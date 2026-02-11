@@ -11,7 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENV FLASK_APP="app.py"
+ENV FLASK_APP="app.py:initialize_app()"
 
 EXPOSE 5000
 
