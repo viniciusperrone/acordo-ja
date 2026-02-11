@@ -13,14 +13,14 @@ class DebtSchema(Schema):
 
 
     @validates("cpf")
-    def validate_cpf(self, value):
+    def validate_cpf(self, value, **kwargs):
         cpf = CPF()
 
         if not cpf.validate(value):
             raise ValidationError("CPF is not valid")
 
     @validates("creditor")
-    def validate_creditor(self, value):
+    def validate_creditor(self, value, **kwargs):
         if not value or not value.strip():
             raise ValidationError("Creditor is required")
 

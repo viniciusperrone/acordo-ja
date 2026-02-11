@@ -14,7 +14,7 @@ def create_debt():
     errors = debt_schema.validate(data)
 
     if errors:
-        return jsonify(errors), 400
+        return jsonify({"errors": errors}), 400
 
 
     debt = Debt(**data)
