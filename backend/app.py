@@ -7,6 +7,7 @@ from config.db import db
 from config.config import Config
 
 import debts
+import debtor
 
 from debts.routes import debts_bp
 

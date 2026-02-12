@@ -1,0 +1,1 @@
+from debtor.models import Debtor
