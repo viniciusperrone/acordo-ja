@@ -13,6 +13,9 @@ COPY . .
 
 ENV FLASK_APP="app.py:initialize_app()"
 
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 5000
 
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5000", "--reload"]
+ENTRYPOINT ["/entrypoint.sh"]
