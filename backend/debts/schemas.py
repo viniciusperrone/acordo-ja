@@ -1,13 +1,15 @@
 from validate_docbr import CPF
-from marshmallow import Schema, fields, validates, ValidationError
+from marshmallow import Schema, fields, validates, ValidationError, validate
 
 from utils.br_bank import BR_BANK_CHOICES
 
 
+BANK_CODES = [code for code, _ in BR_BANK_CHOICES]
+
 class DebtSchema(Schema):
-    id = fields.UUID(dump_only=True)
+    id = fields.Int(dump_only=True)
     cpf = fields.Str(required=True)
-    creditor = fields.Str(required=False)
+    creditor = fields.Str(required=False, validate=validate.OneOf(BANK_CODES))
     original_value = fields.Float(required=True)
     due_date = fields.Date(required=False)
 
@@ -18,11 +20,3 @@ class DebtSchema(Schema):
 
         if not cpf.validate(value):
             raise ValidationError("CPF is not valid")
-
-    @validates("creditor")
-    def validate_creditor(self, value, **kwargs):
-        if not value or not value.strip():
-            raise ValidationError("Creditor is required")
-
-        if value.strip() in BR_BANK_CHOICES:
-            raise ValidationError("Creditor is not valid in Brazil")
