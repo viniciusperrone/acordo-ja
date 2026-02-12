@@ -10,6 +10,7 @@ import debts
 import debtor
 
 from debts.routes import debts_bp
+from debtor.routes import debtor_bp
 
 
 def initialize_app():
@@ -25,6 +26,7 @@ def initialize_app():
     db.init_app(app)
 
     app.register_blueprint(debts_bp)
+    app.register_blueprint(debtor_bp)
 
     Migrate(app, db)
 
