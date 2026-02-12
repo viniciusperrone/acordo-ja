@@ -1,5 +1,5 @@
-from config.db import db
 from datetime import datetime as dt
+from config.db import db
 
 
 class Debt(db.Model):

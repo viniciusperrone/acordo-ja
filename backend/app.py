@@ -8,6 +8,7 @@ from config.config import Config
 
 import debts
 import debtor
+import agreement
 
 from debts.routes import debts_bp
 from debtor.routes import debtor_bp
