@@ -20,3 +20,7 @@ class DebtSchema(Schema):
 
         if not cpf.validate(value):
             raise ValidationError("CPF is not valid")
+
+
+    class Meta:
+        unknown = "raise"
