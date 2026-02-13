@@ -1,3 +1,5 @@
+from sqlalchemy.dialects.postgresql import UUID
+
 from config.db import db
 
 from utils.choices import  INSTALLMENT_STATUS_CHOICES
@@ -10,6 +12,7 @@ class Installments(db.Model):
     installment_number = db.Column(db.Integer, nullable=False)
     due_date = db.Column(db.Date, nullable=False)
     payment_date = db.Column(db.Date)
+    value = db.Column(db.Float, nullable=False)
 
     status = db.Column(
         db.Enum(
@@ -20,3 +23,10 @@ class Installments(db.Model):
         default="PENDING"
     )
 
+    agreement = db.relationship("Agreement", backref="installments")
+
+    agreement_id = db.Column(
+        UUID(as_uuid=True),
+        db.ForeignKey("agreements.id"),
+        nullable=False
+    )
