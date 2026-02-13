@@ -1,4 +1,4 @@
-from marshmallow import Schema, fields, validate
+from marshmallow import Schema, fields, validate, validates, ValidationError
 
 from utils.choices import INSTALLMENT_STATUS_CHOICES
 
@@ -17,3 +17,8 @@ class InstallmentSchema(Schema):
 
     class Meta:
         unknown = "raise"
+
+    @validates("value")
+    def validate_value(self, value, **kwargs):
+        if value <= 0:
+            raise ValidationError("Installment value must be greater than zero.")
