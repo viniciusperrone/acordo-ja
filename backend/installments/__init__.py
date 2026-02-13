@@ -1,0 +1,1 @@
+from installments.models import *
