@@ -9,9 +9,11 @@ from config.config import Config
 import debts
 import debtor
 import agreement
+import installments
 
 from debts.routes import debts_bp
 from debtor.routes import debtor_bp
+from installments.routes import installment_bp
 
 
 def initialize_app():
@@ -28,6 +30,7 @@ def initialize_app():
 
     app.register_blueprint(debts_bp)
     app.register_blueprint(debtor_bp)
+    app.register_blueprint(installment_bp)
 
     Migrate(app, db)
 
