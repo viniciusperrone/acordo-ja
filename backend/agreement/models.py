@@ -1,5 +1,7 @@
 import uuid
 from datetime import datetime
+from decimal import Decimal
+
 from config.db import db
 
 from sqlalchemy.dialects.postgresql import UUID, NUMERIC
@@ -10,12 +12,12 @@ class Agreement(db.Model):
 
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
-    total_traded = db.Column(NUMERIC(12, 2), nullable=False)
-    qtd_instalments = db.Column(db.Integer, nullable=False)
+    total_traded = db.Column(NUMERIC(12, 2), nullable=False) # Automatically calculated
+    instalments_quantity = db.Column(db.Integer, nullable=False, default=1) # Default 1
     installment_value = db.Column(NUMERIC(12, 2), nullable=False)
 
-    entry_value = db.Column(NUMERIC(12, 2), nullable=False)
-    discount_applied = db.Column(db.Float, default=0)
+    entry_value = db.Column(NUMERIC(12, 2), nullable=False, default=Decimal("0.00"))
+    discount_applied = db.Column(NUMERIC(12, 2), default=Decimal("0.00"))
     first_due_date = db.Column(db.Date, nullable=False)
 
     debt_id = db.Column(
