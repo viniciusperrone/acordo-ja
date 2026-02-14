@@ -27,4 +27,3 @@ def create_debtor():
 
     except Exception as err:
         return jsonify({"message": "Internal Server Error"}), 500
-

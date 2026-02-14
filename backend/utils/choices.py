@@ -6,3 +6,9 @@ DEBT_STATUS_CHOICES = (
     ('RENEGOTIATED', 'Renegociada'),
     ('PAID OFF','Quitada')
 )
+
+INSTALLMENT_STATUS_CHOICES = (
+    ('PENDING', 'Pendente'),
+    ('PAID', 'Paga'),
+    ('OVERDUE', 'Atrasada'),
+)

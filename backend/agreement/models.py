@@ -13,7 +13,7 @@ class Agreement(db.Model):
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     total_traded = db.Column(NUMERIC(12, 2), nullable=False) # Automatically calculated
-    instalments_quantity = db.Column(db.Integer, nullable=False, default=1) # Default 1
+    installments_quantity = db.Column(db.Integer, nullable=False, default=1) # Default 1
     installment_value = db.Column(NUMERIC(12, 2), nullable=False)
 
     entry_value = db.Column(NUMERIC(12, 2), nullable=False, default=Decimal("0.00"))

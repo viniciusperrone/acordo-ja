@@ -24,6 +24,8 @@ pyflakes==3.4.0
 Pygments==2.19.2
 PyJWT==2.11.0
 pytest==9.0.2
+python-dateutil==2.9.0.post0
+six==1.17.0
 SQLAlchemy==2.0.46
 sqlparse==0.5.5
 typing_extensions==4.15.0

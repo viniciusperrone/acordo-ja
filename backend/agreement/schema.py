@@ -6,8 +6,8 @@ class AgreementSchema(Schema):
     id = fields.UUID(dump_only=True)
     debt_id = fields.Int(required=True)
 
-    total_traded = fields.Decimal(required=True, as_string=True, validate=validate.Range(min=Decimal("0.01")))
-    installment_value = fields.Decimal(required=True, as_string=True, validate=validate.Range(min=Decimal("0.01")))
+    total_traded = fields.Decimal(dump_only=True)
+    installment_value = fields.Decimal(dump_only=True)
     installments_quantity = fields.Int(required=True, validate=validate.Range(min=1))
 
     entry_value = fields.Decimal(load_default=Decimal("0.00"), as_string=True, validate=validate.Range(min=Decimal("0.00")))
