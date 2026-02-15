@@ -15,6 +15,21 @@ from utils.enum import AgreementStatus, InstallmentStatus
 
 agreement_bp = Blueprint('agreement', __name__, url_prefix='/agreement')
 
+@agreement_bp.route('/<uuid:agreement_id>/detail', methods=['GET'])
+def get_agreement(agreement_id):
+    try:
+        agreement = Agreement.query.get(agreement_id)
+
+        if not agreement:
+            return jsonify({"message": "Agreement not found"}), 404
+
+        agreement_schema = AgreementSchema()
+        result = agreement_schema.dump(agreement)
+
+        return jsonify(result), 200
+    except Exception as err:
+        return jsonify({"message": "Internal Server Error"}), 500
+
 @agreement_bp.route('/add', methods=['POST'])
 def create_agreement():
     agreement_schema = AgreementSchema()
