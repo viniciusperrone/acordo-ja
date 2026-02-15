@@ -107,7 +107,7 @@ def create_agreement():
         return jsonify({"message": "Internal Server Error"}), 500
 
 
-@agreement_bp.route('/<uuid:agreement_id>', methods=['PUT'])
+@agreement_bp.route('/<uuid:agreement_id>', methods=['POST'])
 def cancel_agreement(agreement_id):
     try:
         agreement = Agreement.query.get(agreement_id)
@@ -131,6 +131,46 @@ def cancel_agreement(agreement_id):
         db.session.commit()
 
         return jsonify({"message": "Agreement successfully cancelled"}), 201
+
+    except Exception as err:
+        db.session.rollback()
+
+        return jsonify({"message": "Internal Server Error"}), 500
+
+@agreement_bp.route('/<uuid:agreement_id>/complete', methods=['POST'])
+def complete_agreement(agreement_id):
+    try:
+        agreement = Agreement.query.get(agreement_id)
+
+        if not agreement:
+            return jsonify({"message": "Agreement not found"}), 404
+
+        if agreement.status == AgreementStatus.COMPLETED:
+            return jsonify({"message": "Agreement already completed"}), 400
+
+        if agreement.status == AgreementStatus.CANCELLED:
+            return jsonify({"message": "Agreement is canceled"}), 400
+
+        if agreement.status == AgreementStatus.DRAFT:
+            return jsonify({
+                "message": "Draft agreement cannot be completed"
+            }), 400
+
+        pending_installment = Installments.query.filter(
+            Installments.agreement_id == agreement.id,
+            Installments.status != "PAID"
+        ).first()
+
+        if pending_installment:
+            return jsonify({"message": "There are outstanding installments"}), 400
+
+        agreement.status = AgreementStatus.COMPLETED
+
+        db.session.commit()
+
+        return jsonify({
+            "message": "Agreement successfully completed"
+        }), 200
 
     except Exception as err:
         db.session.rollback()
