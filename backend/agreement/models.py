@@ -3,6 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from config.db import db
+from utils.enum import AgreementStatus
 
 from sqlalchemy.dialects.postgresql import UUID, NUMERIC
 
@@ -19,6 +20,11 @@ class Agreement(db.Model):
     entry_value = db.Column(NUMERIC(12, 2), nullable=False, default=Decimal("0.00"))
     discount_applied = db.Column(NUMERIC(12, 2), default=Decimal("0.00"))
     first_due_date = db.Column(db.Date, nullable=False)
+    status = db.Column(
+        db.Enum(AgreementStatus),
+        default=AgreementStatus.DRAFT,
+        nullable=False
+    )
 
     debt_id = db.Column(
         db.Integer,

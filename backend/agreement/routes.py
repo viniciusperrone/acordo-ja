@@ -15,7 +15,6 @@ from config.db import db
 
 agreement_bp = Blueprint('agreement', __name__, url_prefix='/agreement')
 
-
 @agreement_bp.route('/add', methods=['POST'])
 def create_agreement():
     agreement_schema = AgreementSchema()
@@ -76,6 +75,7 @@ def create_agreement():
             installments.append(entry_installment)
 
             installment_number += 1
+            current_due_date += relativedelta(months=1)
 
         for _ in range(installments_quantity):
             installment = Installments(
@@ -105,3 +105,4 @@ def create_agreement():
 
         db.session.rollback()
         return jsonify({"message": "Internal Server Error"}), 500
+
