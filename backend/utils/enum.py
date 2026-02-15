@@ -6,3 +6,10 @@ class AgreementStatus(Enum):
     ACTIVE = "ACTIVE"
     CANCELLED = "CANCELLED"
     COMPLETED = "COMPLETED"
+
+
+class InstallmentStatus(Enum):
+    PENDING = 'PENDING'
+    PAID = 'PAID'
+    OVERDUE = 'OVERDUE'
+    CANCELLED = 'CANCELLED'

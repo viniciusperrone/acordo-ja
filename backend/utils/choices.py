@@ -11,6 +11,7 @@ INSTALLMENT_STATUS_CHOICES = (
     ('PENDING', 'Pendente'),
     ('PAID', 'Paga'),
     ('OVERDUE', 'Atrasada'),
+    ('CANCELLED', 'Cancelada'),
 )
 
 AGREEMENT_STATUS_CHOICES = (

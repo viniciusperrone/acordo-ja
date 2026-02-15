@@ -11,7 +11,7 @@ from debts import Debt
 from dateutil.relativedelta import relativedelta
 
 from config.db import db
-
+from utils.enum import AgreementStatus, InstallmentStatus
 
 agreement_bp = Blueprint('agreement', __name__, url_prefix='/agreement')
 
@@ -106,3 +106,33 @@ def create_agreement():
         db.session.rollback()
         return jsonify({"message": "Internal Server Error"}), 500
 
+
+@agreement_bp.route('/<uuid:agreement_id>', methods=['PUT'])
+def cancel_agreement(agreement_id):
+    try:
+        agreement = Agreement.query.get(agreement_id)
+
+        if not agreement:
+            return jsonify({"message": "Agreement not found"}), 404
+
+        if agreement.status == AgreementStatus.COMPLETED:
+            return jsonify({"message": "Cannot cancel a completed agreement"}), 400
+
+        if agreement.status == AgreementStatus.CANCELLED:
+            return jsonify({"message": "Agreement already cancelled"}), 400
+
+        agreement.status = AgreementStatus.CANCELLED
+
+        Installments.query.filter_by(
+            agreement_id=agreement.id,
+            status=InstallmentStatus.PENDING
+        ).update({"status": InstallmentStatus.CANCELLED})
+
+        db.session.commit()
+
+        return jsonify({"message": "Agreement successfully cancelled"}), 201
+
+    except Exception as err:
+        db.session.rollback()
+
+        return jsonify({"message": "Internal Server Error"}), 500
