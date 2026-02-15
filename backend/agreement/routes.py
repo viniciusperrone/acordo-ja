@@ -15,6 +15,33 @@ from utils.enum import AgreementStatus, InstallmentStatus
 
 agreement_bp = Blueprint('agreement', __name__, url_prefix='/agreement')
 
+@agreement_bp.route('/list', methods=['GET'])
+def list_agreements():
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+
+        pagination = Agreement.query.paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
+
+        agreements_schema = AgreementSchema(many=True)
+
+        result = agreements_schema.dump(pagination.items)
+
+        return jsonify({
+            "items": result,
+            "total": pagination.total,
+            "pages": pagination.pages,
+            "current_page": page
+        })
+
+    except Exception as err:
+        return jsonify({"message": "Internal Server Error"}), 500
+
+
 @agreement_bp.route('/<uuid:agreement_id>/detail', methods=['GET'])
 def get_agreement(agreement_id):
     try:
