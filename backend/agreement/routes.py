@@ -149,7 +149,6 @@ def create_agreement():
         db.session.rollback()
         return jsonify({"message": "Internal Server Error"}), 500
 
-
 @agreement_bp.route('/<uuid:agreement_id>', methods=['POST'])
 def cancel_agreement(agreement_id):
     try:
