@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
+from operator import index
 
 from config.db import db
 from utils.enum import AgreementStatus
@@ -21,15 +22,17 @@ class Agreement(db.Model):
     discount_applied = db.Column(NUMERIC(12, 2), default=Decimal("0.00"))
     first_due_date = db.Column(db.Date, nullable=False)
     status = db.Column(
-        db.Enum(AgreementStatus),
+        db.Enum(AgreementStatus, name="agreementstatus"),
         default=AgreementStatus.DRAFT,
+        server_default=AgreementStatus.DRAFT.value,
         nullable=False
     )
 
     debt_id = db.Column(
         db.Integer,
         db.ForeignKey("debts.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
     debt = db.relationship("Debt", back_populates="agreements")
 

@@ -1,12 +1,17 @@
 from decimal import Decimal, ROUND_HALF_UP
 from marshmallow import Schema, fields, validate, validates_schema, ValidationError
 
+from utils.enum import AgreementStatus
+
 
 class AgreementSchema(Schema):
     id = fields.UUID(dump_only=True)
     debt_id = fields.Int(required=True)
 
-    status = fields.String(dump_only=True)
+    status = fields.Enum(
+        AgreementStatus,
+        dump_only=True
+    )
 
     total_traded = fields.Decimal(dump_only=True)
     installment_value = fields.Decimal(dump_only=True)
