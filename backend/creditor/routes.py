@@ -33,12 +33,13 @@ def list_creditors():
         })
 
     except Exception as err:
+        print(str(err))
         return jsonify({"message": "Internal Server Error"}), 500
 
 @creditor_bp.route('/<uuid:creditor_id>/detail', methods=['GET'])
 def retrieve_creditor(creditor_id):
     try:
-        creditor = Creditor.query.get(creditor_id)
+        creditor = db.session.get(Creditor, creditor_id)
 
         if not creditor:
             return jsonify({'message': 'Creditor not found'}), 404
@@ -70,7 +71,7 @@ def create_creditor():
         db.session.add(creditor)
         db.session.commit()
 
-        return jsonify({'message': 'Successfully registered creditor'})
+        return jsonify({'message': 'Successfully registered creditor'}), 201
 
     except ValidationError as err:
         return jsonify({'message': err.messages}), 400

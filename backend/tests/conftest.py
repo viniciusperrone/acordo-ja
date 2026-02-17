@@ -13,7 +13,7 @@ def app():
 
     app.config.update({
         "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///test.db",
         "SQLALCHEMY_TRACK_MODIFICATIONS": True
     })
 
@@ -29,3 +29,10 @@ def client(app):
 @pytest.fixture()
 def runner(app):
     return app.test_cli_runner()
+
+@pytest.fixture(scope="function")
+def db_session(app):
+    with app.app_context():
+        yield db.session
+        db.session.rollback()
+        db.session.remove()
