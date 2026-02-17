@@ -6,6 +6,7 @@ from flask_migrate import Migrate
 from config.db import db
 from config.config import Config
 
+import creditor
 import debts
 import debtor
 import agreement
