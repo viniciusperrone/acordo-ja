@@ -12,6 +12,7 @@ import debtor
 import agreement
 import installments
 
+from creditor.routes import creditor_bp
 from debts.routes import debts_bp
 from debtor.routes import debtor_bp
 from installments.routes import installment_bp
@@ -30,6 +31,7 @@ def initialize_app():
 
     db.init_app(app)
 
+    app.register_blueprint(creditor_bp)
     app.register_blueprint(debts_bp)
     app.register_blueprint(debtor_bp)
     app.register_blueprint(installment_bp)
