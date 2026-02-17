@@ -5,7 +5,7 @@ from config.db import db
 
 from creditor.schemas import CreditorSchema
 from creditor.models import Creditor
-
+from creditor.services import CreditorService, CreditorAlreadyExistsError
 
 creditor_bp = Blueprint('creditor', __name__, url_prefix='/creditors')
 
@@ -59,23 +59,22 @@ def create_creditor():
     try:
         data = creditor_schema.load(request.json)
 
-        bank_code = data['bank_code']
+        CreditorService.create_creditor(
+            data=data,
+            session=db.session
+        )
 
-        existing_creditor = Creditor.query.filter_by(bank_code=bank_code).first()
-
-        if existing_creditor:
-            return jsonify({'message': 'Creditor already exists'}), 400
-
-        creditor = Creditor(**data)
-
-        db.session.add(creditor)
         db.session.commit()
 
         return jsonify({'message': 'Successfully registered creditor'}), 201
 
     except ValidationError as err:
+        db.session.rollback()
         return jsonify({'message': err.messages}), 400
 
+    except CreditorAlreadyExistsError as err:
+        db.session.rollback()
+        return jsonify({'message': str(err)}), 400
     except Exception as err:
-
+        db.session.rollback()
         return jsonify({'message': "Internal Server Error"}), 500
