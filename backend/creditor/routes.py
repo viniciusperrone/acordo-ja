@@ -35,6 +35,22 @@ def list_creditors():
     except Exception as err:
         return jsonify({"message": "Internal Server Error"}), 500
 
+@creditor_bp.route('/<uuid:creditor_id>/detail', methods=['GET'])
+def retrieve_creditor(creditor_id):
+    try:
+        creditor = Creditor.query.get(creditor_id)
+
+        if not creditor:
+            return jsonify({'message': 'Creditor not found'}), 404
+
+        creditor_schema = CreditorSchema()
+        result = creditor_schema.dump(creditor)
+
+        return jsonify(result), 200
+
+    except Exception as err:
+        return jsonify({"message": "Internal Server Error"}), 500
+
 @creditor_bp.route('/add', methods=['POST'])
 def create_creditor():
     creditor_schema = CreditorSchema()
