@@ -9,6 +9,32 @@ from creditor.models import Creditor
 
 creditor_bp = Blueprint('creditor', __name__, url_prefix='/creditors')
 
+@creditor_bp.route('/list', methods=['GET'])
+def list_creditors():
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+
+        pagination = Creditor.query.paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
+
+        creditors_schema = CreditorSchema(many=True)
+
+        result = creditors_schema.dump(pagination.items)
+
+        return jsonify({
+            "items": result,
+            "total": pagination.total,
+            "pages": pagination.pages,
+            "current_page": page
+        })
+
+    except Exception as err:
+        return jsonify({"message": "Internal Server Error"}), 500
+
 @creditor_bp.route('/add', methods=['POST'])
 def create_creditor():
     creditor_schema = CreditorSchema()

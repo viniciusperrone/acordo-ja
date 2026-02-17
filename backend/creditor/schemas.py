@@ -6,6 +6,7 @@ from debts.schemas import BANK_CODES
 class CreditorSchema(Schema):
     id = fields.UUID(dump_only=True)
     bank_code = fields.Str(required=True, validate=validate.OneOf(BANK_CODES))
+    bank_name = fields.Str(dump_only=True, attribute="bank_name")
     interest_rate = fields.Decimal(
         required=True,
         as_string=True,
