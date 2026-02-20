@@ -1,7 +1,7 @@
 import uuid
+
 from datetime import datetime
 from decimal import Decimal
-from operator import index
 
 from config.db import db
 from utils.enum import AgreementStatus
@@ -29,7 +29,7 @@ class Agreement(db.Model):
     )
 
     debt_id = db.Column(
-        db.Integer,
+        UUID(as_uuid=True),
         db.ForeignKey("debts.id"),
         nullable=False,
         index=True
