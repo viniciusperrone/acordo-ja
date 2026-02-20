@@ -13,3 +13,11 @@ class InstallmentStatus(Enum):
     PAID = 'PAID'
     OVERDUE = 'OVERDUE'
     CANCELLED = 'CANCELLED'
+
+
+class DebtStatus(Enum):
+    OPEN = "OPEN"
+    IN_AGREEMENT = "IN_AGREEMENT"
+    PAID = "PAID"
+    DEFAULTED = "DEFAULTED"
+    CANCELLED = "CANCELLED"

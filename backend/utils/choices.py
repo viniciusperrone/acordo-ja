@@ -1,10 +1,11 @@
 from enum import Enum
 
 DEBT_STATUS_CHOICES = (
-    ('PENDING', 'Pendente'),
-    ('IN NEGOTIATION', 'Em negociação'),
-    ('RENEGOTIATED', 'Renegociada'),
-    ('PAID OFF','Quitada')
+    ("OPEN", "Aberta"),
+    ("IN_AGREEMENT", "Em Acordo"),
+    ("PAID", "Quitada"),
+    ("DEFAULTED", "Inadimplente"),
+    ("CANCELLED", "Cancelada"),
 )
 
 INSTALLMENT_STATUS_CHOICES = (
