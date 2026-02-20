@@ -5,7 +5,9 @@ from config.db import db
 
 from creditor.schemas import CreditorSchema
 from creditor.models import Creditor
-from creditor.services import CreditorService, CreditorAlreadyExistsError
+from creditor.services import CreditorService
+from creditor.exceptions import CreditorAlreadyExistsError
+
 
 creditor_bp = Blueprint('creditor', __name__, url_prefix='/creditors')
 

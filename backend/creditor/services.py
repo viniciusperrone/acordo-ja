@@ -1,8 +1,5 @@
 from creditor import Creditor
-
-
-class CreditorAlreadyExistsError(Exception):
-    pass
+from creditor.exceptions import CreditorAlreadyExistsError
 
 
 class CreditorService:
