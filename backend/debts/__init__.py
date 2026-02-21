@@ -1,1 +1,4 @@
-from debts.models import *
+from .models import Debt
+
+
+__all__ = ["Debt"]

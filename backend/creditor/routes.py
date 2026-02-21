@@ -32,7 +32,7 @@ def list_creditors():
             "total": pagination.total,
             "pages": pagination.pages,
             "current_page": page
-        })
+        }), 200
 
     except Exception as err:
         print(str(err))
