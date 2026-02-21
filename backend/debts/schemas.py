@@ -1,25 +1,47 @@
-from validate_docbr import CPF
-from marshmallow import Schema, fields, validates, ValidationError, validate
+from marshmallow import Schema, fields, validate, validates_schema, ValidationError
 
-from utils.br_bank import BR_BANK_CHOICES
+from utils.enum import DebtStatus
 
-
-BANK_CODES = [code for code, _ in BR_BANK_CHOICES]
 
 class DebtSchema(Schema):
-    id = fields.Int(dump_only=True)
-    cpf = fields.Str(required=True)
-    creditor = fields.Str(required=False, validate=validate.OneOf(BANK_CODES))
-    original_value = fields.Float(required=True)
-    due_date = fields.Date(required=False)
+    id = fields.UUID(dump_only=True)
 
+    debtor_id = fields.Int(required=True)
+    creditor_id = fields.UUID(required=True)
 
-    @validates("cpf")
-    def validate_cpf(self, value, **kwargs):
-        cpf = CPF()
+    original_value = fields.Decimal(as_string=True, required=True)
+    updated_value = fields.Decimal(as_string=True, required=True)
 
-        if not cpf.validate(value):
-            raise ValidationError("CPF is not valid")
+    due_date = fields.Date(required=True)
+    last_agreement_date = fields.DateTime(dump_only=True)
+
+    status = fields.Str(
+        validate=validate.OneOf([status.name for status in DebtStatus]),
+        dump_only=True
+    )
+
+    renegotiation_count = fields.Int(dump_only=True)
+
+    created_at = fields.DateTime(dump_only=True)
+    updated_at = fields.DateTime(dump_only=True)
+
+    @validates_schema
+    def validate_values(self, data, **kwargs):
+        original_value = data.get("original_value")
+        updated_value = data.get("updated_value")
+
+        if original_value is not None and original_value <= 0:
+            raise ValidationError("Original value must be greater than 0", field_name="original_value")
+
+        if updated_value is not None:
+            if updated_value <= 0:
+                raise ValidationError("Updated value must be greater than 0", field_name="updated_value")
+
+            if original_value is not None and updated_value < original_value:
+                raise ValidationError(
+                    "Updated value must be greater than or equal to original value",
+                    field_name="updated_value"
+                )
 
 
     class Meta:

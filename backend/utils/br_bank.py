@@ -436,3 +436,5 @@ BR_BANK_CHOICES = (
     ('756', 'BANCO SICOOB S.A.'),
     ('757', 'BCO KEB HANA DO BRASIL S.A.'),
 )
+
+BANK_CODES = [code for code, _ in BR_BANK_CHOICES]
