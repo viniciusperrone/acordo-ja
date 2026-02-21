@@ -2,8 +2,9 @@ from flask import Blueprint, request, jsonify
 from marshmallow import ValidationError
 
 from config.db import db
-from debts import Debt
 from debts.schemas import DebtSchema
+from debts.services import DebtService
+from debts.exceptions import DebtorNotExistError, CreditorNotExistError
 
 debts_bp = Blueprint('debts', __name__, url_prefix='/debts')
 
@@ -14,16 +15,23 @@ def create_debt():
     try:
         data = debt_schema.load(request.json)
 
-        debt = Debt(**data)
+        DebtService.create_debt(
+            data=data,
+            session=db.session
+        )
 
-        db.session.add(debt)
         db.session.commit()
 
         return jsonify({'message': 'Successfully registered debt'}), 201
 
     except ValidationError as err:
+        db.session.rollback()
         return jsonify({"errors": err.messages}), 400
-
+    except DebtorNotExistError as err:
+        db.session.rollback()
+        return jsonify({'message': str(err)}), 400
+    except CreditorNotExistError as err:
+        db.session.rollback()
+        return jsonify({'message': str(err)}), 400
     except Exception as e:
-
         return jsonify({"message": "Internal Server Error"}), 500
