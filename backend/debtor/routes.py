@@ -34,6 +34,22 @@ def list_debtors():
     except Exception as err:
         return jsonify({"message": "Internal Server Error"}), 500
 
+@debtor_bp.route('/<int:debtor_id>/detail', methods=['GET'])
+def retrieve_debtor(debtor_id):
+    try:
+        debtor = db.session.get(Debtor, debtor_id)
+
+        if not debtor:
+            return jsonify({"message": "Debtor not found"}), 404
+
+        debtor_schema = DebtorSchema()
+        result = debtor_schema.dump(debtor)
+
+        return jsonify(result), 200
+
+    except Exception as err:
+        return jsonify({"message": "Internal Server Error"}), 500
+
 @debtor_bp.route('/add', methods=['POST'])
 def create_debtor():
     debtor_schema = DebtorSchema()
