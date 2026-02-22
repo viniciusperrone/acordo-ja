@@ -79,5 +79,6 @@ def create_debt():
     except CreditorNotExistError as err:
         db.session.rollback()
         return jsonify({'message': str(err)}), 400
-    except Exception as e:
+    except Exception as err:
+        print(str(err))
         return jsonify({"message": "Internal Server Error"}), 500

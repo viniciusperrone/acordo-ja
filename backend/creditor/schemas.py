@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields, validate
 
-from debts.schemas import BANK_CODES
+from utils.br_bank import BANK_CODES
 
 
 class CreditorSchema(Schema):

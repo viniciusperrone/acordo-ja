@@ -1,7 +1,6 @@
 from uuid import uuid4
 from creditor import Creditor
-from debts.schemas import BANK_CODES
-from config.db import db
+from utils.br_bank import BANK_CODES
 
 
 def test_should_return_empty_list_when_no_creditors(client):
