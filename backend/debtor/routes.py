@@ -8,7 +8,7 @@ from debtor.schemas import DebtorSchema
 
 debtor_bp = Blueprint('debtor', __name__, url_prefix='/debtor')
 
-@debtor_bp.router('/list', methods=['GET'])
+@debtor_bp.route('/list', methods=['GET'])
 def list_debtors():
     try:
         page = request.args.get('page', 1, type=int)
