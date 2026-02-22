@@ -30,8 +30,8 @@ class DebtorSchema(Schema):
     def validate_phone(self, value, **kwargs):
         phone = re.sub(r"\D", "", value)
 
-        if len(phone) not in range(10, 11):
-            raise ValidationError("Phone number must be between 10 and 11")
+        if len(phone) not in (10, 11):
+            raise ValidationError("Phone number must be 10 or 11")
 
     class Meta:
         unknown = "raise"
