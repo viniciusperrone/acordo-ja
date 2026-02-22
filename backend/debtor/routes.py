@@ -8,6 +8,32 @@ from debtor.schemas import DebtorSchema
 
 debtor_bp = Blueprint('debtor', __name__, url_prefix='/debtor')
 
+@debtor_bp.router('/list', methods=['GET'])
+def list_debtors():
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+
+        pagination = Debtor.query.paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
+
+        debtors_schema = DebtorSchema(many=True)
+
+        result = debtors_schema.dump(pagination.items)
+
+        return jsonify({
+            "items": result,
+            "total": pagination.total,
+            "pages": pagination.pages,
+            "current_page": page
+        }), 200
+
+    except Exception as err:
+        return jsonify({"message": "Internal Server Error"}), 500
+
 @debtor_bp.route('/add', methods=['POST'])
 def create_debtor():
     debtor_schema = DebtorSchema()
