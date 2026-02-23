@@ -5,8 +5,9 @@ from dateutil.relativedelta import relativedelta
 from agreement import Agreement
 from debts import Debt
 from installments import Installments
+from utils.enum import AgreementStatus, InstallmentStatus
 
-from .exceptions import DebtNotFountError
+from .exceptions import DebtNotFountError, AgreementStatusError
 
 
 class AgreementService:
@@ -99,3 +100,19 @@ class AgreementService:
         session.commit()
 
         return agreement
+
+    @staticmethod
+    def cancel_agreement(agreement: Agreement, session):
+        if agreement.status == AgreementStatus.COMPLETED:
+            raise AgreementStatusError("Cannot cancel a completed agreement")
+        if agreement.status == AgreementStatus.CANCELLED:
+            raise AgreementStatusError("Agreement already cancelled")
+
+        agreement.status = AgreementStatus.CANCELLED
+
+        Installments.query.filter_by(
+            agreement_id=agreement.agreement_id,
+            status=InstallmentStatus.PENDING,
+        ).update({"status": InstallmentStatus.CANCELLED})
+
+        session.commit()

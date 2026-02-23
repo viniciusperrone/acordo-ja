@@ -1,19 +1,14 @@
-from decimal import Decimal, ROUND_HALF_UP
-
 from flask import Blueprint, request, jsonify
 from marshmallow import ValidationError
 
 from agreement import Agreement
-from agreement.exceptions import DebtNotFountError
+from agreement.exceptions import DebtNotFountError, AgreementStatusError
 from agreement.schemas import AgreementSchema
 from agreement.services import AgreementService
 from installments import Installments
-from debts import Debt
-
-from dateutil.relativedelta import relativedelta
 
 from config.db import db
-from utils.enum import AgreementStatus, InstallmentStatus
+from utils.enum import AgreementStatus
 
 agreement_bp = Blueprint('agreement', __name__, url_prefix='/agreement')
 
@@ -91,22 +86,13 @@ def cancel_agreement(agreement_id):
         if not agreement:
             return jsonify({"message": "Agreement not found"}), 404
 
-        if agreement.status == AgreementStatus.COMPLETED:
-            return jsonify({"message": "Cannot cancel a completed agreement"}), 400
-
-        if agreement.status == AgreementStatus.CANCELLED:
-            return jsonify({"message": "Agreement already cancelled"}), 400
-
-        agreement.status = AgreementStatus.CANCELLED
-
-        Installments.query.filter_by(
-            agreement_id=agreement.id,
-            status=InstallmentStatus.PENDING
-        ).update({"status": InstallmentStatus.CANCELLED})
-
-        db.session.commit()
+        AgreementService.cancel_agreement(agreement, db.session)
 
         return jsonify({"message": "Agreement successfully cancelled"}), 201
+
+    except AgreementStatusError as err:
+        db.session.rollback()
+        return jsonify({'message': str(err)}), 400
 
     except Exception as err:
         db.session.rollback()
