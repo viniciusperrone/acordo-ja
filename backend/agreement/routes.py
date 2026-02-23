@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from marshmallow import ValidationError
 
 from agreement import Agreement
-from agreement.exceptions import DebtNotFountError, AgreementStatusError
+from agreement.exceptions import DebtNotFountError, AgreementStatusError, PendingInstallmentsError
 from agreement.schemas import AgreementSchema
 from agreement.services import AgreementService
 from installments import Installments
@@ -96,7 +96,6 @@ def cancel_agreement(agreement_id):
 
     except Exception as err:
         db.session.rollback()
-
         return jsonify({"message": "Internal Server Error"}), 500
 
 @agreement_bp.route('/<uuid:agreement_id>/complete', methods=['POST'])
@@ -107,32 +106,19 @@ def complete_agreement(agreement_id):
         if not agreement:
             return jsonify({"message": "Agreement not found"}), 404
 
-        if agreement.status == AgreementStatus.COMPLETED:
-            return jsonify({"message": "Agreement already completed"}), 400
-
-        if agreement.status == AgreementStatus.CANCELLED:
-            return jsonify({"message": "Agreement is canceled"}), 400
-
-        if agreement.status == AgreementStatus.DRAFT:
-            return jsonify({
-                "message": "Draft agreement cannot be completed"
-            }), 400
-
-        pending_installment = Installments.query.filter(
-            Installments.agreement_id == agreement.id,
-            Installments.status != "PAID"
-        ).first()
-
-        if pending_installment:
-            return jsonify({"message": "There are outstanding installments"}), 400
-
-        agreement.status = AgreementStatus.COMPLETED
-
-        db.session.commit()
+        AgreementService.complete_agreement(agreement, db.session)
 
         return jsonify({
             "message": "Agreement successfully completed"
         }), 200
+
+    except AgreementStatusError as err:
+        db.session.rollback()
+        return jsonify({'message': str(err)}), 400
+
+    except PendingInstallmentsError as err:
+        db.session.rollback()
+        return jsonify({"message": str(err)}), 400
 
     except Exception as err:
         db.session.rollback()

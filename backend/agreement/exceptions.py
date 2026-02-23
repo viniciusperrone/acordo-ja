@@ -5,3 +5,6 @@ class DebtNotFountError(Exception):
 
 class AgreementStatusError(Exception):
     pass
+
+class PendingInstallmentsError(Exception):
+    pass

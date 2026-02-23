@@ -7,7 +7,7 @@ from debts import Debt
 from installments import Installments
 from utils.enum import AgreementStatus, InstallmentStatus
 
-from .exceptions import DebtNotFountError, AgreementStatusError
+from .exceptions import DebtNotFountError, AgreementStatusError, PendingInstallmentsError
 
 
 class AgreementService:
@@ -115,4 +115,24 @@ class AgreementService:
             status=InstallmentStatus.PENDING,
         ).update({"status": InstallmentStatus.CANCELLED})
 
+        session.commit()
+
+    @staticmethod
+    def complete_agreement(agreement: Agreement, session):
+        if agreement.status == AgreementStatus.COMPLETED:
+            raise AgreementStatusError("Agreement already completed")
+        elif agreement.status == AgreementStatus.CANCELLED:
+            raise AgreementStatusError("Agreement is canceled")
+        elif agreement.status == AgreementStatus.DRAFT:
+            raise AgreementStatusError("Draft agreement cannot be completed")
+
+        pending_installment = Installments.query.filter(
+            Installments.agreement_id == agreement.id,
+            Installments.status != InstallmentStatus.PAID,
+        ).first()
+
+        if pending_installment:
+            raise PendingInstallmentsError("There are outstanding installments")
+
+        agreement.status = AgreementStatus.COMPLETED
         session.commit()
