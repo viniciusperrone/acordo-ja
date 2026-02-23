@@ -2,7 +2,8 @@ from flask import Blueprint, request, jsonify
 from marshmallow import ValidationError
 
 from agreement import Agreement
-from agreement.exceptions import DebtNotFountError, AgreementStatusError, PendingInstallmentsError
+from agreement.exceptions import DebtNotFountError, AgreementStatusError, PendingInstallmentsError, \
+    AgreementNotFoundError
 from agreement.schemas import AgreementSchema
 from agreement.services import AgreementService
 from installments import Installments
@@ -43,15 +44,14 @@ def list_agreements():
 @agreement_bp.route('/<uuid:agreement_id>/detail', methods=['GET'])
 def get_agreement(agreement_id):
     try:
-        agreement = Agreement.query.get(agreement_id)
-
-        if not agreement:
-            return jsonify({"message": "Agreement not found"}), 404
+        agreement = AgreementService.get_agreement_or_fail(agreement_id)
 
         agreement_schema = AgreementSchema()
         result = agreement_schema.dump(agreement)
 
         return jsonify(result), 200
+    except AgreementNotFoundError as err:
+        return jsonify({'message': str(err)}), 400
     except Exception as err:
         return jsonify({"message": "Internal Server Error"}), 500
 
@@ -81,7 +81,7 @@ def create_agreement():
 @agreement_bp.route('/<uuid:agreement_id>/cancel', methods=['POST'])
 def cancel_agreement(agreement_id):
     try:
-        agreement = Agreement.query.get(agreement_id)
+        agreement = AgreementService.get_agreement_or_fail(agreement_id)
 
         if not agreement:
             return jsonify({"message": "Agreement not found"}), 404
@@ -90,10 +90,11 @@ def cancel_agreement(agreement_id):
 
         return jsonify({"message": "Agreement successfully cancelled"}), 201
 
+    except AgreementNotFoundError as err:
+        return jsonify({'message': str(err)}), 400
     except AgreementStatusError as err:
         db.session.rollback()
         return jsonify({'message': str(err)}), 400
-
     except Exception as err:
         db.session.rollback()
         return jsonify({"message": "Internal Server Error"}), 500
@@ -101,16 +102,16 @@ def cancel_agreement(agreement_id):
 @agreement_bp.route('/<uuid:agreement_id>/complete', methods=['POST'])
 def complete_agreement(agreement_id):
     try:
-        agreement = Agreement.query.get(agreement_id)
-
-        if not agreement:
-            return jsonify({"message": "Agreement not found"}), 404
+        agreement = AgreementService.get_agreement_or_fail(agreement_id)
 
         AgreementService.complete_agreement(agreement, db.session)
 
         return jsonify({
             "message": "Agreement successfully completed"
         }), 200
+
+    except AgreementNotFoundError as err:
+        return jsonify({'message': str(err)}), 400
 
     except AgreementStatusError as err:
         db.session.rollback()

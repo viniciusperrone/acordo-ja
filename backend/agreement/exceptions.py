@@ -8,3 +8,6 @@ class AgreementStatusError(Exception):
 
 class PendingInstallmentsError(Exception):
     pass
+
+class AgreementNotFoundError(Exception):
+    pass

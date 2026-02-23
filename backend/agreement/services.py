@@ -7,10 +7,17 @@ from debts import Debt
 from installments import Installments
 from utils.enum import AgreementStatus, InstallmentStatus
 
-from .exceptions import DebtNotFountError, AgreementStatusError, PendingInstallmentsError
+from .exceptions import DebtNotFountError, AgreementStatusError, PendingInstallmentsError, AgreementNotFoundError
 
 
 class AgreementService:
+
+    @staticmethod
+    def get_agreement_or_fail(agreement_id):
+        agreement = Agreement.query.get(agreement_id)
+        if not agreement:
+            raise AgreementNotFoundError("Agreement not found")
+        return agreement
 
     @staticmethod
     def create_agreement(data, session):
