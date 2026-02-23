@@ -6,7 +6,7 @@ from utils.enum import AgreementStatus
 
 class AgreementSchema(Schema):
     id = fields.UUID(dump_only=True)
-    debt_id = fields.Int(required=True)
+    debt_id = fields.UUID(required=True)
 
     status = fields.Enum(
         AgreementStatus,

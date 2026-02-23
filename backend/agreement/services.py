@@ -1,0 +1,101 @@
+from datetime import date
+from decimal import Decimal, ROUND_HALF_UP
+from dateutil.relativedelta import relativedelta
+
+from agreement import Agreement
+from debts import Debt
+from installments import Installments
+
+from .exceptions import DebtNotFountError
+
+
+class AgreementService:
+
+    @staticmethod
+    def create_agreement(data, session):
+        debt_id = data["debt_id"]
+
+        debt = session.get(Debt, debt_id)
+
+        if not debt:
+            raise DebtNotFountError("Debt not found")
+
+        debt_value = Decimal(debt.original_value).quantize(Decimal("0.01"))
+        total_to_pay = debt_value
+
+        if debt.due_date and debt.due_date < date.today():
+            applied_rate = Decimal(debt.creditor.interest_rate).quantize(
+                Decimal("0.01")
+            )
+            total_to_pay = (debt_value * (Decimal("1.00") + applied_rate)).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
+
+        discount = Decimal(data["discount_applied"]).quantize(Decimal("0.01"))
+        entry = Decimal(data["entry_value"]).quantize(Decimal("0.01"))
+        installments_quantity = data["installments_quantity"]
+
+        if installments_quantity <= 0:
+            raise ValueError("Installments quantity must be greater than zero")
+
+        total_to_pay = (total_to_pay - discount).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+
+        remaining_value = (total_to_pay - entry).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+
+        installment_value = (remaining_value / installments_quantity).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+
+        agreement = Agreement(
+            debt_id=debt_id,
+            total_traded=total_to_pay,
+            installment_value=installment_value,
+            installments_quantity=installments_quantity,
+            entry_value=entry,
+            discount_applied=discount,
+            first_due_date=data["first_due_date"],
+        )
+
+        session.add(agreement)
+        session.flush()
+
+        installments = []
+        installment_number = 1
+        current_due_date = data["first_due_date"]
+
+        if entry > Decimal("0.00"):
+            installments.append(
+                Installments(
+                    installment_number=installment_number,
+                    due_date=current_due_date,
+                    value=entry,
+                    status="PENDING",
+                    agreement_id=agreement.id,
+                )
+            )
+
+            installment_number += 1
+            current_due_date += relativedelta(months=1)
+
+        for _ in range(installments_quantity):
+            installments.append(
+                Installments(
+                    installment_number=installment_number,
+                    due_date=current_due_date,
+                    value=installment_value,
+                    status="PENDING",
+                    agreement_id=agreement.id,
+                )
+            )
+
+            installment_number += 1
+            current_due_date += relativedelta(months=1)
+
+        session.add_all(installments)
+        session.commit()
+
+        return agreement

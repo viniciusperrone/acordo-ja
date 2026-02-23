@@ -1,0 +1,4 @@
+
+
+class DebtNotFountError(Exception):
+    pass
