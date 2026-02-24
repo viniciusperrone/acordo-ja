@@ -3,7 +3,8 @@ from sqlalchemy.dialects.postgresql import UUID, NUMERIC
 
 from config.db import db
 
-from utils.choices import  INSTALLMENT_STATUS_CHOICES
+from utils.choices import INSTALLMENT_STATUS_CHOICES
+from utils.enum import InstallmentStatus
 
 
 class Installments(db.Model):
@@ -16,13 +17,15 @@ class Installments(db.Model):
     value = db.Column(NUMERIC(12, 2), nullable=False)
 
     status = db.Column(
-        db.Enum(
-            *[choice[0] for choice in INSTALLMENT_STATUS_CHOICES],
-            name="installment_status_enum"
-        ),
-        nullable=False,
-        default="PENDING"
+       db.Enum(
+           InstallmentStatus,
+           name="installment_status_enum"
+       ),
+       default=InstallmentStatus.PENDING,
+       server_default=InstallmentStatus.PENDING.value,
+       nullable=False
     )
+
 
     agreement = db.relationship("Agreement", backref="installments")
 
