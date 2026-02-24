@@ -2,14 +2,17 @@ from flask import Blueprint, request, jsonify
 from marshmallow import ValidationError
 
 from agreement import Agreement
-from agreement.exceptions import DebtNotFountError, AgreementStatusError, PendingInstallmentsError, \
+from agreement.exceptions import (
+    DebtNotFountError,
+    AgreementStatusError,
+    PendingInstallmentsError,
     AgreementNotFoundError
+)
 from agreement.schemas import AgreementSchema
 from agreement.services import AgreementService
-from installments import Installments
 
 from config.db import db
-from utils.enum import AgreementStatus
+
 
 agreement_bp = Blueprint('agreement', __name__, url_prefix='/agreement')
 
@@ -83,19 +86,17 @@ def cancel_agreement(agreement_id):
     try:
         agreement = AgreementService.get_agreement_or_fail(agreement_id)
 
-        if not agreement:
-            return jsonify({"message": "Agreement not found"}), 404
-
         AgreementService.cancel_agreement(agreement, db.session)
 
         return jsonify({"message": "Agreement successfully cancelled"}), 201
 
     except AgreementNotFoundError as err:
-        return jsonify({'message': str(err)}), 400
+        return jsonify({'message': str(err)}), 404
     except AgreementStatusError as err:
         db.session.rollback()
         return jsonify({'message': str(err)}), 400
     except Exception as err:
+        print(str(err))
         db.session.rollback()
         return jsonify({"message": "Internal Server Error"}), 500
 
@@ -111,7 +112,7 @@ def complete_agreement(agreement_id):
         }), 200
 
     except AgreementNotFoundError as err:
-        return jsonify({'message': str(err)}), 400
+        return jsonify({'message': str(err)}), 404
 
     except AgreementStatusError as err:
         db.session.rollback()
@@ -123,5 +124,4 @@ def complete_agreement(agreement_id):
 
     except Exception as err:
         db.session.rollback()
-
         return jsonify({"message": "Internal Server Error"}), 500

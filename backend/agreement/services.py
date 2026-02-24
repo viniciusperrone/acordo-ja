@@ -7,7 +7,12 @@ from debts import Debt
 from installments import Installments
 from utils.enum import AgreementStatus, InstallmentStatus
 
-from .exceptions import DebtNotFountError, AgreementStatusError, PendingInstallmentsError, AgreementNotFoundError
+from .exceptions import (
+    DebtNotFountError,
+    AgreementStatusError,
+    PendingInstallmentsError,
+    AgreementNotFoundError,
+)
 
 
 class AgreementService:
@@ -35,9 +40,8 @@ class AgreementService:
             applied_rate = Decimal(debt.creditor.interest_rate).quantize(
                 Decimal("0.01")
             )
-            total_to_pay = (debt_value * (Decimal("1.00") + applied_rate)).quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP
-            )
+            total_to_pay = ((debt_value * (Decimal("1.00") + applied_rate))
+                            .quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
         discount = Decimal(data["discount_applied"]).quantize(Decimal("0.01"))
         entry = Decimal(data["entry_value"]).quantize(Decimal("0.01"))
@@ -46,22 +50,33 @@ class AgreementService:
         if installments_quantity <= 0:
             raise ValueError("Installments quantity must be greater than zero")
 
+        if discount > total_to_pay:
+            raise ValueError("Discount cannot exceed total debt")
+
         total_to_pay = (total_to_pay - discount).quantize(
             Decimal("0.01"), rounding=ROUND_HALF_UP
         )
+
+        if entry > total_to_pay:
+            raise ValueError("Entry cannot exceed total after discount")
 
         remaining_value = (total_to_pay - entry).quantize(
             Decimal("0.01"), rounding=ROUND_HALF_UP
         )
 
-        installment_value = (remaining_value / installments_quantity).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
+        base_installment_value = (
+                remaining_value / installments_quantity
+        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+        last_installment_value = (
+                remaining_value
+                - (base_installment_value * (installments_quantity - 1))
+        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         agreement = Agreement(
             debt_id=debt_id,
             total_traded=total_to_pay,
-            installment_value=installment_value,
+            installment_value=base_installment_value,
             installments_quantity=installments_quantity,
             entry_value=entry,
             discount_applied=discount,
@@ -81,7 +96,7 @@ class AgreementService:
                     installment_number=installment_number,
                     due_date=current_due_date,
                     value=entry,
-                    status="PENDING",
+                    status=InstallmentStatus.PENDING,
                     agreement_id=agreement.id,
                 )
             )
@@ -89,13 +104,18 @@ class AgreementService:
             installment_number += 1
             current_due_date += relativedelta(months=1)
 
-        for _ in range(installments_quantity):
+        for i in range(installments_quantity):
+            value = (
+                last_installment_value
+                if i == installments_quantity - 1
+                else base_installment_value
+            )
             installments.append(
                 Installments(
                     installment_number=installment_number,
                     due_date=current_due_date,
-                    value=installment_value,
-                    status="PENDING",
+                    value=value,
+                    status=InstallmentStatus.PENDING,
                     agreement_id=agreement.id,
                 )
             )
@@ -118,8 +138,7 @@ class AgreementService:
         agreement.status = AgreementStatus.CANCELLED
 
         Installments.query.filter_by(
-            agreement_id=agreement.agreement_id,
-            status=InstallmentStatus.PENDING,
+            agreement_id=agreement.agreement_id
         ).update({"status": InstallmentStatus.CANCELLED})
 
         session.commit()
