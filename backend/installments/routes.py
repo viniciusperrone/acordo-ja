@@ -3,6 +3,7 @@ from marshmallow import ValidationError
 
 from config.db import db
 from installments import Installments
+from installments.filters import InstallmentFilter
 from installments.schemas import InstallmentSchema
 
 installment_bp = Blueprint("installments", __name__, url_prefix="/installments")
@@ -14,7 +15,11 @@ def list_installments():
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
 
-        pagination = Installments.query.paginate(
+        query = Installments.query
+
+        query = InstallmentFilter(query, request.args).apply()
+
+        pagination = query.paginate(
             page=page,
             per_page=per_page,
             error_out=False

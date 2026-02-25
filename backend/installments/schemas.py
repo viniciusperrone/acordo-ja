@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields, validate, validates, ValidationError
 
-from utils.choices import INSTALLMENT_STATUS_CHOICES
+from utils.enum import InstallmentStatus
 
 
 class InstallmentSchema(Schema):
@@ -10,8 +10,7 @@ class InstallmentSchema(Schema):
     due_date = fields.Date(required=True)
     payment_date = fields.Date(required=False, allow_none=True)
     value = fields.Float(required=True)
-    status = fields.Str(required=True,
-                        validate=validate.OneOf(INSTALLMENT_STATUS_CHOICES))
+    status = fields.Enum(InstallmentStatus, dump_only=True)
     agreement_id = fields.UUID(required=True)
 
 
