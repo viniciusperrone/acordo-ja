@@ -1,10 +1,12 @@
 from flask import Blueprint, request, jsonify
-from marshmallow import ValidationError
 
 from config.db import db
 from installments import Installments
 from installments.filters import InstallmentFilter
 from installments.schemas import InstallmentSchema
+from installments.services import InstallmentService
+from installments.exceptions import InstallmentNotFoundError, InstallmentError, InstallmentWithoutAgreementError
+
 
 installment_bp = Blueprint("installments", __name__, url_prefix="/installments")
 
@@ -41,21 +43,22 @@ def list_installments():
         return jsonify({'message': "Internal Server Error"}), 500
 
 
-@installment_bp.route("/add", methods=["POST"])
-def create_installment():
-    installment_schema = InstallmentSchema()
-
+@installment_bp.route("/<int:installment_id>/pay", methods=["POST"])
+def pay_installment(installment_id):
     try:
-        data = installment_schema.load(request.json)
+        installment = InstallmentService.get_installment_or_fail(installment_id)
 
-        installment = Installments(**data)
+        InstallmentService.pay_installment(installment, db.session)
 
-        db.session.add(installment)
-        db.session.commit()
+        return jsonify({"message": "Installment paid"}), 200
 
-        return jsonify({'message': 'Successfully registered installment'})
+    except InstallmentNotFoundError as err:
+        return jsonify({"message": str(err)}), 404
 
-    except ValidationError as err:
-        return jsonify({'message': err.messages})
+    except (InstallmentWithoutAgreementError, InstallmentError) as err:
+        return jsonify({"message": str(err)}), 400
+
     except Exception as err:
-        return jsonify({'message': 'Internal Server Error'})
+        db.session.rollback()
+        print(str(err))
+        return jsonify({'message': "Internal Server Error"}), 500

@@ -16,7 +16,7 @@ class InstallmentService:
 
 
     @staticmethod
-    def paid_installment(installment: Installments, session):
+    def pay_installment(installment: Installments, session):
         agreement = installment.agreement
 
         if not agreement:
