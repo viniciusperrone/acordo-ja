@@ -37,13 +37,3 @@ class InstallmentService:
         session.commit()
 
         return installment
-
-
-    @staticmethod
-    def cancel_installment(installment: Installments, session):
-        agreement = installment.agreement
-
-        if not agreement:
-            raise InstallmentWithoutAgreementError(
-                f"Installment {installment.id} has no agreement associated"
-            )
