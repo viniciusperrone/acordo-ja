@@ -8,6 +8,34 @@ from installments.schemas import InstallmentSchema
 installment_bp = Blueprint("installments", __name__, url_prefix="/installments")
 
 
+@installment_bp.route("/list", methods=["GET"])
+def list_installments():
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+
+        pagination = Installments.query.paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
+
+        installments_schema = InstallmentSchema(many=True)
+
+        result = installments_schema.dump(pagination.items)
+
+        return jsonify({
+            "items": result,
+            "total": pagination.total,
+            "pages": pagination.pages,
+            "current_page": page
+        }), 200
+
+    except Exception as err:
+        print(str(err))
+        return jsonify({'message': "Internal Server Error"}), 500
+
+
 @installment_bp.route("/add", methods=["POST"])
 def create_installment():
     installment_schema = InstallmentSchema()
