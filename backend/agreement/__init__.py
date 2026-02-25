@@ -1,1 +1,3 @@
-from agreement.models import *
+from agreement.models import Agreement
+
+__all__ = ["Agreement"]

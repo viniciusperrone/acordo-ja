@@ -7,6 +7,7 @@ from installments.schemas import InstallmentSchema
 
 installment_bp = Blueprint("installments", __name__, url_prefix="/installments")
 
+
 @installment_bp.route("/add", methods=["POST"])
 def create_installment():
     installment_schema = InstallmentSchema()
