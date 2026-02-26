@@ -25,13 +25,18 @@ class Installments(db.Model):
        nullable=False
     )
 
-
     agreement = db.relationship("Agreement", backref="installments")
 
     agreement_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey("agreements.id"),
         nullable=False
+    )
+
+    payments = db.relationship(
+        "Payment",
+        back_populates="installment",
+        cascade="all, delete-orphan"
     )
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)

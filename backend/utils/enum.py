@@ -21,3 +21,10 @@ class DebtStatus(Enum):
     PAID = "PAID"
     DEFAULTED = "DEFAULTED"
     CANCELLED = "CANCELLED"
+
+class MethodPayment(Enum):
+    PIX = "PIX"
+    BOLETO = "BOLETO"
+    TED = "TED"
+    CARTAO = "CARTAO"
+    DINHEIRO = "DINHEIRO"
