@@ -1,3 +1,4 @@
+from datetime import date
 from installments import Installments
 from utils.enum import AgreementStatus, InstallmentStatus
 from .exceptions import InstallmentNotFoundError, InstallmentWithoutAgreementError, InstallmentError
@@ -34,6 +35,8 @@ class InstallmentService:
             raise InstallmentError(f"Installment {installment.id} is already paid")
 
         installment.status = InstallmentStatus.PAID
+        installment.payment_date = date.today()
+        
         session.commit()
 
         return installment

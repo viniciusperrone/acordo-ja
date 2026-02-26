@@ -3,7 +3,6 @@ from sqlalchemy.dialects.postgresql import UUID, NUMERIC
 
 from config.db import db
 
-from utils.choices import INSTALLMENT_STATUS_CHOICES
 from utils.enum import InstallmentStatus
 
 

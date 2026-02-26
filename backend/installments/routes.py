@@ -44,7 +44,7 @@ def list_installments():
 
 
 @installment_bp.route("/<int:installment_id>/pay", methods=["POST"])
-def pay_installment(installment_id):
+def Par(installment_id):
     try:
         installment = InstallmentService.get_installment_or_fail(installment_id)
 
