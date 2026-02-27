@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from marshmallow import ValidationError
 
 from config.db import db
 from installments import Installments
@@ -6,7 +7,9 @@ from installments.filters import InstallmentFilter
 from installments.schemas import InstallmentSchema
 from installments.services import InstallmentService
 from installments.exceptions import InstallmentNotFoundError, InstallmentError, InstallmentWithoutAgreementError
-
+from payment.exception import PaymentError
+from payment.schemas import PaymentSchema
+from payment.services import PaymentService
 
 installment_bp = Blueprint("installments", __name__, url_prefix="/installments")
 
@@ -44,18 +47,30 @@ def list_installments():
 
 
 @installment_bp.route("/<int:installment_id>/pay", methods=["POST"])
-def Par(installment_id):
+def pay_installment(installment_id):
+    payment_schema = PaymentSchema()
+
     try:
         installment = InstallmentService.get_installment_or_fail(installment_id)
 
-        InstallmentService.pay_installment(installment, db.session)
+        data = payment_schema.load(request.json)
 
-        return jsonify({"message": "Installment paid"}), 200
+        PaymentService.register_payment(
+            installment=installment,
+            amount=data['amount'],
+            method=data['method'],
+            session=db.session
+        )
+
+        return jsonify({"message": "Installment paid successfully"}), 200
+
+    except ValidationError as err:
+        return jsonify({'message': err.messages}), 400
 
     except InstallmentNotFoundError as err:
         return jsonify({"message": str(err)}), 404
 
-    except (InstallmentWithoutAgreementError, InstallmentError) as err:
+    except (InstallmentWithoutAgreementError, PaymentError) as err:
         return jsonify({"message": str(err)}), 400
 
     except Exception as err:

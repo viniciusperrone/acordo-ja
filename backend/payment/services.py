@@ -1,9 +1,15 @@
 from datetime import datetime
 
+from installments.exceptions import InstallmentWithoutAgreementError
 from payment.models import Payment
 from payment.exception import PaymentError
 
-from utils.enum import InstallmentStatus, AgreementStatus, DebtStatus
+from utils.enum import (
+    InstallmentStatus,
+    AgreementStatus,
+    DebtStatus,
+    MethodPayment
+)
 
 
 class PaymentService:
@@ -11,13 +17,23 @@ class PaymentService:
     @staticmethod
     def register_payment(installment, amount, method, session):
 
+        if not installment.agreement:
+            raise InstallmentWithoutAgreementError(
+                f"Installment {installment.id} has no agreement associated"
+            )
+
+        if not isinstance(method, MethodPayment):
+            raise PaymentError("Invalid payment method")
+
         if installment.status == InstallmentStatus.PAID:
             raise PaymentError("Installment already paid")
 
         if installment.agreement.status != AgreementStatus.ACTIVE:
-            raise PaymentError("Agreement is not active")
+            raise PaymentError(
+                f"Cannot pay installment {installment.id} because agreement is not active"
+            )
 
-        if amount != installment.amount:
+        if amount != installment.value:
             raise PaymentError("Payment must match installment value")
 
         payment = Payment(

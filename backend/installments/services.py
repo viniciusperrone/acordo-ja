@@ -1,5 +1,7 @@
 from datetime import date
+
 from installments import Installments
+from payment.services import PaymentService
 from utils.enum import AgreementStatus, InstallmentStatus
 from .exceptions import InstallmentNotFoundError, InstallmentWithoutAgreementError, InstallmentError
 
