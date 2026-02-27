@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 
 from .models import Payment
 from .schemas import PaymentSchema
+from .filters import PaymentFilter
 
 
 payment_bp = Blueprint("payment", __name__, url_prefix="/payment")
@@ -12,7 +13,11 @@ def list_payment():
         page = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 10, type=int)
 
-        pagination = Payment.query.paginate(
+        query = Payment.query
+
+        query = PaymentFilter(query, request.args).apply()
+
+        pagination = query.paginate(
             page=page,
             per_page=per_page,
             error_out=False

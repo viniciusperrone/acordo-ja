@@ -1,3 +1,3 @@
-from .models import MethodPayment
+from .models import Payment
 
-__all__ = ['MethodPayment']
+__all__ = ['Payment']
