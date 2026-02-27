@@ -6,7 +6,7 @@ from installments import Installments
 from installments.filters import InstallmentFilter
 from installments.schemas import InstallmentSchema
 from installments.services import InstallmentService
-from installments.exceptions import InstallmentNotFoundError, InstallmentError, InstallmentWithoutAgreementError
+from installments.exceptions import InstallmentNotFoundError, InstallmentWithoutAgreementError
 from payment.exception import PaymentError
 from payment.schemas import PaymentSchema
 from payment.services import PaymentService

@@ -31,6 +31,10 @@ class BaseFilter:
             if not column:
                 continue
 
+            if hasattr(column.type, 'enums'):
+                if value not in column.type.enums:
+                    continue
+
             operation = OPERATORS.get(operator)
             if not operation:
                 continue
