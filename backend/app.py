@@ -19,6 +19,7 @@ from debts.routes import debts_bp
 from debtor.routes import debtor_bp
 from installments.routes import installment_bp
 from agreement.routes import agreement_bp
+from payment.routes import payment_bp
 
 
 def initialize_app():
@@ -38,6 +39,7 @@ def initialize_app():
     app.register_blueprint(debtor_bp)
     app.register_blueprint(installment_bp)
     app.register_blueprint(agreement_bp)
+    app.register_blueprint(payment_bp)
 
     Migrate(app, db)
 
