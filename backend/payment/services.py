@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 
 from installments.exceptions import InstallmentWithoutAgreementError
 from payment.models import Payment
@@ -42,6 +42,9 @@ class PaymentService:
             paid_at=datetime.utcnow(),
             method=method,
         )
+
+        installment.status = InstallmentStatus.PAID
+        installment.payment_date = date.today()
 
         session.add(payment)
 

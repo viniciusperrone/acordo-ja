@@ -1,9 +1,5 @@
-from datetime import date
-
 from installments import Installments
-from payment.services import PaymentService
-from utils.enum import AgreementStatus, InstallmentStatus
-from .exceptions import InstallmentNotFoundError, InstallmentWithoutAgreementError, InstallmentError
+from .exceptions import InstallmentNotFoundError
 
 
 class InstallmentService:
@@ -14,31 +10,5 @@ class InstallmentService:
 
         if not installment:
             raise InstallmentNotFoundError("Installment not found")
-
-        return installment
-
-
-    @staticmethod
-    def pay_installment(installment: Installments, session):
-        agreement = installment.agreement
-
-        if not agreement:
-            raise InstallmentWithoutAgreementError(
-                f"Installment {installment.id} has no agreement associated"
-            )
-
-        if agreement.status != AgreementStatus.ACTIVE:
-            raise InstallmentError(
-                f"Cannot pay installment {installment.id} because agreement "
-                f"{agreement.id} is not active (status={agreement.status.name})"
-            )
-
-        if installment.status == InstallmentStatus.PAID:
-            raise InstallmentError(f"Installment {installment.id} is already paid")
-
-        installment.status = InstallmentStatus.PAID
-        installment.payment_date = date.today()
-        
-        session.commit()
 
         return installment
