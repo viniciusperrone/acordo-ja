@@ -13,6 +13,7 @@ class InstallmentFilter(BaseFilter):
     }
 
     ordering_fields = [
+        "installment_number",
         "due_date",
         "value",
         "created_at",
