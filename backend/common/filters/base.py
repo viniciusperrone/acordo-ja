@@ -1,4 +1,4 @@
-from sqlalchemy import asc, desc
+from sqlalchemy import asc, desc, Enum, false
 from .operators import OPERATORS
 
 
@@ -31,9 +31,10 @@ class BaseFilter:
             if not column:
                 continue
 
-            if hasattr(column.type, 'enums'):
+            if isinstance(column.type, Enum):
                 if value not in column.type.enums:
-                    continue
+                    self.query = self.query.filter(false())
+                    return self
 
             operation = OPERATORS.get(operator)
             if not operation:
