@@ -7,6 +7,7 @@ from creditor.schemas import CreditorSchema
 from creditor.models import Creditor
 from creditor.services import CreditorService
 from creditor.exceptions import CreditorAlreadyExistsError
+from creditor.filters import CreditorFilter
 
 
 creditor_bp = Blueprint('creditor', __name__, url_prefix='/creditors')
@@ -17,7 +18,11 @@ def list_creditors():
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
 
-        pagination = Creditor.query.paginate(
+        query = Creditor.query
+
+        query = CreditorFilter(query, request.args).apply()
+
+        pagination = query.paginate(
             page=page,
             per_page=per_page,
             error_out=False
