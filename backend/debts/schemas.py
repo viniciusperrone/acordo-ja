@@ -1,4 +1,4 @@
-from marshmallow import Schema, fields, validate, validates_schema, ValidationError
+from marshmallow import Schema, fields, validates_schema, ValidationError
 
 from utils.enum import DebtStatus
 
@@ -15,8 +15,9 @@ class DebtSchema(Schema):
     due_date = fields.Date(required=True)
     last_agreement_date = fields.DateTime(dump_only=True)
 
-    status = fields.Str(
-        validate=validate.OneOf([status.name for status in DebtStatus]),
+    status = fields.Enum(
+        DebtStatus,
+        by_value=True,
         dump_only=True
     )
 
