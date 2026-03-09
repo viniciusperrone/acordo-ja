@@ -11,7 +11,7 @@ from agreement.exceptions import (
 from agreement.schemas import AgreementSchema
 from agreement.services import AgreementService
 
-from config.db import db
+from config.transactional import transactional
 
 
 agreement_bp = Blueprint('agreement', __name__, url_prefix='/agreement')
@@ -59,7 +59,8 @@ def get_agreement(agreement_id):
         return jsonify({"message": "Internal Server Error"}), 500
 
 @agreement_bp.route('/add', methods=['POST'])
-def create_agreement():
+@transactional
+def create_agreement(db):
     agreement_schema = AgreementSchema()
 
     try:
@@ -82,7 +83,8 @@ def create_agreement():
         return jsonify({"message": "Internal Server Error"}), 500
 
 @agreement_bp.route('/<uuid:agreement_id>/cancel', methods=['POST'])
-def cancel_agreement(agreement_id):
+@transactional
+def cancel_agreement(agreement_id, db):
     try:
         agreement = AgreementService.get_agreement_or_fail(agreement_id)
 
@@ -101,7 +103,8 @@ def cancel_agreement(agreement_id):
         return jsonify({"message": "Internal Server Error"}), 500
 
 @agreement_bp.route('/<uuid:agreement_id>/complete', methods=['POST'])
-def complete_agreement(agreement_id):
+@transactional
+def complete_agreement(agreement_id, db):
     try:
         agreement = AgreementService.get_agreement_or_fail(agreement_id)
 
