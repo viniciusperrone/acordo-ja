@@ -12,6 +12,7 @@ import debtor
 import agreement
 import installments
 import payment
+import users
 
 
 from creditor.routes import creditor_bp

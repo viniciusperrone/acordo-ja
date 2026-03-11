@@ -28,3 +28,8 @@ class MethodPayment(Enum):
     TED = "TED"
     CARTAO = "CARTAO"
     DINHEIRO = "DINHEIRO"
+
+class UserRole(Enum):
+    ADMIN = "ADMIN"
+    MANAGER = "MANAGER"
+    AGENT = "AGENT"
