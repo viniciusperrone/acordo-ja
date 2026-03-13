@@ -1,0 +1,37 @@
+import datetime
+
+from flask_jwt_extended import create_access_token, create_refresh_token
+
+from users.models import User
+
+
+class InvalidCredentials(Exception):
+    pass
+
+
+class AuthenticationService:
+
+    @staticmethod
+    def login(email, password, session):
+        user = session.query(User).filter(User.email == email).first()
+
+        if not user or not user.verify_password(password):
+            raise InvalidCredentials("Invalid credentials")
+
+        access_token = create_access_token(
+            identity=user.id,
+            expires_delta=datetime.timedelta(minutes=30),
+            additional_claims={
+                "role": user.role.value
+            }
+        )
+
+        refresh_token = create_refresh_token(
+            identity=user.id,
+            expires_delta=datetime.timedelta(days=7)
+        )
+
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token
+        }
