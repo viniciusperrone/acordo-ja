@@ -15,7 +15,7 @@ class AuthenticationService:
     def login(email, password, session):
         user = session.query(User).filter(User.email == email).first()
 
-        if not user or not user.verify_password(password):
+        if not user or not user.check_password(password):
             raise InvalidCredentials("Invalid credentials")
 
         access_token = create_access_token(

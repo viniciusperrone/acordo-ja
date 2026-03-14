@@ -2,6 +2,7 @@ import os
 
 from flask import Flask
 from flask_migrate import Migrate
+from flask_jwt_extended import JWTManager
 
 from config.db import db
 from config.config import Config
@@ -14,7 +15,6 @@ import installments
 import payment
 import users
 
-
 from creditor.routes import creditor_bp
 from debts.routes import debts_bp
 from debtor.routes import debtor_bp
@@ -22,6 +22,7 @@ from installments.routes import installment_bp
 from agreement.routes import agreement_bp
 from payment.routes import payment_bp
 from users.routes import user_bp
+from authentication.routes import authentication_bp
 
 
 def initialize_app():
@@ -35,6 +36,7 @@ def initialize_app():
         app.config.from_object(Config)
 
     db.init_app(app)
+    jwt = JWTManager(app)
 
     app.register_blueprint(creditor_bp)
     app.register_blueprint(debts_bp)
@@ -43,6 +45,7 @@ def initialize_app():
     app.register_blueprint(agreement_bp)
     app.register_blueprint(payment_bp)
     app.register_blueprint(user_bp)
+    app.register_blueprint(authentication_bp)
 
     Migrate(app, db)
 
