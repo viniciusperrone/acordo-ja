@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
-from config.db import db
+from config.transactional import transactional
 
 from debts import Debt
 from debts.schemas import DebtSchema
@@ -11,6 +12,7 @@ from debts.exceptions import DebtorNotExistError, CreditorNotExistError
 debts_bp = Blueprint('debts', __name__, url_prefix='/debts')
 
 @debts_bp.route('/list', methods=['GET'])
+@jwt_required()
 def list_debts():
     try:
         page = request.args.get('page', 1, type=int)
@@ -38,7 +40,9 @@ def list_debts():
         return jsonify({'message': 'Internal Server Error'}), 500
 
 @debts_bp.route('/<uuid:debt_id>/detail', methods=['GET'])
-def retrieve_debt(debt_id):
+@jwt_required()
+@transactional
+def retrieve_debt(debt_id, db):
     try:
         debt = db.session.get(Debt, debt_id)
 
@@ -55,7 +59,9 @@ def retrieve_debt(debt_id):
 
 
 @debts_bp.route('/add', methods=['POST'])
-def create_debt():
+@jwt_required()
+@transactional
+def create_debt(db):
     debt_schema = DebtSchema()
 
     try:
@@ -71,13 +77,10 @@ def create_debt():
         return jsonify({'message': 'Successfully registered debt'}), 201
 
     except ValidationError as err:
-        db.session.rollback()
         return jsonify({"errors": err.messages}), 400
     except DebtorNotExistError as err:
-        db.session.rollback()
         return jsonify({'message': str(err)}), 400
     except CreditorNotExistError as err:
-        db.session.rollback()
         return jsonify({'message': str(err)}), 400
     except Exception as err:
         print(str(err))
