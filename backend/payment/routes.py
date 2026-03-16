@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required
 
 from .models import Payment
 from .schemas import PaymentSchema
@@ -8,6 +9,7 @@ from .filters import PaymentFilter
 payment_bp = Blueprint("payment", __name__, url_prefix="/payment")
 
 @payment_bp.route("/list", methods=["GET"])
+@jwt_required()
 def list_payment():
     try:
         page = request.args.get("page", 1, type=int)

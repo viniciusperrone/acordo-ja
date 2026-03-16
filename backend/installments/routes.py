@@ -1,7 +1,9 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
-from config.db import db
+from config.transactional import transactional
+
 from installments import Installments
 from installments.filters import InstallmentFilter
 from installments.schemas import InstallmentSchema
@@ -15,6 +17,7 @@ installment_bp = Blueprint("installments", __name__, url_prefix="/installments")
 
 
 @installment_bp.route("/list", methods=["GET"])
+@jwt_required()
 def list_installments():
     try:
         page = request.args.get('page', 1, type=int)
@@ -47,7 +50,9 @@ def list_installments():
 
 
 @installment_bp.route("/<int:installment_id>/pay", methods=["POST"])
-def pay_installment(installment_id):
+@jwt_required()
+@transactional
+def pay_installment(installment_id, db):
     payment_schema = PaymentSchema()
 
     try:

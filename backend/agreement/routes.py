@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
 from agreement import Agreement
@@ -17,6 +18,7 @@ from config.transactional import transactional
 agreement_bp = Blueprint('agreement', __name__, url_prefix='/agreement')
 
 @agreement_bp.route('/list', methods=['GET'])
+@jwt_required()
 def list_agreements():
     try:
         page = request.args.get('page', 1, type=int)
@@ -45,6 +47,7 @@ def list_agreements():
 
 
 @agreement_bp.route('/<uuid:agreement_id>/detail', methods=['GET'])
+@jwt_required()
 def get_agreement(agreement_id):
     try:
         agreement = AgreementService.get_agreement_or_fail(agreement_id)
@@ -59,6 +62,7 @@ def get_agreement(agreement_id):
         return jsonify({"message": "Internal Server Error"}), 500
 
 @agreement_bp.route('/add', methods=['POST'])
+@jwt_required()
 @transactional
 def create_agreement(db):
     agreement_schema = AgreementSchema()
