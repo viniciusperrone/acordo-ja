@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
-from config.db import db
+from config.transactional import transactional
 from debtor.models import Debtor
 from debtor.schemas import DebtorSchema
 
@@ -9,6 +10,7 @@ from debtor.schemas import DebtorSchema
 debtor_bp = Blueprint('debtor', __name__, url_prefix='/debtor')
 
 @debtor_bp.route('/list', methods=['GET'])
+@jwt_required()
 def list_debtors():
     try:
         page = request.args.get('page', 1, type=int)
@@ -35,7 +37,9 @@ def list_debtors():
         return jsonify({"message": "Internal Server Error"}), 500
 
 @debtor_bp.route('/<int:debtor_id>/detail', methods=['GET'])
-def retrieve_debtor(debtor_id):
+@jwt_required()
+@transactional
+def retrieve_debtor(debtor_id, db):
     try:
         debtor = db.session.get(Debtor, debtor_id)
 
@@ -51,7 +55,9 @@ def retrieve_debtor(debtor_id):
         return jsonify({"message": "Internal Server Error"}), 500
 
 @debtor_bp.route('/add', methods=['POST'])
-def create_debtor():
+@jwt_required()
+@transactional
+def create_debtor(db):
     debtor_schema = DebtorSchema()
 
     try:
@@ -60,7 +66,6 @@ def create_debtor():
         debt = Debtor(**data)
 
         db.session.add(debt)
-        db.session.commit()
 
         return jsonify({"message": "Successfully registered debtor"}), 201
 
