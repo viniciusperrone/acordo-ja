@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
-from config.db import db
+from config.transactional import transactional
 
 from creditor.schemas import CreditorSchema
 from creditor.models import Creditor
@@ -12,6 +13,7 @@ from creditor.filters import CreditorFilter
 
 creditor_bp = Blueprint('creditor', __name__, url_prefix='/creditors')
 
+@jwt_required()
 @creditor_bp.route('/list', methods=['GET'])
 def list_creditors():
     try:
@@ -44,7 +46,9 @@ def list_creditors():
         return jsonify({"message": "Internal Server Error"}), 500
 
 @creditor_bp.route('/<uuid:creditor_id>/detail', methods=['GET'])
-def retrieve_creditor(creditor_id):
+@jwt_required()
+@transactional
+def retrieve_creditor(creditor_id, db):
     try:
         creditor = db.session.get(Creditor, creditor_id)
 
@@ -59,8 +63,11 @@ def retrieve_creditor(creditor_id):
     except Exception as err:
         return jsonify({"message": "Internal Server Error"}), 500
 
+
 @creditor_bp.route('/add', methods=['POST'])
-def create_creditor():
+@jwt_required()
+@transactional
+def create_creditor(db):
     creditor_schema = CreditorSchema()
 
     try:

@@ -24,4 +24,3 @@ def create_user(db):
     except Exception as err:
         print(str(err))
         return jsonify({"message": "Internal Server Error"}), 500
-
