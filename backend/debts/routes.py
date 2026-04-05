@@ -85,3 +85,10 @@ def create_debt(db):
     except Exception as err:
         print(str(err))
         return jsonify({"message": "Internal Server Error"}), 500
+
+@debts_bp.route('/search', methods=['GET'])
+@transactional
+def search_debt(db):
+    
+
+    ...

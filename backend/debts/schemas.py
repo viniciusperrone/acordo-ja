@@ -1,4 +1,7 @@
-from marshmallow import Schema, fields, validates_schema, ValidationError
+import re
+
+from marshmallow import Schema, fields, validates, validates_schema, ValidationError
+from validate_docbr import CPF, CNPJ
 
 from utils.enum import DebtStatus
 
@@ -47,3 +50,19 @@ class DebtSchema(Schema):
 
     class Meta:
         unknown = "raise"
+
+class DebtSearchByDocumentSchema(Schema):
+    document = fields.String(required=True)
+
+    @validates("document")
+    def validate_document(self, value, **kwargs):
+        document = re.sub(r"\D", "", value)
+
+        cpf = CPF()
+        cnpj = CNPJ()
+
+        is_valid_cpf = len(document) == 11 and cpf.validate(document)
+        is_valid_cnpj = len(document) == 14 and cnpj.validate(document)
+
+        if not (is_valid_cpf or is_valid_cnpj):
+            raise ValidationError("CPF or CNPJ must be valid")
