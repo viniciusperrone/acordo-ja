@@ -94,18 +94,31 @@ def search_debt():
     debts_schema = DebtSchema(many=True)
 
     try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+
         data = debt_schema.load(request.args)
 
-        debts = (
+        query = (
             Debt.query
             .join(Debt.debtor)
             .filter(Debt.debtor.has(document=data['document']))
-            .all()
         )
 
-        result = debts_schema.dump(debts)
+        pagination = query.paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
 
-        return jsonify(result), 200
+        result = debts_schema.dump(pagination.items)
+
+        return jsonify({
+            "items": result,
+            "total": pagination.total,
+            "pages": pagination.pages,
+            "current_page": page,
+        }), 200
 
     except ValidationError as err:
         return jsonify({"errors": err.messages}), 400
