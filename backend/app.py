@@ -14,6 +14,8 @@ import agreement
 import installments
 import payment
 import users
+import leads
+
 
 from creditor.routes import creditor_bp
 from debts.routes import debts_bp
