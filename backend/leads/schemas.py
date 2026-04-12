@@ -6,7 +6,7 @@ from marshmallow import Schema, fields, validates, ValidationError
 class LeadSchema(Schema):
     id = fields.UUID(dump_only=True)
     name = fields.String(required=True)
-    document = fields.String(required=True)
+    document = fields.String(dump_only=True)
     email = fields.Email(required=True)
     phone = fields.String(required=True)
 
