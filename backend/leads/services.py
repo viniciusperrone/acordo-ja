@@ -14,5 +14,6 @@ class LeadService:
         lead = Lead(**data)
 
         session.add(lead)
-
+        session.commit()
+        
         return lead
