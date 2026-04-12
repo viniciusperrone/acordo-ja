@@ -11,5 +11,7 @@ class Debtor(db.Model):
     email = db.Column(db.String(150))
     phone = db.Column(db.String(20))
 
+    debts = db.relationship("Debt", back_populates="debtor")
+
     created_at = db.Column(db.DateTime, default=dt.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, onupdate=dt.utcnow)

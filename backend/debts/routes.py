@@ -5,7 +5,7 @@ from marshmallow import ValidationError
 from config.transactional import transactional
 
 from debts import Debt
-from debts.schemas import DebtSchema
+from debts.schemas import DebtSchema, DebtSearchByDocumentSchema
 from debts.services import DebtService
 from debts.exceptions import DebtorNotExistError, CreditorNotExistError
 
@@ -86,9 +86,29 @@ def create_debt(db):
         print(str(err))
         return jsonify({"message": "Internal Server Error"}), 500
 
-@debts_bp.route('/search', methods=['GET'])
-@transactional
-def search_debt(db):
-    
 
-    ...
+@debts_bp.route('/search', methods=['GET'])
+@jwt_required()
+def search_debt():
+    debt_schema = DebtSearchByDocumentSchema()
+    debts_schema = DebtSchema(many=True)
+
+    try:
+        data = debt_schema.load(request.args)
+
+        debts = (
+            Debt.query
+            .join(Debt.debtor)
+            .filter(Debt.debtor.has(document=data['document']))
+            .all()
+        )
+
+        result = debts_schema.dump(debts)
+
+        return jsonify(result), 200
+
+    except ValidationError as err:
+        return jsonify({"errors": err.messages}), 400
+    except Exception as err:
+        print(str(err))
+        return jsonify({"message": "Internal Server Error"}), 500
