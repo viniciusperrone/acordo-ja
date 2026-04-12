@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app, g
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
@@ -35,8 +35,17 @@ def list_debts():
             "current_page": page,
         }), 200
 
-    except Exception as err:
-        print(str(err))
+    except Exception:
+        current_app.logger.exception(
+            "An error occured while listing debts",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
         return jsonify({'message': 'Internal Server Error'}), 500
 
 @debts_bp.route('/<uuid:debt_id>/detail', methods=['GET'])
@@ -53,8 +62,16 @@ def retrieve_debt(debt_id, db):
         result = debt_schema.dump(debt)
 
         return jsonify(result), 200
-    except Exception as err:
-        print(str(err))
+    except Exception:
+        current_app.logger.exception(
+            "An error occured while retrieving debt",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
         return jsonify({'message': 'Internal Server Error'}), 500
 
 
@@ -72,8 +89,6 @@ def create_debt(db):
             session=db.session
         )
 
-        db.session.commit()
-
         return jsonify({'message': 'Successfully registered debt'}), 201
 
     except ValidationError as err:
@@ -82,8 +97,17 @@ def create_debt(db):
         return jsonify({'message': str(err)}), 400
     except CreditorNotExistError as err:
         return jsonify({'message': str(err)}), 400
-    except Exception as err:
-        print(str(err))
+    except Exception:
+        current_app.logger.exception(
+            "An error occured while creating debt",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
         return jsonify({"message": "Internal Server Error"}), 500
 
 
@@ -122,6 +146,15 @@ def search_debt():
 
     except ValidationError as err:
         return jsonify({"errors": err.messages}), 400
-    except Exception as err:
-        print(str(err))
+    except Exception:
+        current_app.logger.exception(
+            "An error occured while searching debt",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
         return jsonify({"message": "Internal Server Error"}), 500

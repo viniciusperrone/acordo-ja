@@ -1,4 +1,6 @@
 import os
+import logging
+from logging.handlers import RotatingFileHandler
 
 from flask import Flask
 from flask_migrate import Migrate
@@ -6,6 +8,7 @@ from flask_jwt_extended import JWTManager
 
 from config.db import db
 from config.config import Config
+from config.logging import CustomFormatter
 
 import creditor
 import debts
@@ -16,7 +19,6 @@ import payment
 import users
 import leads
 
-
 from creditor.routes import creditor_bp
 from debts.routes import debts_bp
 from debtor.routes import debtor_bp
@@ -26,6 +28,30 @@ from payment.routes import payment_bp
 from leads.routes import leads_bp
 from users.routes import user_bp
 from authentication.routes import authentication_bp
+
+
+def setup_logging(app):
+    if not os.path.exists("logs"):
+        os.mkdir("logs")
+
+    file_handler = RotatingFileHandler(
+        "logs/app.log",
+        maxBytes=10240,
+        backupCount=10
+    )
+
+    formatter = CustomFormatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s | "
+        "endpoint=%(endpoint)s method=%(method)s request_id=%(request_id)s"
+    )
+
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.INFO)
+
+    app.logger.addHandler(file_handler)
+    app.logger.setLevel(logging.INFO)
+
+    app.logger.info("Logging configurado com sucesso")
 
 
 def initialize_app():
@@ -40,6 +66,8 @@ def initialize_app():
 
     db.init_app(app)
     jwt = JWTManager(app)
+
+    setup_logging(app)
 
     app.register_blueprint(creditor_bp)
     app.register_blueprint(debts_bp)
