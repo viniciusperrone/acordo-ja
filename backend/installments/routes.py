@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app, g
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
@@ -44,8 +44,17 @@ def list_installments():
             "current_page": page
         }), 200
 
-    except Exception as err:
-        print(str(err))
+    except Exception:
+        current_app.logger.exception(
+            "An error occured while fetching installments",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
         return jsonify({'message': "Internal Server Error"}), 500
 
 
@@ -60,7 +69,7 @@ def pay_installment(installment_id, db):
 
         data = payment_schema.load(request.json)
 
-        PaymentService.register_payment(
+        payment = PaymentService.register_payment(
             installment=installment,
             amount=data['amount'],
             method=data['method'],
@@ -78,7 +87,15 @@ def pay_installment(installment_id, db):
     except (InstallmentWithoutAgreementError, PaymentError) as err:
         return jsonify({"message": str(err)}), 400
 
-    except Exception as err:
-        db.session.rollback()
-        print(str(err))
+    except Exception:
+        current_app.logger.exception(
+            "An error occurred when pay installment",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
         return jsonify({'message': "Internal Server Error"}), 500
