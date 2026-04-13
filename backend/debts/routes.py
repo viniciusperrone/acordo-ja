@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
 from common.decorators import current_user
-from config.transactional import transactional
+from common.decorators.transactional import transactional
 
 from debts import Debt
 from debts.schemas import DebtSchema, DebtSearchByDocumentSchema

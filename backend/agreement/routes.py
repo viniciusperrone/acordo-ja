@@ -12,7 +12,7 @@ from agreement.exceptions import (
 from agreement.schemas import AgreementSchema
 from agreement.services import AgreementService
 
-from config.transactional import transactional
+from common.decorators.transactional import transactional
 
 
 agreement_bp = Blueprint('agreement', __name__, url_prefix='/agreement')

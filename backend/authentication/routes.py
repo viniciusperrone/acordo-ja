@@ -3,7 +3,7 @@ from marshmallow import ValidationError
 
 from authentication.schemas import AuthenticationSchema
 from authentication.services import AuthenticationService, InvalidCredentials
-from config.transactional import transactional
+from common.decorators.transactional import transactional
 
 
 authentication_bp = Blueprint("authentication", __name__, url_prefix="/authentication")

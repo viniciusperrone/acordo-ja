@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
-from config.transactional import transactional
+from common.decorators.transactional import transactional
 from debtor.models import Debtor
 from debtor.schemas import DebtorSchema
 

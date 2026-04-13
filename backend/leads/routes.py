@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from marshmallow import ValidationError
 
-from config.transactional import transactional
+from common.decorators.transactional import transactional
 from .schemas import LeadSchema
 from .services import LeadService
 
