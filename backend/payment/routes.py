@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app, g
 from flask_jwt_extended import jwt_required
 
 from .models import Payment
@@ -35,6 +35,15 @@ def list_payment():
             "pages": pagination.pages,
             "current_page": page
         }), 200
-    except Exception as err:
-        print(str(err))
+    except Exception:
+        current_app.logger.exception(
+            "An error occurred while fetching payments list",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
         return jsonify({'message': "Internal Server Error"}), 500
