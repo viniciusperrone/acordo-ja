@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app, g
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
@@ -41,8 +41,17 @@ def list_creditors():
             "current_page": page
         }), 200
 
-    except Exception as err:
-        print(str(err))
+    except Exception:
+        current_app.logger.exception(
+            "An error occured while trying to list creditors",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
         return jsonify({"message": "Internal Server Error"}), 500
 
 @creditor_bp.route('/<uuid:creditor_id>/detail', methods=['GET'])
@@ -60,13 +69,24 @@ def retrieve_creditor(creditor_id, db):
 
         return jsonify(result), 200
 
-    except Exception as err:
+    except Exception:
+        current_app.logger.exception(
+            "An error occured while trying to retrieve creditor",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
         return jsonify({"message": "Internal Server Error"}), 500
 
 
 @creditor_bp.route('/add', methods=['POST'])
 @jwt_required()
 @transactional
+@current_app
 def create_creditor(db):
     creditor_schema = CreditorSchema()
 
@@ -78,17 +98,49 @@ def create_creditor(db):
             session=db.session
         )
 
-        db.session.commit()
+        user = g.current_user
+
+        current_app.logger.info(
+            "Creditor successfully added",
+            extra={
+                "user_id": user.id,
+                "user_role": getattr(user.role, "value", None),
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
 
         return jsonify({'message': 'Successfully registered creditor'}), 201
 
     except ValidationError as err:
-        db.session.rollback()
         return jsonify({'message': err.messages}), 400
 
     except CreditorAlreadyExistsError as err:
-        db.session.rollback()
+        current_app.logger.warning(
+            "Creditor already exists",
+            extra={
+                "user_id": user.id,
+                "user_role": getattr(user.role, "value", None),
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            })
+
         return jsonify({'message': str(err)}), 400
-    except Exception as err:
-        db.session.rollback()
+    except Exception:
+        current_app.logger.exception(
+            "An error occured while trying to register creditor",
+            extra={
+                "user_id": user.id,
+                "user_role": getattr(user.role, "value", None),
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
         return jsonify({'message': "Internal Server Error"}), 500
