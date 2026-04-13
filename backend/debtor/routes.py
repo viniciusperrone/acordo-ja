@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app, g
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
@@ -34,6 +34,16 @@ def list_debtors():
         }), 200
 
     except Exception as err:
+        current_app.logger.exception(
+            "An error occured while trying to list debtors",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
         return jsonify({"message": "Internal Server Error"}), 500
 
 @debtor_bp.route('/<int:debtor_id>/detail', methods=['GET'])
@@ -52,6 +62,16 @@ def retrieve_debtor(debtor_id, db):
         return jsonify(result), 200
 
     except Exception as err:
+        current_app.log_exception(
+            "An error occured while trying to retrieve a debtor",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
         return jsonify({"message": "Internal Server Error"}), 500
 
 @debtor_bp.route('/add', methods=['POST'])
@@ -72,5 +92,15 @@ def create_debtor(db):
     except ValidationError as err:
         return jsonify({"message": err.messages}), 400
 
-    except Exception as err:
+    except Exception:
+        current_app.logger.exception(
+            "An error occured while trying to register a debtor",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
         return jsonify({"message": "Internal Server Error"}), 500
