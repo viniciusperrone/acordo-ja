@@ -38,7 +38,7 @@ def list_debts():
 
     except Exception:
         current_app.logger.exception(
-            "An error occured while listing debts",
+            "An error occurred while listing debts",
             extra={
                 "endpoint": request.path,
                 "method": request.method,
@@ -65,7 +65,7 @@ def retrieve_debt(debt_id, db):
         return jsonify(result), 200
     except Exception:
         current_app.logger.exception(
-            "An error occured while retrieving debt",
+            "An error occurred while retrieving debt",
             extra={
                 "endpoint": request.path,
                 "method": request.method,
@@ -137,7 +137,7 @@ def create_debt(db):
         print(str(err))
 
         current_app.logger.exception(
-            "An error occured while creating debt",
+            "An error occurred while creating debt",
             extra={
                 "endpoint": request.path,
                 "method": request.method,
@@ -187,7 +187,7 @@ def search_debt():
 
     except Exception:
         current_app.logger.exception(
-            "An error occured while searching debt",
+            "An error occurred while searching debt",
             extra={
                 "endpoint": request.path,
                 "method": request.method,

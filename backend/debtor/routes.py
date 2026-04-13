@@ -35,7 +35,7 @@ def list_debtors():
 
     except Exception as err:
         current_app.logger.exception(
-            "An error occured while trying to list debtors",
+            "An error occurred while trying to list debtors",
             extra={
                 "endpoint": request.path,
                 "method": request.method,
@@ -63,7 +63,7 @@ def retrieve_debtor(debtor_id, db):
 
     except Exception as err:
         current_app.log_exception(
-            "An error occured while trying to retrieve a debtor",
+            "An error occurred while trying to retrieve a debtor",
             extra={
                 "endpoint": request.path,
                 "method": request.method,
@@ -94,7 +94,7 @@ def create_debtor(db):
 
     except Exception:
         current_app.logger.exception(
-            "An error occured while trying to register a debtor",
+            "An error occurred while trying to register a debtor",
             extra={
                 "endpoint": request.path,
                 "method": request.method,

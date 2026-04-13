@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app, g
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
@@ -12,7 +12,7 @@ from agreement.exceptions import (
 from agreement.schemas import AgreementSchema
 from agreement.services import AgreementService
 
-from common.decorators.transactional import transactional
+from common.decorators import transactional, current_user
 
 
 agreement_bp = Blueprint('agreement', __name__, url_prefix='/agreement')
@@ -41,8 +41,16 @@ def list_agreements():
             "current_page": page
         })
 
-    except Exception as err:
-        print(str(err))
+    except Exception:
+        current_app.logger.exception(
+            "An error occured while retrieving agreements",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None),
+            }
+        )
         return jsonify({"message": "Internal Server Error"}), 500
 
 
@@ -56,14 +64,27 @@ def get_agreement(agreement_id):
         result = agreement_schema.dump(agreement)
 
         return jsonify(result), 200
+
     except AgreementNotFoundError as err:
         return jsonify({'message': str(err)}), 400
-    except Exception as err:
+
+    except Exception:
+        current_app.logger.exception(
+            "An error occured while retrieving agreement",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None),
+            }
+        )
+
         return jsonify({"message": "Internal Server Error"}), 500
 
 @agreement_bp.route('/add', methods=['POST'])
 @jwt_required()
 @transactional
+@current_user
 def create_agreement(db):
     agreement_schema = AgreementSchema()
 
@@ -72,18 +93,39 @@ def create_agreement(db):
 
         AgreementService.create_agreement(data, db.session)
 
+        user = g.current_user
+
+        current_app.logger.info(
+            "Agreement created successfully",
+            extra={
+                "user_id": user.id,
+                "user_role": getattr(user.role, "value", None),
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None),
+            }
+        )
+
         return jsonify({"message": "Successfully registered agreement"}), 201
 
     except ValidationError as err:
-        db.session.rollback()
         return jsonify({"message": err.messages}), 400
     except DebtNotFountError as err:
-        db.session.rollback()
         return jsonify({'message': str(err)}), 400
     except Exception as err:
-        print(str(err))
+        current_app.logger.exception(
+            "An error occured while creating agreement",
+            extra={
+                "user_id": user.id,
+                "user_role": getattr(user.role, "value", None),
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None),
+            }
+        )
 
-        db.session.rollback()
         return jsonify({"message": "Internal Server Error"}), 500
 
 @agreement_bp.route('/<uuid:agreement_id>/cancel', methods=['POST'])
@@ -94,16 +136,36 @@ def cancel_agreement(agreement_id, db):
 
         AgreementService.cancel_agreement(agreement, db.session)
 
+        current_app.logger.info(
+            "Agreement canceled successfully",
+            extra={
+                "agreement_id": agreement_id,
+                "debt_id": getattr(agreement, "debt_id", None),
+                "endpoint": request.endpoint,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None),
+            }
+        )
+
         return jsonify({"message": "Agreement successfully cancelled"}), 201
 
     except AgreementNotFoundError as err:
         return jsonify({'message': str(err)}), 404
     except AgreementStatusError as err:
-        db.session.rollback()
         return jsonify({'message': str(err)}), 400
-    except Exception as err:
-        print(str(err))
-        db.session.rollback()
+    except Exception:
+        current_app.logger.exception(
+            "An error occured while cancelling agreement",
+            extra={
+                "agreement_id": agreement_id,
+                "endpoint": request.endpoint,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None),
+            }
+        )
+
         return jsonify({"message": "Internal Server Error"}), 500
 
 @agreement_bp.route('/<uuid:agreement_id>/complete', methods=['POST'])
@@ -114,6 +176,18 @@ def complete_agreement(agreement_id, db):
 
         AgreementService.complete_agreement(agreement, db.session)
 
+        current_app.logger.info(
+            "Agreement completed successfully",
+            extra={
+                "agreement_id": agreement_id,
+                "debt_id": getattr(agreement, "debt_id", None),
+                "endpoint": request.endpoint,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None),
+            }
+        )
+
         return jsonify({
             "message": "Agreement successfully completed"
         }), 200
@@ -122,13 +196,21 @@ def complete_agreement(agreement_id, db):
         return jsonify({'message': str(err)}), 404
 
     except AgreementStatusError as err:
-        db.session.rollback()
         return jsonify({'message': str(err)}), 400
 
     except PendingInstallmentsError as err:
-        db.session.rollback()
         return jsonify({"message": str(err)}), 400
 
-    except Exception as err:
-        db.session.rollback()
+    except Exception:
+        current_app.logger.exception(
+            "An error occured while cancelling agreement",
+            extra={
+                "agreement_id": agreement_id,
+                "debt_id": getattr(agreement, "debt_id", None),
+                "endpoint": request.endpoint,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None),
+            }
+        )
         return jsonify({"message": "Internal Server Error"}), 500
