@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, current_app, g
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
+from common.decorators import current_user
 from config.transactional import transactional
 
 from debts import Debt
@@ -78,6 +79,7 @@ def retrieve_debt(debt_id, db):
 @debts_bp.route('/add', methods=['POST'])
 @jwt_required()
 @transactional
+@current_user
 def create_debt(db):
     debt_schema = DebtSchema()
 
@@ -89,15 +91,51 @@ def create_debt(db):
             session=db.session
         )
 
+        user = g.current_user
+
+        current_app.logger.info(
+            'Created new debt',
+            extra={
+                "user_id": user.id,
+                "user_role": getattr(user.role, 'value', None),
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
         return jsonify({'message': 'Successfully registered debt'}), 201
 
     except ValidationError as err:
         return jsonify({"errors": err.messages}), 400
     except DebtorNotExistError as err:
+        current_app.logger.warning(
+            'Debtor not found while creating new debt',
+            extra={
+                "user_id": current_user.id,
+                "error": str(err),
+                "endpoint": request.path,
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
         return jsonify({'message': str(err)}), 400
     except CreditorNotExistError as err:
+        current_app.logger.warning(
+            'Creditor not found while creating debt',
+            extra={
+                "user_id": current_user.id,
+                "error": str(err),
+                "endpoint": request.path,
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
         return jsonify({'message': str(err)}), 400
-    except Exception:
+    except Exception as err:
+        print(str(err))
+
         current_app.logger.exception(
             "An error occured while creating debt",
             extra={
@@ -146,6 +184,7 @@ def search_debt():
 
     except ValidationError as err:
         return jsonify({"errors": err.messages}), 400
+
     except Exception:
         current_app.logger.exception(
             "An error occured while searching debt",
