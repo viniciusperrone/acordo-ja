@@ -49,7 +49,7 @@ def list_notifications(db):
 
     except Exception as err:
         current_app.logger.exception(
-            "An error occured while fetching notifications",
+            "An error occurred while fetching notifications",
             extra={
                 "endpoint": request.path,
                 "method": request.method,
@@ -58,3 +58,27 @@ def list_notifications(db):
             }
         )
         return jsonify({"message": "Internal Server Error"}), 500
+
+@notifications_bp.route('/unread-count', methods=['GET'])
+@jwt_required()
+@transactional
+@current_user
+def get_unread_count():
+    try:
+        current_user_id = g.current_user.id
+        count = NotificationService.get_unread_count(current_user_id)
+
+        return jsonify({"unread_count": count}), 200
+    except Exception as err:
+        current_app.logger.exception(
+            "An error occurred while fetch notification",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
+        return jsonify({"message": "Internal Server Error"}), 500
+    
