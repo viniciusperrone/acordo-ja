@@ -1,9 +1,11 @@
 from flask import Blueprint, request, g, jsonify, current_app
 from flask_jwt_extended import jwt_required
+from marshmallow import ValidationError
 
 from common.decorators import current_user, transactional
+from notifications import Notification
 from notifications.models import Notification
-from notifications.schemas import NotificationSchema
+from notifications.schemas import NotificationSchema, MarkAsReadSchema
 from notifications.services import NotificationService
 from notifications.filters import NotificationFilter
 
@@ -113,4 +115,47 @@ def mark_notification_as_read(notification_id, db):
             }
         )
 
+        return jsonify({"message": "Internal Server Error"}), 500
+
+@notifications_bp.route('/mark-read-bulk', methods=['PATCH'])
+@jwt_required()
+@transactional
+@current_user
+def mark_multiple_as_read(db):
+    mark_schema = MarkAsReadSchema()
+
+    try:
+        current_user_id = g.current_user.id
+        data = mark_schema.load(request.json)
+
+        notifications = Notification.query.filter(
+            Notification.id.in_(data['notification_ids'])
+        ).all()
+
+        for notification in notifications:
+            if str(notification.user_id) != current_user_id:
+                return jsonify({"message": "Unauthorized access"}), 401
+
+        count = NotificationService.mark_multiple_as_read(
+            data['notification_ids'],
+            session=db.session
+        )
+
+        return jsonify({
+            "message": f"{count} notifications marked as read",
+        }), 200
+
+    except ValidationError as err:
+        return jsonify({"message": err.messages}), 400
+    except Exception as err:
+        current_app.logger.exception(
+            "An error occurred while marking notifications as read",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+        
         return jsonify({"message": "Internal Server Error"}), 500
