@@ -5,6 +5,7 @@ from common.decorators import current_user, transactional
 from notifications.models import Notification
 from notifications.schemas import NotificationSchema
 from notifications.services import NotificationService
+from notifications.filters import NotificationFilter
 
 
 notifications_bp = Blueprint('notifications', __name__, url_prefix='/notifications')
@@ -19,18 +20,12 @@ def list_notifications(db):
 
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
-        is_read = request.args.get('is_read', type=lambda v: v.lower() == 'true')
-        notification_type = request.args.get('type', None)
 
         query = Notification.query.filter(
             Notification.user_id == current_user_id,
         )
 
-        if is_read is not None:
-            query = query.filter(Notification.is_read == is_read)
-
-        if notification_type:
-            query = query.filter(Notification.type == notification_type)
+        query = NotificationFilter(query, request.args).apply()
 
         query = query.order_by(Notification.created_at.desc())
 
