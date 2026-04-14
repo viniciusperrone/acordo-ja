@@ -186,3 +186,36 @@ def mark_all_as_read(db):
         )
 
         return jsonify({"message": "Internal Server Error"}), 500
+
+@notifications_bp.route('/<uuid:notification_id>', methods=['DELETE'])
+@jwt_required()
+@transactional
+@current_user
+def delete_notification(notification_id, db):
+    try:
+        current_user_id = g.current_user.id
+
+        notification = db.session.get(Notification, notification_id)
+
+        if not notification:
+            return jsonify({"message": "Notification not found"}), 404
+
+        if str(notification.user_id) != str(current_user_id):
+            return jsonify({"message": "Unauthorized"}), 401
+
+        db.session.delete(notification)
+
+        return '', 204
+
+    except Exception as err:
+        current_app.logger.exception(
+            "An error occurred while deleting notification",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
+        return jsonify({"message": "Internal Server Error"}), 500
