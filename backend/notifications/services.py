@@ -62,3 +62,13 @@ class NotificationService:
             notifications.append(notification)
 
         return notifications
+
+    @staticmethod
+    def mark_as_read(notification_id: str, session=None):
+        notification = session.get(Notification, notification_id)
+
+        if notification:
+            notification.mark_as_read()
+            session.flush()
+
+        return notification
