@@ -106,9 +106,26 @@ class NotificationService:
 
     @staticmethod
     def get_unread_count(user_id: str) -> int:
-        ...
+        return Notification.query.filter(
+            Notification.user_id == user_id,
+            Notification.is_read == False,
+        ).count()
 
     @staticmethod
     def delete_old_notifications(days: int = 30, session = None):
-        ...
+        from datetime import timedelta
 
+        cutoff_date = datetime.utcnow() - timedelta(days=days)
+
+        old_notifications = Notification.query.filter(
+            Notification.is_read == True,
+            Notification.read_at < cutoff_date,
+        ).all()
+
+        count = len(old_notifications)
+
+        for notification in old_notifications:
+            session.delete(notification)
+            
+        session.flush()
+        return count
