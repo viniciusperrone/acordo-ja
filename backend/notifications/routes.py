@@ -81,4 +81,36 @@ def get_unread_count():
         )
 
         return jsonify({"message": "Internal Server Error"}), 500
-    
+
+@notifications_bp.route('/<uuid:notification_id>/mark-read', methods=['PATCH'])
+@jwt_required()
+@transactional
+@current_user
+def mark_notification_as_read(notification_id, db):
+    try:
+        current_user_id = g.current_user.id
+
+        notification = db.session.get(Notification, notification_id)
+
+        if not notification:
+            return jsonify({"message": "Notification not found"}), 404
+
+        if str(notification.user_id) != str(current_user_id):
+            return jsonify({"message": "Unauthorized access"}), 401
+
+        NotificationService.mark_as_read(notification_id, session=db.session)
+
+        return jsonify({"message": "Notification marked as read"}), 200
+
+    except Exception as err:
+        current_app.logger.exception(
+            "An error occurred while marking notification as read",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
+        return jsonify({"message": "Internal Server Error"}), 500
