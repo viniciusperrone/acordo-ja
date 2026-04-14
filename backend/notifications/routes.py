@@ -157,5 +157,32 @@ def mark_multiple_as_read(db):
                 "request_id": getattr(g, "request_id", None)
             }
         )
-        
+
+        return jsonify({"message": "Internal Server Error"}), 500
+
+@notifications_bp.route('/mark-all-read', methods=['PATCH'])
+@jwt_required()
+@transactional
+@current_user
+def mark_all_as_read(db):
+    try:
+        current_user_id = g.current_user.id
+
+        count = NotificationService.mark_all_read_for_user(
+            current_user_id,
+            session=db.session
+        )
+
+        return jsonify({"message": f"{count} notifications marked as read"}), 200
+    except Exception as err:
+        current_app.logger.exception(
+            "An error occurred while marking notifications as read",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
+
         return jsonify({"message": "Internal Server Error"}), 500
