@@ -72,3 +72,32 @@ class NotificationService:
             session.flush()
 
         return notification
+
+    @staticmethod
+    def mark_multiple_as_read(notification_ids: List[str], session=None) -> int:
+        
+        notifications = Notification.query.filter(
+            Notification.id.in_(notification_ids),
+            Notification.is_read == False,
+        ).all()
+
+        count = 0
+        for notification in notifications:
+            notification.mark_as_read()
+            count += 1
+
+        session.flush()
+        return count
+
+    @staticmethod
+    def mark_all_read_for_user(user_id: str, session=None):
+        ...
+
+    @staticmethod
+    def get_unread_count(user_id: str) -> int:
+        ...
+
+    @staticmethod
+    def delete_old_notifications(days: int = 30, session = None):
+        ...
+
