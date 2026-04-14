@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, current_app, g
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
+from common.decorators import current_user
 from common.decorators.transactional import transactional
 
 from creditor.schemas import CreditorSchema
@@ -86,7 +87,7 @@ def retrieve_creditor(creditor_id, db):
 @creditor_bp.route('/add', methods=['POST'])
 @jwt_required()
 @transactional
-@current_app
+@current_user
 def create_creditor(db):
     creditor_schema = CreditorSchema()
 
