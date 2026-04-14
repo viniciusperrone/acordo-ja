@@ -6,7 +6,7 @@ class NotificationSchema(Schema):
     type = fields.Str(required=True)
     title = fields.Str(required=True)
     message = fields.Str(required=True)
-    metadata = fields.Dict(allow_none=True)
+    extra = fields.Dict(allow_none=True)
     user_id = fields.UUID(allow_none=True)
     is_read = fields.Bool(dump_only=True)
     read_at = fields.DateTime(dump_only=True, allow_none=True)

@@ -13,7 +13,7 @@ class NotificationService:
         notification_type: NotificationType,
         title: str,
         message: str,
-        metadata: Optional[dict] = None,
+        extra: Optional[dict] = None,
         user_id: Optional[str] = None,
         session=None,
     ) -> Notification:
@@ -21,7 +21,7 @@ class NotificationService:
             type=notification_type,
             title=title,
             message=message,
-            metadata=metadata,
+            extra=extra,
             user_id=user_id,
         )
 
@@ -35,7 +35,7 @@ class NotificationService:
         notification_type: NotificationType,
         title: str,
         message: str,
-        metadata: Optional[dict] = None,
+        extra: Optional[dict] = None,
         roles: Optional[List[UserRole]] = None,
         session=None,
     ) -> List[Notification]:
@@ -54,7 +54,7 @@ class NotificationService:
                 notification_type=notification_type,
                 title=title,
                 message=message,
-                metadata=metadata,
+                extra=extra,
                 user_id=user.id,
                 session=session,
             )
@@ -126,6 +126,6 @@ class NotificationService:
 
         for notification in old_notifications:
             session.delete(notification)
-            
+
         session.flush()
         return count

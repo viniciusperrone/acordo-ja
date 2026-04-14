@@ -18,7 +18,7 @@ class Notification(db.Model):
 
     title = db.Column(db.String(200), nullable=False)
     message = db.Column(db.Text, nullable=False)
-    metadata = db.Column(db.JSON, nullable=False)
+    extra = db.Column(db.JSON, nullable=False)
 
     user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=True, index=True)
     user = db.relationship("User", backref="notifications")

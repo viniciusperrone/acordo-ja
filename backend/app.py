@@ -17,6 +17,7 @@ import agreement
 import installments
 import payment
 import users
+import notifications
 import leads
 
 from creditor.routes import creditor_bp
@@ -28,6 +29,7 @@ from payment.routes import payment_bp
 from leads.routes import leads_bp
 from users.routes import user_bp
 from authentication.routes import authentication_bp
+from notifications.routes import notifications_bp
 
 
 def setup_logging(app):
@@ -78,6 +80,7 @@ def initialize_app():
     app.register_blueprint(user_bp)
     app.register_blueprint(leads_bp)
     app.register_blueprint(authentication_bp)
+    app.register_blueprint(notifications_bp)
 
     Migrate(app, db)
 
