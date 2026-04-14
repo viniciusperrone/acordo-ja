@@ -1,4 +1,4 @@
-from flask import Blueprint, request, g, jsonify
+from flask import Blueprint, request, g, jsonify, current_app
 from flask_jwt_extended import jwt_required
 
 from common.decorators import current_user, transactional
@@ -48,5 +48,13 @@ def list_notifications(db):
         })
 
     except Exception as err:
-        print(str(err))
+        current_app.logger.exception(
+            "An error occured while fetching notifications",
+            extra={
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None)
+            }
+        )
         return jsonify({"message": "Internal Server Error"}), 500
