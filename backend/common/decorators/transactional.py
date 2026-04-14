@@ -8,8 +8,19 @@ def transactional(func):
         try:
             kwargs["db"] = db
             result = func(*args, **kwargs)
-            db.session.commit()
+
+            if isinstance(result, tuple):
+                _, status = result
+            else:
+                status = getattr(result, "status_code", 200)
+
+            if 200 <= status < 300:
+                db.session.commit()
+            else:
+                db.session.rollback()
+
             return result
+
         except Exception:
             db.session.rollback()
             raise
