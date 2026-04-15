@@ -5,7 +5,7 @@ from dateutil.relativedelta import relativedelta
 from agreement import Agreement
 from debts import Debt
 from installments import Installments
-from utils.enum import AgreementStatus, InstallmentStatus
+from utils.enum import AgreementStatus, InstallmentStatus, DebtStatus
 
 from .exceptions import (
     DebtNotFountError,
@@ -124,6 +124,20 @@ class AgreementService:
             current_due_date += relativedelta(months=1)
 
         session.add_all(installments)
+        session.commit()
+
+        return agreement
+
+    @staticmethod
+    def open_agreement(agreement: Agreement, session):
+        if not agreement.status == AgreementStatus.DRAFT:
+            raise AgreementStatusError("Agreement cannot opened")
+
+        debt = agreement.debt
+
+        debt.status = DebtStatus.IN_AGREEMENT
+        agreement.status = AgreementStatus.ACTIVE
+
         session.commit()
 
         return agreement

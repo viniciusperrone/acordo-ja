@@ -128,6 +128,35 @@ def create_agreement(db):
 
         return jsonify({"message": "Internal Server Error"}), 500
 
+@agreement_bp.route('/<uuid:agreement_id>/activate', methods=['PATCH'])
+@jwt_required()
+@transactional
+def activate_agreement(agreement_id, db):
+    try:
+        agreement = AgreementService.get_agreement_or_fail(agreement_id)
+
+        agreement = AgreementService.open_agreement(agreement, db.session)
+
+        return jsonify({"message": "Agreement has been opened"}), 200
+    except AgreementNotFoundError as err:
+        return jsonify({'message': str(err)}), 404
+    except AgreementStatusError as err:
+        return jsonify({'message': str(err)}), 400
+    except Exception as err:
+        current_app.logger.exception(
+            "An error occurred while opening agreement",
+            extra={
+                "agreement_id": agreement_id,
+                "endpoint": request.endpoint,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None),
+            }
+        )
+
+        return jsonify({"message": "Internal Server Error"}), 500
+
+
 @agreement_bp.route('/<uuid:agreement_id>/cancel', methods=['POST'])
 @transactional
 def cancel_agreement(agreement_id, db):
