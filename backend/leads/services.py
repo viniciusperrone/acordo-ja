@@ -1,6 +1,7 @@
 from marshmallow import ValidationError
 
 from leads import Lead
+from notifications.events import NotificationEvents
 
 
 class LeadService:
@@ -14,6 +15,8 @@ class LeadService:
         lead = Lead(**data)
 
         session.add(lead)
-        session.commit()
+        session.flush()
+
+        NotificationEvents.on_lead_created(lead, session)
         
         return lead
