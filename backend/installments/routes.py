@@ -69,7 +69,7 @@ def pay_installment(installment_id, db):
 
         data = payment_schema.load(request.json)
 
-        payment = PaymentService.register_payment(
+        PaymentService.register_payment(
             installment=installment,
             amount=data['amount'],
             method=data['method'],

@@ -49,6 +49,7 @@ class NotificationService:
         ).all()
 
         notifications = []
+
         for user in users:
             notification = NotificationService.create_notification(
                 notification_type=notification_type,
@@ -56,6 +57,17 @@ class NotificationService:
                 message=message,
                 extra=extra,
                 user_id=user.id,
+                session=session,
+            )
+
+            notifications.append(notification)
+
+        if not users:
+            notification = NotificationService.create_notification(
+                notification_type=notification_type,
+                title=title,
+                message=message,
+                extra=extra,
                 session=session,
             )
 

@@ -1,6 +1,7 @@
 from datetime import datetime, date
 
 from installments.exceptions import InstallmentWithoutAgreementError
+from notifications.events import NotificationEvents
 from payment.models import Payment
 from payment.exception import PaymentError
 
@@ -55,6 +56,8 @@ class PaymentService:
 
             agreement.debt.status = DebtStatus.PAID
 
-        session.commit()
+        session.flush()
+
+        NotificationEvents.on_payment_received(payment, installment, session)
 
         return payment

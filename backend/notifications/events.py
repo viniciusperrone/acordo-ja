@@ -24,7 +24,7 @@ class NotificationEvents:
 
     @staticmethod
     def on_payment_received(payment, installment, session):
-        NotificationEvents.create_notification_for_roles(
+        NotificationService.create_notification_for_roles(
             notification_type=NotificationType.PAYMENT_RECEIVED,
             title="Pagamento Recebido 💰",
             message=f"Pagamento R$ {payment.amount} recebido para parcela #{installment.installment_number}",
