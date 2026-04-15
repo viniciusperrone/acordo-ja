@@ -35,10 +35,10 @@ class Notification(db.Model):
     def to_dict(self):
         return {
             'id': str(self.id),
-            'type': self.type.value,
+            'notification_type': self.type.value,
             'title': self.title,
             'message': self.message,
-            'metadata': self.metadata,
+            'extra': self.extra,
             'user_id': str(self.user_id) if self.user_id else None,
             'is_read': self.is_read,
             'read_at': self.read_at.isoformat() if self.read_at else None,
