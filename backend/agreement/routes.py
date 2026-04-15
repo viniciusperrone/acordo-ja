@@ -54,6 +54,52 @@ def list_agreements():
         return jsonify({"message": "Internal Server Error"}), 500
 
 
+@agreement_bp.route('/add', methods=['POST'])
+@jwt_required()
+@current_user
+@transactional
+def create_agreement(db):
+    agreement_schema = AgreementSchema()
+    user = getattr(g, "current_user", None)
+
+    try:
+        data = agreement_schema.load(request.json)
+
+        AgreementService.create_agreement(data, db.session)
+
+        current_app.logger.info(
+            "Agreement created successfully",
+            extra={
+                "user_id": getattr(user, "id", None),
+                "user_role": getattr(user.role, "value", None) if user else None,
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None),
+            }
+        )
+
+        return jsonify({"message": "Successfully registered agreement"}), 201
+
+    except ValidationError as err:
+        return jsonify({"message": err.messages}), 400
+    except DebtNotFountError as err:
+        return jsonify({'message': str(err)}), 400
+    except Exception as err:
+        current_app.logger.exception(
+            "An error occurred while creating agreement",
+            extra={
+                "user_id": getattr(user, "id", None),
+                "user_role": getattr(user.role, "value", None) if user else None,
+                "endpoint": request.path,
+                "method": request.method,
+                "params": request.args.to_dict(),
+                "request_id": getattr(g, "request_id", None),
+            }
+        )
+
+        return jsonify({"message": "Internal Server Error"}), 500
+
 @agreement_bp.route('/<uuid:agreement_id>/detail', methods=['GET'])
 @jwt_required()
 def get_agreement(agreement_id):
@@ -72,53 +118,6 @@ def get_agreement(agreement_id):
         current_app.logger.exception(
             "An error occured while retrieving agreement",
             extra={
-                "endpoint": request.path,
-                "method": request.method,
-                "params": request.args.to_dict(),
-                "request_id": getattr(g, "request_id", None),
-            }
-        )
-
-        return jsonify({"message": "Internal Server Error"}), 500
-
-@agreement_bp.route('/add', methods=['POST'])
-@jwt_required()
-@transactional
-@current_user
-def create_agreement(db):
-    agreement_schema = AgreementSchema()
-
-    try:
-        data = agreement_schema.load(request.json)
-
-        AgreementService.create_agreement(data, db.session)
-
-        user = g.current_user
-
-        current_app.logger.info(
-            "Agreement created successfully",
-            extra={
-                "user_id": user.id,
-                "user_role": getattr(user.role, "value", None),
-                "endpoint": request.path,
-                "method": request.method,
-                "params": request.args.to_dict(),
-                "request_id": getattr(g, "request_id", None),
-            }
-        )
-
-        return jsonify({"message": "Successfully registered agreement"}), 201
-
-    except ValidationError as err:
-        return jsonify({"message": err.messages}), 400
-    except DebtNotFountError as err:
-        return jsonify({'message': str(err)}), 400
-    except Exception as err:
-        current_app.logger.exception(
-            "An error occured while creating agreement",
-            extra={
-                "user_id": user.id,
-                "user_role": getattr(user.role, "value", None),
                 "endpoint": request.path,
                 "method": request.method,
                 "params": request.args.to_dict(),

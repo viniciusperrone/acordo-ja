@@ -61,7 +61,7 @@ class NotificationEvents:
             notification_type=NotificationType.AGREEMENT_CREATED,
             title="Novo Acordo Criado ✅",
             message=f"Um novo acordo foi criado no valor de R$ {agreement.total_traded} em {agreement.installments_quantity}x",
-            metadata={
+            extra={
                 "agreement_id": str(agreement.id),
                 "total_traded": str(agreement.total_traded),
                 "installments_quantity": agreement.installments_quantity,
@@ -77,7 +77,7 @@ class NotificationEvents:
             notification_type=NotificationType.AGREEMENT_COMPLETED,
             title="Acordo Finalizado 🎉",
             message=f"O acordo de R$ {agreement.total_traded} foi completamente quitado!",
-            metadata={
+            extra={
                 "agreement_id": str(agreement.id),
                 "total_traded": str(agreement.total_traded),
                 "debt_id": str(agreement.debt_id)
@@ -92,7 +92,7 @@ class NotificationEvents:
             notification_type=NotificationType.DEBT_PAID,
             title="Dívida Quitada 🎊",
             message=f"A dívida de R$ {debt.updated_value} foi totalmente paga!",
-            metadata={
+            extra={
                 "debt_id": str(debt.id),
                 "debtor_id": debt.debtor_id,
                 "original_value": str(debt.original_value),

@@ -5,6 +5,7 @@ from dateutil.relativedelta import relativedelta
 from agreement import Agreement
 from debts import Debt
 from installments import Installments
+from notifications.events import NotificationEvents
 from utils.enum import AgreementStatus, InstallmentStatus, DebtStatus
 
 from .exceptions import (
@@ -124,7 +125,9 @@ class AgreementService:
             current_due_date += relativedelta(months=1)
 
         session.add_all(installments)
-        session.commit()
+        session.flush()
+
+        NotificationEvents.on_agreement_created(agreement, session)
 
         return agreement
 
