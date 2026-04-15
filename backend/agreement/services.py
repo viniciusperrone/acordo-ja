@@ -178,4 +178,6 @@ class AgreementService:
             raise PendingInstallmentsError("There are outstanding installments")
 
         agreement.status = AgreementStatus.COMPLETED
-        session.commit()
+        session.flush()
+
+        NotificationEvents.on_agreement_completed(agreement, session)
