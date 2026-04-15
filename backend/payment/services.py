@@ -54,8 +54,11 @@ class PaymentService:
         if all(i.status == InstallmentStatus.PAID for i in agreement.installments):
             agreement.status = AgreementStatus.COMPLETED
 
+            NotificationEvents.on_agreement_completed(agreement, session)
+
             agreement.debt.status = DebtStatus.PAID
 
+            NotificationEvents.on_debt_paid(agreement.debt, session)
         session.flush()
 
         NotificationEvents.on_payment_received(payment, installment, session)
