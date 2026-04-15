@@ -45,7 +45,7 @@ class NotificationService:
 
         users = User.query.filter(
             User.is_active == True,
-            User.roles.in_(roles),
+            User.role.in_(roles),
         ).all()
 
         notifications = []

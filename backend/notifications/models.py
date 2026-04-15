@@ -24,7 +24,7 @@ class Notification(db.Model):
     user = db.relationship("User", backref="notifications")
 
     is_read = db.Column(db.Boolean, nullable=False, default=False)
-    read_at = db.Column(db.DateTime, nullable=False)
+    read_at = db.Column(db.DateTime, nullable=True)
 
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 

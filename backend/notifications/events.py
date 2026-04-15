@@ -7,11 +7,11 @@ class NotificationEvents:
     @staticmethod
     def on_lead_created(lead, session):
         NotificationService.create_notification_for_roles(
-            type=NotificationType.NEW_LEAD,
+            notification_type=NotificationType.NEW_LEAD,
             title="Novo Lead Criado! 🎯",
             message=f"Um novo lead foi registrado: {lead.name} (CPF/CNPJ): {lead.document}",
             extra={
-                "lead_id": lead.id,
+                "lead_id": str(lead.id),
                 "lead_name": lead.name,
                 "lead_document": lead.document,
                 "lead_email": lead.email,
@@ -25,7 +25,7 @@ class NotificationEvents:
     @staticmethod
     def on_payment_received(payment, installment, session):
         NotificationEvents.create_notification_for_roles(
-            type=NotificationType.PAYMENT_RECEIVED,
+            notification_type=NotificationType.PAYMENT_RECEIVED,
             title="Pagamento Recebido 💰",
             message=f"Pagamento R$ {payment.amount} recebido para parcela #{installment.installment_number}",
             extra={
@@ -41,7 +41,7 @@ class NotificationEvents:
     @staticmethod
     def on_installment_overdue(installment, session):
         NotificationService.create_notification_for_roles(
-            type=NotificationType.INSTALLMENT_OVERDUE,
+            notification_type=NotificationType.INSTALLMENT_OVERDUE,
             title="Parcela Vencida ⚠️",
             message=f"A parcela #{installment.installment_number} está vencida desde {installment.due_date}",
             extra={
@@ -58,7 +58,7 @@ class NotificationEvents:
     @staticmethod
     def on_agreement_created(agreement, session):
         NotificationService.create_notification_for_roles(
-            type=NotificationType.AGREEMENT_CREATED,
+            notification_type=NotificationType.AGREEMENT_CREATED,
             title="Novo Acordo Criado ✅",
             message=f"Um novo acordo foi criado no valor de R$ {agreement.total_traded} em {agreement.installments_quantity}x",
             metadata={
@@ -74,7 +74,7 @@ class NotificationEvents:
     @staticmethod
     def on_agreement_completed(agreement, session):
         NotificationService.create_notification_for_roles(
-            type=NotificationType.AGREEMENT_COMPLETED,
+            notification_type=NotificationType.AGREEMENT_COMPLETED,
             title="Acordo Finalizado 🎉",
             message=f"O acordo de R$ {agreement.total_traded} foi completamente quitado!",
             metadata={
@@ -89,7 +89,7 @@ class NotificationEvents:
     @staticmethod
     def on_debt_paid(debt, session):
         NotificationService.create_notification_for_roles(
-            type=NotificationType.DEBT_PAID,
+            notification_type=NotificationType.DEBT_PAID,
             title="Dívida Quitada 🎊",
             message=f"A dívida de R$ {debt.updated_value} foi totalmente paga!",
             metadata={
