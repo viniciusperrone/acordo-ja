@@ -84,6 +84,11 @@ def initialize_app():
 
     Migrate(app, db)
 
+    if not app.config.get("TESTING"):
+        from tasks.scheduler import init_scheduler
+
+        init_scheduler(app)
+
     return app
 
 
