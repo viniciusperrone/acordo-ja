@@ -5,6 +5,8 @@ from logging.handlers import RotatingFileHandler
 from flask import Flask
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 from config.db import db
 from config.config import Config
@@ -68,6 +70,12 @@ def initialize_app():
 
     db.init_app(app)
     jwt = JWTManager(app)
+
+    limiter = Limiter(
+        get_remote_address,
+        app=app,
+        default_limits=["200 per day", "50 per hour"],
+    )
 
     setup_logging(app)
 
