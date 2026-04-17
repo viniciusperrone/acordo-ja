@@ -4,6 +4,7 @@ from marshmallow import ValidationError
 
 from common.decorators import current_user
 from common.decorators.transactional import transactional
+from config.rate_limit import limiter
 
 from debts import Debt
 from debts.schemas import DebtSchema, DebtSearchByDocumentSchema
@@ -14,6 +15,7 @@ debts_bp = Blueprint('debts', __name__, url_prefix='/debts')
 
 @debts_bp.route('/list', methods=['GET'])
 @jwt_required()
+@limiter.limit("30 per minute")
 def list_debts():
     try:
         page = request.args.get('page', 1, type=int)
@@ -51,6 +53,7 @@ def list_debts():
 
 @debts_bp.route('/<uuid:debt_id>/detail', methods=['GET'])
 @jwt_required()
+@limiter.limit("60 per minute")
 @transactional
 def retrieve_debt(debt_id, db):
     try:
@@ -78,6 +81,7 @@ def retrieve_debt(debt_id, db):
 
 @debts_bp.route('/add', methods=['POST'])
 @jwt_required()
+@limiter.limit("10 per minute")
 @transactional
 @current_user
 def create_debt(db):
@@ -151,6 +155,7 @@ def create_debt(db):
 
 @debts_bp.route('/search', methods=['GET'])
 @jwt_required()
+@limiter.limit("30 per minute")
 def search_debt():
     debt_schema = DebtSearchByDocumentSchema()
     debts_schema = DebtSchema(many=True)

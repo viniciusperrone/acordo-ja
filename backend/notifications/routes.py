@@ -3,7 +3,8 @@ from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
 from common.decorators import current_user, transactional
-from notifications import Notification
+from config.rate_limit import limiter
+
 from notifications.models import Notification
 from notifications.schemas import NotificationSchema, MarkAsReadSchema
 from notifications.services import NotificationService
@@ -14,6 +15,7 @@ notifications_bp = Blueprint('notifications', __name__, url_prefix='/notificatio
 
 @notifications_bp.route('/list', methods=['GET'])
 @jwt_required()
+@limiter.limit("60 per minute")
 @transactional
 @current_user
 def list_notifications(db):
@@ -63,6 +65,7 @@ def list_notifications(db):
 
 @notifications_bp.route('/unread-count', methods=['GET'])
 @jwt_required()
+@limiter.limit("120 per minute")
 @transactional
 @current_user
 def get_unread_count():
@@ -86,6 +89,7 @@ def get_unread_count():
 
 @notifications_bp.route('/<uuid:notification_id>/mark-read', methods=['PATCH'])
 @jwt_required()
+@limiter.limit("30 per minute")
 @transactional
 @current_user
 def mark_notification_as_read(notification_id, db):
@@ -119,6 +123,7 @@ def mark_notification_as_read(notification_id, db):
 
 @notifications_bp.route('/mark-read-bulk', methods=['PATCH'])
 @jwt_required()
+@limiter.limit("10 per minute")
 @transactional
 @current_user
 def mark_multiple_as_read(db):
@@ -162,6 +167,7 @@ def mark_multiple_as_read(db):
 
 @notifications_bp.route('/mark-all-read', methods=['PATCH'])
 @jwt_required()
+@limiter.limit("5 per minute")
 @transactional
 @current_user
 def mark_all_as_read(db):
@@ -189,6 +195,7 @@ def mark_all_as_read(db):
 
 @notifications_bp.route('/<uuid:notification_id>', methods=['DELETE'])
 @jwt_required()
+@limiter.limit("30 per minute")
 @transactional
 @current_user
 def delete_notification(notification_id, db):

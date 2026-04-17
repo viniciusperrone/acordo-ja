@@ -2,7 +2,8 @@ from flask import Blueprint, request, jsonify, current_app, g
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
-from common.decorators.transactional import transactional
+from common.decorators import transactional
+from config.rate_limit import limiter
 
 from installments import Installments
 from installments.filters import InstallmentFilter
@@ -17,6 +18,7 @@ installment_bp = Blueprint("installments", __name__, url_prefix="/installments")
 
 
 @installment_bp.route("/list", methods=["GET"])
+@limiter.limit("30 per minute")
 @jwt_required()
 def list_installments():
     try:
@@ -60,6 +62,7 @@ def list_installments():
 
 @installment_bp.route("/<int:installment_id>/pay", methods=["POST"])
 @jwt_required()
+@limiter.limit("3 per minute")
 @transactional
 def pay_installment(installment_id, db):
     payment_schema = PaymentSchema()

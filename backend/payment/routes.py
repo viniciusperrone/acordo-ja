@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify, current_app, g
 from flask_jwt_extended import jwt_required
 
+from config.rate_limit import limiter
+
 from .models import Payment
 from .schemas import PaymentSchema
 from .filters import PaymentFilter
@@ -9,6 +11,7 @@ from .filters import PaymentFilter
 payment_bp = Blueprint("payment", __name__, url_prefix="/payment")
 
 @payment_bp.route("/list", methods=["GET"])
+@limiter.limit("30 per minute")
 @jwt_required()
 def list_payment():
     try:

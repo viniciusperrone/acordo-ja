@@ -1,7 +1,9 @@
 from flask import Blueprint, request, jsonify
 from marshmallow import ValidationError
 
-from common.decorators.transactional import transactional
+from common.decorators import transactional
+from config.rate_limit import limiter
+
 from users.services import UserService
 from users.schemas import UserSchema
 
@@ -9,6 +11,7 @@ from users.schemas import UserSchema
 user_bp = Blueprint('user', __name__, url_prefix='/user')
 
 @user_bp.route('/add', methods=['POST'])
+@limiter.limit("10 per minute")
 @transactional
 def create_user(db):
     user_schema = UserSchema()

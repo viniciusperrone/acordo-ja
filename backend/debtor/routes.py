@@ -2,7 +2,9 @@ from flask import Blueprint, request, jsonify, current_app, g
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
-from common.decorators.transactional import transactional
+from common.decorators import transactional
+from config.rate_limit import limiter
+
 from debtor.models import Debtor
 from debtor.schemas import DebtorSchema
 
@@ -10,6 +12,7 @@ from debtor.schemas import DebtorSchema
 debtor_bp = Blueprint('debtor', __name__, url_prefix='/debtor')
 
 @debtor_bp.route('/list', methods=['GET'])
+@limiter.limit("30 per minute")
 @jwt_required()
 def list_debtors():
     try:
@@ -48,6 +51,7 @@ def list_debtors():
 
 @debtor_bp.route('/<int:debtor_id>/detail', methods=['GET'])
 @jwt_required()
+@limiter.limit("60 per minute")
 @transactional
 def retrieve_debtor(debtor_id, db):
     try:
@@ -76,6 +80,7 @@ def retrieve_debtor(debtor_id, db):
 
 @debtor_bp.route('/add', methods=['POST'])
 @jwt_required()
+@limiter.limit("10 per minute")
 @transactional
 def create_debtor(db):
     debtor_schema = DebtorSchema()
