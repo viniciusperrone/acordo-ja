@@ -16,7 +16,7 @@ def check_overdue_installments():
         overdue_installments = Installments.query.filter(
             and_(
                 Installments.status == InstallmentStatus.PENDING,
-                Installments.due_date < date.today
+                Installments.due_date < date.today()
             )
         ).all()
 

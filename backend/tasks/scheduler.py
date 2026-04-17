@@ -21,6 +21,15 @@ def init_scheduler(app: Flask):
         misfire_grace_time=3600,
     )
 
+    scheduler.add_job(
+        func=lambda: run_with_app_context(app, cleanup_old_notification),
+        trigger=CronTrigger(hour=3, minute=0),
+        id='cleanup_old_notification',
+        name='Cleanup old notifications',
+        replace_existing=True,
+        misfire_grace_time=3600,
+    )
+
     scheduler.start()
 
 
@@ -40,5 +49,6 @@ def cleanup_old_notification():
 
     except Exception as e:
         db.session.rollback()
+
         raise
 
