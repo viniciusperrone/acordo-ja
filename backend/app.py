@@ -11,6 +11,7 @@ from flask_limiter.util import get_remote_address
 from config.db import db
 from config.config import Config
 from config.logging import CustomFormatter
+from config.rate_limit import limiter
 
 import creditor
 import debts
@@ -71,11 +72,7 @@ def initialize_app():
     db.init_app(app)
     jwt = JWTManager(app)
 
-    limiter = Limiter(
-        get_remote_address,
-        app=app,
-        default_limits=["200 per day", "50 per hour"],
-    )
+    limiter.init_app(app)
 
     setup_logging(app)
 
