@@ -30,3 +30,4 @@ def login(db):
 
     except Exception as err:
         return jsonify({'message': str(err)}), 500
+ 

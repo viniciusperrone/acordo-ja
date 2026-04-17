@@ -2,6 +2,8 @@ from flask import Blueprint, request, jsonify, current_app, g
 from marshmallow import ValidationError
 
 from common.decorators.transactional import transactional
+from config.rate_limit import limiter
+
 from .schemas import LeadSchema
 from .services import LeadService
 
@@ -9,6 +11,7 @@ from .services import LeadService
 leads_bp = Blueprint('leads', __name__, url_prefix='/leads')
 
 @leads_bp.route('/add', methods=['POST'])
+@limiter.limit('5 per minute')
 @transactional
 def create_lead(db):
     lead_schema = LeadSchema()
