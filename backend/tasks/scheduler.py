@@ -6,21 +6,20 @@ from .check_overdue import check_overdue_installments
 
 
 def init_scheduler(app: Flask):
-    from flask import current_app
 
     scheduler = BackgroundScheduler(
         daemon=True,
         timezone='America/Sao_Paulo',
     )
 
-    current_app.logger_info(
+    app.logger.info(
         "Initializing scheduler",
         extra={"timezone": "America/Sao_Paulo"}
     )
 
     scheduler.add_job(
         func=lambda: run_with_app_context(app, check_overdue_installments),
-        trigger=CronTrigger(hour=9, minute=0),
+        trigger=CronTrigger(hour=21, minute=48),
         id='check_overdue_installments',
         name='Check overdue payments',
         replace_existing=True,
@@ -36,7 +35,7 @@ def init_scheduler(app: Flask):
         misfire_grace_time=3600,
     )
 
-    current_app.logger.info(
+    app.logger.info(
         "Scheduler started",
         extra={
             "jobs": [
@@ -47,7 +46,6 @@ def init_scheduler(app: Flask):
     )
 
     scheduler.start()
-
 
 def run_with_app_context(app: Flask, func):
     from flask import current_app
