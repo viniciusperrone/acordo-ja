@@ -10,6 +10,7 @@ services:
       - .:/app
     depends_on:
       - db
+      - redis
   db:
     image: postgres:16
     container_name: acordoja-db
@@ -22,6 +23,11 @@ services:
       POSTGRES_PASSWORD: "postgres"
       POSTGRES_USER: "postgres"
       POSTGRES_DB: "acordoja"
+  redis:
+    image: redis:7
+    container_name: acordoja-redis
+    ports:
+      - "6379:6379"
 
   pgadmin:
     image: dpage/pgadmin4
