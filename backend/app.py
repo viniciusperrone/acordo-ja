@@ -9,7 +9,7 @@ from flask_jwt_extended import JWTManager
 from config.db import db
 from config.config import Config
 from config.logging import CustomFormatter
-from config.rate_limit import limiter
+from config.rate_limit import limiter, rate_limit_handler
 
 import creditor
 import debts
@@ -71,6 +71,8 @@ def initialize_app():
     jwt = JWTManager(app)
 
     limiter.init_app(app)
+
+    app.register_error_handler(429, rate_limit_handler)
 
     setup_logging(app)
 
