@@ -19,7 +19,7 @@ def init_scheduler(app: Flask):
 
     scheduler.add_job(
         func=lambda: run_with_app_context(app, check_overdue_installments),
-        trigger=CronTrigger(hour=21, minute=48),
+        trigger=CronTrigger(hour=9, minute=0),
         id='check_overdue_installments',
         name='Check overdue payments',
         replace_existing=True,
