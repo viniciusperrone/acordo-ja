@@ -2,8 +2,8 @@ from flask import Blueprint, request, jsonify, current_app, g
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 
-from common.decorators import current_user
-from common.decorators.transactional import transactional
+from common.decorators import current_user, transactional
+from config.rate_limit import limiter
 
 from creditor.schemas import CreditorSchema
 from creditor.models import Creditor
@@ -16,6 +16,7 @@ creditor_bp = Blueprint('creditor', __name__, url_prefix='/creditors')
 
 @jwt_required()
 @creditor_bp.route('/list', methods=['GET'])
+@limiter.limit("30 per minute")
 def list_creditors():
     try:
         page = request.args.get('page', 1, type=int)
@@ -57,6 +58,7 @@ def list_creditors():
 
 @creditor_bp.route('/<uuid:creditor_id>/detail', methods=['GET'])
 @jwt_required()
+@limiter.limit("60 per minute")
 @transactional
 def retrieve_creditor(creditor_id, db):
     try:
@@ -86,6 +88,7 @@ def retrieve_creditor(creditor_id, db):
 
 @creditor_bp.route('/add', methods=['POST'])
 @jwt_required()
+@limiter.limit("10 per minute")
 @transactional
 @current_user
 def create_creditor(db):
