@@ -57,11 +57,18 @@ class DebtHistory(db.Model):
         index=True
     )
 
-    old_status = db.Column(db.String, nullable=True)
-    new_status = db.Column(db.String, nullable=True)
+    old_status = db.Column(db.Enum(DebtStatus, name="debt_status_enum"), nullable=True)
+    new_status = db.Column(db.Enum(DebtStatus, name="debt_status_enum"), nullable=True)
 
-    old_value = db.Column(NUMERIC(12, 2), nullable=False)
-    new_value = db.Column(NUMERIC(12, 2), nullable=False)
+    old_value = db.Column(NUMERIC(12, 2), nullable=True)
+    new_value = db.Column(NUMERIC(12, 2), nullable=True)
 
     changed_at = db.Column(db.DateTime, default=dt.utcnow, nullable=False)
     reason = db.Column(db.String, nullable=True)
+
+    debt = db.relationship("Debt", backref="history")
+
+    __table_args__ = (
+        db.Index('ix_debt_history_debt_id_changed_at', 'debt_id', 'changed_at'),
+    )
+
