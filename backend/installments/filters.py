@@ -6,6 +6,7 @@ class InstallmentFilter(BaseFilter):
     model = Installments
 
     fields = {
+        "agremeent_id": ["exact", "in"],
         "status": ["exact", "in"],
         "agreement_id": ["exact"],
         "due_date": ["exact", "gte", "lte"],
