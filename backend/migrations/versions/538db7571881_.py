@@ -22,11 +22,11 @@ def upgrade():
         batch_op.alter_column('old_status',
                existing_type=sa.VARCHAR(),
                type_=sa.Enum('OPEN', 'IN_AGREEMENT', 'PAID', 'DEFAULTED', 'CANCELLED', name='debt_status_enum'),
-               existing_nullable=True)
+               existing_nullable=True, postgresql_using='old_status::debt_status_enum')
         batch_op.alter_column('new_status',
                existing_type=sa.VARCHAR(),
                type_=sa.Enum('OPEN', 'IN_AGREEMENT', 'PAID', 'DEFAULTED', 'CANCELLED', name='debt_status_enum'),
-               existing_nullable=True)
+               existing_nullable=True, postgresql_using='new_status::debt_status_enum')
         batch_op.alter_column('old_value',
                existing_type=sa.NUMERIC(precision=12, scale=2),
                nullable=True)

@@ -26,7 +26,7 @@ class Debt(db.Model):
     )
 
     original_value = db.Column(NUMERIC(12, 2), nullable=False)
-    updated_value = db.Column(NUMERIC(12, 2), nullable=False)
+    updated_value = db.Column(NUMERIC(12, 2), nullable=True)
     due_date = db.Column(db.Date, nullable=False)
 
     status = db.Column(
