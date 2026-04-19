@@ -44,3 +44,24 @@ class Debt(db.Model):
 
     created_at = db.Column(db.DateTime, default=dt.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, onupdate=dt.utcnow)
+
+class DebtHistory(db.Model):
+    __tablename__ = 'debt_history'
+
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    debt_id = db.Column(
+        UUID(as_uuid=True),
+        db.ForeignKey('debts.id'),
+        nullable=False,
+        index=True
+    )
+
+    old_status = db.Column(db.String, nullable=True)
+    new_status = db.Column(db.String, nullable=True)
+
+    old_value = db.Column(NUMERIC(12, 2), nullable=False)
+    new_value = db.Column(NUMERIC(12, 2), nullable=False)
+
+    changed_at = db.Column(db.DateTime, default=dt.utcnow, nullable=False)
+    reason = db.Column(db.String, nullable=True)
