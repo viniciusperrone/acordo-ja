@@ -22,7 +22,7 @@ class Agreement(db.Model):
     discount_applied = db.Column(NUMERIC(12, 2), default=Decimal("0.00"))
     first_due_date = db.Column(db.Date, nullable=False)
     status = db.Column(
-        db.Enum(AgreementStatus, name="agreementstatus"),
+        db.Enum(AgreementStatus, name="agreement_status_enum"),
         default=AgreementStatus.DRAFT,
         server_default=AgreementStatus.DRAFT.value,
         nullable=False
