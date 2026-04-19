@@ -71,4 +71,3 @@ class DebtHistory(db.Model):
     __table_args__ = (
         db.Index('ix_debt_history_debt_id_changed_at', 'debt_id', 'changed_at'),
     )
-

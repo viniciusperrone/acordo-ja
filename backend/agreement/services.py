@@ -84,6 +84,8 @@ class AgreementService:
             first_due_date=data["first_due_date"],
         )
 
+        debt.renegotiation_count += 1
+
         session.add(agreement)
         session.flush()
 
@@ -139,6 +141,8 @@ class AgreementService:
         debt = agreement.debt
 
         debt.status = DebtStatus.IN_AGREEMENT
+        debt.updated_value = agreement.total_traded
+        debt.last_agreement_date = agreement.created_at
         agreement.status = AgreementStatus.ACTIVE
 
         session.commit()
@@ -157,6 +161,8 @@ class AgreementService:
         Installments.query.filter_by(
             agreement_id=agreement.agreement_id
         ).update({"status": InstallmentStatus.CANCELLED})
+
+        agreement.debt.updated_value = None
 
         session.commit()
 
