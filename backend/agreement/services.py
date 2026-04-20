@@ -153,6 +153,7 @@ class AgreementService:
             debt=debt,
             agreement_id=str(agreement.id),
             old_status=old_status,
+            old_value=old_value,
             total_traded=agreement.total_traded,
             installments_quantity=agreement.installments_quantity,
             session=session
@@ -169,6 +170,7 @@ class AgreementService:
         if agreement.status == AgreementStatus.CANCELLED:
             raise AgreementStatusError("Agreement already cancelled")
 
+        old_status = agreement.status
         agreement.status = AgreementStatus.CANCELLED
 
         Installments.query.filter_by(
@@ -176,6 +178,15 @@ class AgreementService:
         ).update({"status": InstallmentStatus.CANCELLED})
 
         agreement.debt.updated_value = None
+        agreement.debt.status = DebtStatus.OPEN
+
+        DebtHistoryService.record_agreement_cancelled(
+            debt=agreement.status,
+            agreement_id=str(agreement.id),
+            agreement_old_status=old_status,
+            agreement_new_status=agreement.status,
+            session=session
+        )
 
         session.commit()
 
@@ -197,6 +208,7 @@ class AgreementService:
             raise PendingInstallmentsError("There are outstanding installments")
 
         agreement.status = AgreementStatus.COMPLETED
+
         session.flush()
 
         NotificationEvents.on_agreement_completed(agreement, session)
