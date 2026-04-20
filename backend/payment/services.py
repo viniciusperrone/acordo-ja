@@ -4,6 +4,7 @@ from installments.exceptions import InstallmentWithoutAgreementError
 from notifications.events import NotificationEvents
 from payment.models import Payment
 from payment.exception import PaymentError
+from debts.history_service import DebtHistoryService
 
 from utils.enum import (
     InstallmentStatus,
@@ -52,6 +53,7 @@ class PaymentService:
         agreement = installment.agreement
 
         if all(i.status == InstallmentStatus.PAID for i in agreement.installments):
+            old_status = agreement.debt.status
             agreement.status = AgreementStatus.COMPLETED
 
             NotificationEvents.on_agreement_completed(agreement, session)
@@ -59,6 +61,15 @@ class PaymentService:
             agreement.debt.status = DebtStatus.PAID
 
             NotificationEvents.on_debt_paid(agreement.debt, session)
+
+            DebtHistoryService.record_status_change(
+                debt=agreement.debt,
+                old_status=old_status,
+                new_status=DebtStatus.PAID,
+                reason=f"Dívida quitada - Acordo {agreement.id} completado",
+                session=session
+            )
+
         session.flush()
 
         NotificationEvents.on_payment_received(payment, installment, session)
