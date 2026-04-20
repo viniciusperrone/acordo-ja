@@ -4,6 +4,7 @@ from dateutil.relativedelta import relativedelta
 
 from agreement import Agreement
 from debts import Debt
+from debts.history_service import DebtHistoryService
 from installments import Installments
 from notifications.events import NotificationEvents
 from utils.enum import AgreementStatus, InstallmentStatus, DebtStatus
@@ -140,10 +141,22 @@ class AgreementService:
 
         debt = agreement.debt
 
+        old_status = debt.status
+        old_value = debt.updated_value or debt.original_value
+
         debt.status = DebtStatus.IN_AGREEMENT
         debt.updated_value = agreement.total_traded
         debt.last_agreement_date = agreement.created_at
         agreement.status = AgreementStatus.ACTIVE
+
+        DebtHistoryService.record_agreement_activated(
+            debt=debt,
+            agreement_id=str(agreement.id),
+            old_status=old_status,
+            total_traded=agreement.total_traded,
+            installments_quantity=agreement.installments_quantity,
+            session=session
+        )
 
         session.commit()
 

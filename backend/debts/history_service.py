@@ -56,7 +56,7 @@ class DebtHistoryService:
         )
 
     @staticmethod
-    def record_agreement_created(
+    def record_agreement_activated(
             debt: Debt,
             agreement_id: str,
             old_status: DebtStatus,
