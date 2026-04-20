@@ -3,7 +3,7 @@ from sqlalchemy import UUID, NUMERIC
 from datetime import datetime as dt
 
 from config.db import db
-from utils.enum import DebtStatus
+from utils.enum import DebtStatus, DebtHistoryType
 
 
 class Debt(db.Model):
@@ -57,9 +57,14 @@ class DebtHistory(db.Model):
         index=True
     )
 
+    event_type = db.Column(
+        db.Enum(DebtHistoryType, name="debt_history_type_enum"),
+        nullable=False,
+        index=True
+    )
+
     old_status = db.Column(db.Enum(DebtStatus, name="debt_status_enum"), nullable=True)
     new_status = db.Column(db.Enum(DebtStatus, name="debt_status_enum"), nullable=True)
-
     old_value = db.Column(NUMERIC(12, 2), nullable=True)
     new_value = db.Column(NUMERIC(12, 2), nullable=True)
 
