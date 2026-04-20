@@ -76,7 +76,8 @@ class DebtHistoryService:
                 "agreement_id": agreement_id,
                 "installments_quantity": installments_quantity,
                 "total_traded": str(total_traded),
-            }
+            },
+            session=session
         )
 
     @staticmethod

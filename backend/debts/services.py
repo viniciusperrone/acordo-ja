@@ -3,6 +3,7 @@ from debts import Debt
 from debtor import Debtor
 
 from .exceptions import CreditorNotExistError, DebtorNotExistError
+from .history_service import DebtHistoryService
 
 
 class DebtService:
@@ -32,6 +33,10 @@ class DebtService:
             raise DebtorNotExistError("Debtor not found")
 
         debt = Debt(**data)
+
         session.add(debt)
+        session.flush()
+
+        DebtHistoryService.record_debt_created(debt, session)
 
         return debt
