@@ -3,6 +3,7 @@ from typing import Optional, Dict, Any
 from decimal import Decimal
 
 from .models import Debt, DebtHistory
+from users.models import User
 from utils.enum import DebtHistoryType, DebtStatus, AgreementStatus
 
 
@@ -39,19 +40,24 @@ class DebtHistoryService:
         return history
 
     @staticmethod
-    def record_debt_created(debt: Debt, session) -> DebtHistory:
+    def record_debt_created(debt: Debt, user: User, session) -> DebtHistory:
+        extra = {
+            "debtor_id": debt.debtor_id,
+            "creditor_id": str(debt.creditor_id),
+            "user": {
+                "user_id": str(user.id),
+                "name": user.name,
+                "role": user.role.value,
+            },
+            "due_date": debt.due_date.isoformat(),
+        }
 
         return DebtHistoryService.record_event(
             debt=debt,
             event_type=DebtHistoryType.DEBT_CREATED,
             new_status=DebtStatus.OPEN,
             reason=f"Dívida criada - Valor: R$ {debt.original_value}",
-            extra={
-                "original_value": debt.original_value,
-                "debtor_id": debt.debtor_id,
-                "creditor_id": str(debt.creditor_id),
-                "due_date": debt.due_date.isoformat(),
-            },
+            extra=extra,
             session=session,
         )
 

@@ -85,6 +85,8 @@ def retrieve_debt(debt_id, db):
 @transactional
 @current_user
 def create_debt(db):
+    user = g.current_user
+
     debt_schema = DebtSchema()
 
     try:
@@ -92,10 +94,10 @@ def create_debt(db):
 
         DebtService.create_debt(
             data=data,
+            user=user,
             session=db.session
         )
 
-        user = g.current_user
 
         current_app.logger.info(
             'Created new debt',

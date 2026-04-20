@@ -9,7 +9,7 @@ from .history_service import DebtHistoryService
 class DebtService:
 
     @staticmethod
-    def create_debt(data, session):
+    def create_debt(data, user, session):
         creditor_id = data['creditor_id']
 
         existing_creditor = (
@@ -37,6 +37,6 @@ class DebtService:
         session.add(debt)
         session.flush()
 
-        DebtHistoryService.record_debt_created(debt, session)
+        DebtHistoryService.record_debt_created(debt, user, session)
 
         return debt
