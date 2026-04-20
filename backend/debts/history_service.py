@@ -68,11 +68,12 @@ class DebtHistoryService:
             old_status: DebtStatus,
             total_traded: Decimal,
             installments_quantity: int,
+            user: User,
             session
     ) -> DebtHistory:
         return DebtHistoryService.record_event(
             debt=debt,
-            event_type=DebtHistoryType.AGREEMENT_CREATED,
+            event_type=DebtHistoryType.AGREEMENT_ACTIVATED,
             old_status=old_status,
             new_status=DebtStatus.IN_AGREEMENT,
             old_value=debt.original_value,
@@ -82,6 +83,11 @@ class DebtHistoryService:
                 "agreement_id": agreement_id,
                 "installments_quantity": installments_quantity,
                 "total_traded": str(total_traded),
+                "user": {
+                    "user_id": str(user.id),
+                    "name": user.name,
+                    "role": user.role.value,
+                },
             },
             session=session
         )

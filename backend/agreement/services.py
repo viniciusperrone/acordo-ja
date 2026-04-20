@@ -3,6 +3,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from dateutil.relativedelta import relativedelta
 
 from agreement import Agreement
+from users.models import User
 from debts import Debt
 from debts.history_service import DebtHistoryService
 from installments import Installments
@@ -135,14 +136,13 @@ class AgreementService:
         return agreement
 
     @staticmethod
-    def open_agreement(agreement: Agreement, session):
+    def open_agreement(agreement: Agreement, user: User, session):
         if not agreement.status == AgreementStatus.DRAFT:
             raise AgreementStatusError("Agreement cannot opened")
 
         debt = agreement.debt
 
         old_status = debt.status
-        old_value = debt.updated_value or debt.original_value
 
         debt.status = DebtStatus.IN_AGREEMENT
         debt.updated_value = agreement.total_traded
@@ -153,9 +153,9 @@ class AgreementService:
             debt=debt,
             agreement_id=str(agreement.id),
             old_status=old_status,
-            old_value=old_value,
             total_traded=agreement.total_traded,
             installments_quantity=agreement.installments_quantity,
+            user=user,
             session=session
         )
 

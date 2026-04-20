@@ -130,11 +130,14 @@ def get_agreement(agreement_id):
 @agreement_bp.route('/<uuid:agreement_id>/activate', methods=['PATCH'])
 @jwt_required()
 @transactional
+@current_user
 def activate_agreement(agreement_id, db):
+    user = g.current_user
+
     try:
         agreement = AgreementService.get_agreement_or_fail(agreement_id)
 
-        agreement = AgreementService.open_agreement(agreement, db.session)
+        AgreementService.open_agreement(agreement, user, db.session)
 
         return jsonify({"message": "Agreement has been opened"}), 200
     except AgreementNotFoundError as err:
