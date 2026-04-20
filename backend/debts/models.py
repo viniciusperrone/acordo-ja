@@ -71,6 +71,8 @@ class DebtHistory(db.Model):
     changed_at = db.Column(db.DateTime, default=dt.utcnow, nullable=False)
     reason = db.Column(db.String, nullable=True)
 
+    extra = db.Column(db.JSON, nullable=True)
+
     debt = db.relationship("Debt", backref="history")
 
     __table_args__ = (
