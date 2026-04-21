@@ -7,7 +7,7 @@ from config.rate_limit import limiter
 
 from debtor.models import Debtor
 from debtor.schemas import DebtorSchema
-
+from debtor.filters import DebtorFilter
 
 debtor_bp = Blueprint('debtor', __name__, url_prefix='/debtor')
 
@@ -19,7 +19,11 @@ def list_debtors():
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
 
-        pagination = Debtor.query.paginate(
+        query = Debtor.query
+
+        query = DebtorFilter(query, request.args).apply()
+
+        pagination = query.paginate(
             page=page,
             per_page=per_page,
             error_out=False
