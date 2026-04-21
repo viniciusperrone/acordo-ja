@@ -1,6 +1,6 @@
 import re
 from validate_docbr import CPF, CNPJ
-from marshmallow import Schema, fields, validates, ValidationError
+from marshmallow import Schema, fields, validates, pre_load, ValidationError
 
 
 class DebtorSchema(Schema):
@@ -32,6 +32,16 @@ class DebtorSchema(Schema):
 
         if len(phone) not in (10, 11):
             raise ValidationError("Phone number must be 10 or 11")
+
+    @pre_load
+    def normalize_fields(self, data, **kwargs):
+        if "document" in data:
+            data["document"] = re.sub(r"\D", "", data["document"])
+
+        if "phone" in data:
+            data["phone"] = re.sub(r"\D", "", data["phone"])
+
+        return data
 
     class Meta:
         unknown = "raise"
