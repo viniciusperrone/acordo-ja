@@ -10,6 +10,7 @@ from debts import Debt
 from debts.schemas import DebtSchema, DebtSearchByDocumentSchema
 from debts.services import DebtService
 from debts.exceptions import DebtorNotExistError, CreditorNotExistError
+from debts.filters import DebtFilter
 
 debts_bp = Blueprint('debts', __name__, url_prefix='/debts')
 
@@ -21,7 +22,11 @@ def list_debts():
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
 
-        pagination = Debt.query.paginate(
+        query = Debt.query
+
+        query = DebtFilter(query, request.args).apply()
+
+        pagination = query.paginate(
             page=page,
             per_page=per_page,
             error_out=False
