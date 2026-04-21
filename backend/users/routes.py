@@ -16,7 +16,6 @@ from users.exceptions import EmailAlreadyExists
 
 user_bp = Blueprint('user', __name__, url_prefix='/user')
 
-
 @user_bp.route('/list', methods=['GET'])
 @limiter.limit("30 per minute")
 @jwt_required()
@@ -48,6 +47,25 @@ def list_users(db):
     except Exception as err:
         return jsonify({"message": "Internal Server Error"}), 500
 
+@user_bp.route('/<uuid:user_id>/detail', methods=['GET'])
+@jwt_required()
+@limiter.limit("60 per minute")
+@transactional
+def retrieve_user(user_id, db):
+    try:
+        user = db.session.get(User, user_id)
+
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+
+        user_schema = UserSchema()
+        result = user_schema.dump(user)
+
+        return jsonify(result), 200
+
+    except Exception as err:
+        print(str(err))
+        return jsonify({"message": "Internal Server Error"}), 500
 
 @user_bp.route('/add', methods=['POST'])
 @jwt_required()
