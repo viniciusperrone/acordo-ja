@@ -38,6 +38,7 @@ class Debt(db.Model):
 
     agreements = db.relationship("Agreement", back_populates="debt")
     debtor = db.relationship("Debtor", back_populates="debts")
+    creditor = db.relationship("Creditor", back_populates="debts")
 
     renegotiation_count = db.Column(db.Integer, default=0)
     last_agreement_date = db.Column(db.DateTime)

@@ -3,6 +3,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from dateutil.relativedelta import relativedelta
 
 from agreement import Agreement
+from creditor import Creditor
 from users.models import User
 from debts import Debt
 from debts.history_service import DebtHistoryService
@@ -30,7 +31,6 @@ class AgreementService:
     @staticmethod
     def create_agreement(data, session):
         debt_id = data["debt_id"]
-
         debt = session.get(Debt, debt_id)
 
         if not debt:
@@ -39,47 +39,66 @@ class AgreementService:
         debt_value = Decimal(debt.original_value).quantize(Decimal("0.01"))
         total_to_pay = debt_value
 
+        # Aplica multa uma vez se a dívida estiver vencida
         if debt.due_date and debt.due_date < date.today():
-            applied_rate = Decimal(debt.creditor.interest_rate).quantize(
-                Decimal("0.01")
-            )
-            total_to_pay = ((debt_value * (Decimal("1.00") + applied_rate))
-                            .quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+            fine_rate = Decimal(debt.creditor.fine_rate).quantize(Decimal("0.0001"))
+            total_to_pay = (debt_value * (Decimal("1") + fine_rate / Decimal("100"))
+                            ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-        discount = Decimal(data["discount_applied"]).quantize(Decimal("0.01"))
-        entry = Decimal(data["entry_value"]).quantize(Decimal("0.01"))
-        installments_quantity = data["installments_quantity"]
+        # Validação e aplicação do desconto
+        discount = Decimal(data.get("discount_applied", "0.00")).quantize(Decimal("0.01"))
+        discount_limit = Decimal(debt.creditor.discount_limit).quantize(Decimal("0.0001"))
+        max_discount = (total_to_pay * discount_limit / Decimal("100")
+                        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-        if installments_quantity <= 0:
-            raise ValueError("Installments quantity must be greater than zero")
-
+        if discount > max_discount:
+            raise ValueError(f"Discount cannot exceed {discount_limit}% of total (max: {max_discount})")
         if discount > total_to_pay:
             raise ValueError("Discount cannot exceed total debt")
 
-        total_to_pay = (total_to_pay - discount).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
+        total_to_pay = (total_to_pay - discount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
+        # Validação e aplicação da entrada
+        entry = Decimal(data.get("entry_value", "0.00")).quantize(Decimal("0.01"))
         if entry > total_to_pay:
             raise ValueError("Entry cannot exceed total after discount")
 
-        remaining_value = (total_to_pay - entry).quantize(
+        remaining_value = (total_to_pay - entry).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+        # Validação de parcelas
+        installments_quantity = data["installments_quantity"]
+        if installments_quantity <= 0:
+            raise ValueError("Installments quantity must be greater than zero")
+
+        # Cálculo Price (juros compostos)
+        interest_rate = Decimal(debt.creditor.interest_rate).quantize(Decimal("0.0001"))
+        monthly_rate = interest_rate / Decimal("100")
+
+        if monthly_rate > 0 and remaining_value > 0:
+            rate_factor = (Decimal("1") + monthly_rate) ** installments_quantity
+            installment_value = (
+                remaining_value * (monthly_rate * rate_factor) / (rate_factor - Decimal("1"))
+            ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        else:
+            installment_value = (
+                remaining_value / installments_quantity
+            ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+        total_price = (installment_value * installments_quantity).quantize(
             Decimal("0.01"), rounding=ROUND_HALF_UP
         )
-
-        base_installment_value = (
-                remaining_value / installments_quantity
+        last_installment_value = (
+                total_price - (installment_value * (installments_quantity - 1))
         ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-        last_installment_value = (
-                remaining_value
-                - (base_installment_value * (installments_quantity - 1))
+        total_with_interest = (
+                (installment_value * (installments_quantity - 1)) + last_installment_value
         ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         agreement = Agreement(
             debt_id=debt_id,
-            total_traded=total_to_pay,
-            installment_value=base_installment_value,
+            total_traded=entry + total_with_interest,
+            installment_value=installment_value,
             installments_quantity=installments_quantity,
             entry_value=entry,
             discount_applied=discount,
@@ -87,7 +106,6 @@ class AgreementService:
         )
 
         debt.renegotiation_count += 1
-
         session.add(agreement)
         session.flush()
 
@@ -113,7 +131,7 @@ class AgreementService:
             value = (
                 last_installment_value
                 if i == installments_quantity - 1
-                else base_installment_value
+                else installment_value
             )
             installments.append(
                 Installments(

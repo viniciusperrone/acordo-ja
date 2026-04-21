@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from sqlalchemy import UUID, NUMERIC
 
 from config.db import db
@@ -22,7 +23,9 @@ class Creditor(db.Model):
     fine_rate = db.Column(NUMERIC(5,2))
     discount_limit = db.Column(NUMERIC(5,2))
 
-    created_at = db.Column(db.DateTime, default=db.func.now())
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    debts = db.relationship("Debt", back_populates="creditor")
 
     @property
     def bank_name(self):
