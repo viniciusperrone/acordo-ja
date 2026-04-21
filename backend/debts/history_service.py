@@ -96,6 +96,7 @@ class DebtHistoryService:
     def record_agreement_cancelled(
             debt: Debt,
             agreement_id: str,
+            debt_old_status: DebtStatus,
             agreement_new_status: AgreementStatus,
             agreement_old_status: AgreementStatus,
             session
@@ -105,7 +106,7 @@ class DebtHistoryService:
         return DebtHistoryService.record_event(
             debt=debt,
             event_type=DebtHistoryType.AGREEMENT_CANCELLED,
-            old_status=DebtStatus.IN_AGREEMENT,
+            old_status=debt_old_status,
             new_status=DebtStatus.OPEN,
             old_value=old_value,
             new_value=None,

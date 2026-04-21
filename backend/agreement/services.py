@@ -188,20 +188,22 @@ class AgreementService:
         if agreement.status == AgreementStatus.CANCELLED:
             raise AgreementStatusError("Agreement already cancelled")
 
-        old_status = agreement.status
+        agreement_old_status = agreement.status
         agreement.status = AgreementStatus.CANCELLED
 
         Installments.query.filter_by(
-            agreement_id=agreement.agreement_id
+            agreement_id=agreement.id
         ).update({"status": InstallmentStatus.CANCELLED})
 
+        debt_old_status = agreement.debt.status
         agreement.debt.updated_value = None
         agreement.debt.status = DebtStatus.OPEN
 
         DebtHistoryService.record_agreement_cancelled(
-            debt=agreement.status,
+            debt=agreement.debt,
             agreement_id=str(agreement.id),
-            agreement_old_status=old_status,
+            debt_old_status=debt_old_status,
+            agreement_old_status=agreement_old_status,
             agreement_new_status=agreement.status,
             session=session
         )
