@@ -1,17 +1,50 @@
 from flask import Blueprint, request, jsonify, g
 from flask_jwt_extended import jwt_required
+from flask_sqlalchemy.model import Model
 from marshmallow.exceptions import ValidationError
 
 from common.decorators import transactional, current_user
 from common.exceptions import UnauthorizedError
 from config.rate_limit import limiter
 
+from users.models import User
 from users.services import UserService
 from users.schemas import UserSchema
+from users.filters import UserFilter
 from users.exceptions import EmailAlreadyExists
 
 
 user_bp = Blueprint('user', __name__, url_prefix='/user')
+
+
+@user_bp.route('/list', methods=['GET'])
+@transactional
+def list_users(db):
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+
+        query = UserFilter(User.query, request.args).apply()
+
+        pagination = query.paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
+
+        users_schema = UserSchema(many=True)
+
+        result = users_schema.dump(pagination.items)
+
+        return jsonify({
+            "items": result,
+            "total": pagination.total,
+            "pages": pagination.pages,
+            "current_page": pagination.page,
+        })
+
+    except Exception as err:
+        return jsonify({"message": "Internal Server Error"}), 500
 
 
 @user_bp.route('/add', methods=['POST'])
@@ -39,3 +72,4 @@ def create_user(db):
     except Exception as err:
         print(str(err))
         return jsonify({"message": "Internal Server Error"}), 500
+
