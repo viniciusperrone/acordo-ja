@@ -18,6 +18,8 @@ user_bp = Blueprint('user', __name__, url_prefix='/user')
 
 
 @user_bp.route('/list', methods=['GET'])
+@limiter.limit("30 per minute")
+@jwt_required()
 @transactional
 def list_users(db):
     try:
