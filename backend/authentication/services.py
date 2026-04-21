@@ -3,10 +3,7 @@ import datetime
 from flask_jwt_extended import create_access_token, create_refresh_token
 
 from users.models import User
-
-
-class InvalidCredentials(Exception):
-    pass
+from authentication.exceptions import InvalidCredentials
 
 
 class AuthenticationService:
@@ -16,7 +13,7 @@ class AuthenticationService:
         user = session.query(User).filter(User.email == email).first()
 
         if not user or not user.check_password(password):
-            raise InvalidCredentials("Invalid credentials")
+            raise InvalidCredentials
 
         access_token = create_access_token(
             identity=user.id,
