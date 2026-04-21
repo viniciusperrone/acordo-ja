@@ -28,13 +28,8 @@ class BaseFilter:
                 continue
 
             column = getattr(self.model, field_name, None)
-            if not column:
+            if column is None:
                 continue
-
-            if isinstance(column.type, Enum):
-                if value not in column.type.enums:
-                    self.query = self.query.filter(false())
-                    return self
 
             operation = OPERATORS.get(operator)
             if not operation:
