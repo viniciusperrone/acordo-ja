@@ -9,7 +9,7 @@ class UserService:
     @staticmethod
     def create_user(data, staff, session):
         if staff.role not in [UserRole.ADMIN, UserRole.MANAGER]:
-            raise UnauthorizedError("User does not have permission to create users")
+            raise UnauthorizedError(message="User does not have permission to create users")
 
         existing_user = (
             session.query(User)

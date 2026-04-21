@@ -10,6 +10,7 @@ from config.db import db
 from config.config import Config
 from config.logging import CustomFormatter
 from config.rate_limit import limiter, rate_limit_handler
+from common.handlers.error_handlers import register_error_handlers
 
 import creditor
 import debts
@@ -86,6 +87,8 @@ def initialize_app():
     app.register_blueprint(leads_bp)
     app.register_blueprint(authentication_bp)
     app.register_blueprint(notifications_bp)
+
+    register_error_handlers(app)
 
     Migrate(app, db)
 
