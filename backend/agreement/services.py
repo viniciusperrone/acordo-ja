@@ -1,9 +1,10 @@
+from sqlalchemy import exists
+
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from dateutil.relativedelta import relativedelta
 
 from agreement import Agreement
-from creditor import Creditor
 from users.models import User
 from debts import Debt
 from debts.history_service import DebtHistoryService
@@ -159,6 +160,16 @@ class AgreementService:
             raise AgreementStatusError("Agreement cannot opened")
 
         debt = agreement.debt
+
+        has_active = session.query(
+            exists().where(
+                Agreement.debt_id == debt.id,
+                Agreement.status == AgreementStatus.ACTIVE
+            )
+        ).scalar()
+
+        if has_active:
+            raise AgreementStatusError("Debt already has an active agreement")
 
         old_status = debt.status
 

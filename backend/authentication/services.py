@@ -20,7 +20,7 @@ class AuthenticationService:
 
         access_token = create_access_token(
             identity=user.id,
-            expires_delta=datetime.timedelta(minutes=30),
+            expires_delta=datetime.timedelta(hours=6),
             additional_claims={
                 "role": user.role.value
             }
