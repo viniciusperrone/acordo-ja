@@ -1,11 +1,16 @@
-from users import User
+from users.models import User
+from users.exceptions import EmailAlreadyExists
+
+from common.exceptions.auth import UnauthorizedError
 from utils.enum import UserRole
-from .exceptions import EmailAlreadyExists
 
 class UserService:
 
     @staticmethod
-    def create_user(data, session):
+    def create_user(data, staff, session):
+        if staff.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+            raise UnauthorizedError("User does not have permission to create users")
+
         existing_user = (
             session.query(User)
             .filter(
@@ -26,5 +31,6 @@ class UserService:
         user.set_password(data['password'])
 
         session.add(user)
+        session.flush()
 
         return user
