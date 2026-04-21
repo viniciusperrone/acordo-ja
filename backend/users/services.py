@@ -1,10 +1,20 @@
-from users.models import User
-from users.exceptions import EmailAlreadyExists
-
-from common.exceptions.auth import UnauthorizedError
 from utils.enum import UserRole
+from common.exceptions.auth import UnauthorizedError
+
+from users.models import User
+from users.exceptions import EmailAlreadyExists, UserNotFoundError
+
 
 class UserService:
+
+    @staticmethod
+    def get(user_id, session):
+        user = session.get(User, user_id)
+
+        if not user:
+            raise UserNotFoundError
+
+        return user
 
     @staticmethod
     def create_user(data, staff, session):
