@@ -9,6 +9,7 @@ from debtor.models import Debtor
 from debtor.schemas import DebtorSchema
 from debtor.filters import DebtorFilter
 
+
 debtor_bp = Blueprint('debtor', __name__, url_prefix='/debtor')
 
 @debtor_bp.route('/list', methods=['GET'])

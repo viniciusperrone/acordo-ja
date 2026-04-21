@@ -11,4 +11,5 @@ class DebtorFilter(BaseFilter):
         "document": ["exact", "like"],
         "email": ["exact", "like"],
         "phone": ["exact", "like"],
+        "debt_id": ["exact", "in"],
     }
