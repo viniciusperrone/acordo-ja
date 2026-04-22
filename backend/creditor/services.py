@@ -23,7 +23,7 @@ class CreditorService:
         )
 
         if existing_creditor:
-            raise CreditorAlreadyExistsError("Creditor already exists")
+            raise CreditorAlreadyExistsError
 
         creditor = Creditor(**data)
         session.add(creditor)

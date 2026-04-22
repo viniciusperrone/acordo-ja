@@ -1,15 +1,28 @@
+from werkzeug.exceptions import NotFound
 from creditor import Creditor
 from debts import Debt
 from debtor import Debtor
 
-from .exceptions import CreditorNotExistError, DebtorNotExistError
-from .history_service import DebtHistoryService
+from creditor.exceptions import CreditorNotFound
+from debtor.exceptions import DebtorNotFound
+from debts.exceptions import DebtNotFound
+
+from debts.history_service import DebtHistoryService
 
 
 class DebtService:
 
     @staticmethod
-    def create_debt(data, user, session):
+    def get(debt_id, session):
+        debt = session.get(Debt, debt_id)
+
+        if debt is None:
+            raise DebtNotFound
+
+        return debt
+
+    @staticmethod
+    def create(data, user, session):
         creditor_id = data['creditor_id']
 
         existing_creditor = (
@@ -19,7 +32,7 @@ class DebtService:
         )
 
         if not existing_creditor:
-            raise CreditorNotExistError("Creditor not found")
+            raise CreditorNotFound
 
         debtor_id = data['debtor_id']
 
@@ -30,7 +43,7 @@ class DebtService:
         )
 
         if not existing_debtor:
-            raise DebtorNotExistError("Debtor not found")
+            raise DebtorNotFound
 
         debt = Debt(**data)
 

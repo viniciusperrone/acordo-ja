@@ -1,7 +1,6 @@
+from common.exceptions import AppException
 
 
-class CreditorNotExistError(Exception):
-    pass
-
-class DebtorNotExistError(Exception):
-    pass
+class DebtNotFound(AppException):
+    status_code = 404
+    message = "Debt not found"
