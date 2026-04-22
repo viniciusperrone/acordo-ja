@@ -8,7 +8,7 @@ def register_error_handlers(app: Flask):
 
     @app.errorhandler(ValidationError)
     def handle_validation_error(err):
-        return jsonify({"message": err.message}), 400
+        return jsonify({"message": err.messages if err.messages else str(err)}), 400
 
     @app.errorhandler(AppException)
     def handle_app_exception(err):
