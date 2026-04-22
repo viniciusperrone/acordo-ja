@@ -1,6 +1,6 @@
 from datetime import datetime, date
 
-from installments.exceptions import InstallmentWithoutAgreementError
+from installments.exceptions import InstallmentWithoutAgreement
 from notifications.events import NotificationEvents
 from payment.models import Payment
 from payment.exception import PaymentError
@@ -17,10 +17,10 @@ from utils.enum import (
 class PaymentService:
 
     @staticmethod
-    def register_payment(installment, amount, method, session):
+    def process_installment_payment(installment, amount, method, session):
 
         if not installment.agreement:
-            raise InstallmentWithoutAgreementError(
+            raise InstallmentWithoutAgreement(
                 f"Installment {installment.id} has no agreement associated"
             )
 

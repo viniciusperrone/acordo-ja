@@ -1,14 +1,14 @@
-from installments import Installments
-from .exceptions import InstallmentNotFoundError
+from installments.models import Installments
+from installments.exceptions import InstallmentNotFound
 
 
 class InstallmentService:
 
     @staticmethod
-    def get_installment_or_fail(installment_id):
-        installment = Installments.query.get(installment_id)
+    def get(installment_id, session):
+        installment = session.get(Installments, installment_id)
 
         if not installment:
-            raise InstallmentNotFoundError("Installment not found")
+            raise InstallmentNotFound
 
         return installment

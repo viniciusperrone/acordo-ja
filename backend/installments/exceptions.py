@@ -1,10 +1,13 @@
+from common.exceptions import AppException
 
 
-class InstallmentError(Exception):
+class InstallmentError(AppException):
     pass
 
-class InstallmentNotFoundError(InstallmentError):
-    pass
+class InstallmentNotFound(InstallmentError):
+    message = "Installment not found"
+    status_code = 404
 
-class InstallmentWithoutAgreementError(InstallmentError):
-    pass
+class InstallmentWithoutAgreement(InstallmentError):
+    message = "Installment with no agreement"
+    status_code = 400

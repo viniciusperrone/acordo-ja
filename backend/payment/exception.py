@@ -1,4 +1,6 @@
+from common.exceptions import AppException
 
 
-class PaymentError(Exception):
-    pass
+class PaymentError(AppException):
+    message = None
+    status_code = 400
