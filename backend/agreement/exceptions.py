@@ -1,13 +1,14 @@
+from common.exceptions import AppException
 
 
-class DebtNotFountError(Exception):
-    pass
+class AgreementNotFound(AppException):
+    status_code = 404
+    message = "Agreement not found"
 
-class AgreementStatusError(Exception):
-    pass
+class AgreementStatusError(AppException):
+    status_code = 400
+    message = None
 
 class PendingInstallmentsError(Exception):
-    pass
-
-class AgreementNotFoundError(Exception):
-    pass
+    status_code = 400
+    message = "There are outstanding installments"

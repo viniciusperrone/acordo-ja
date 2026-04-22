@@ -12,30 +12,32 @@ from installments import Installments
 from notifications.events import NotificationEvents
 from utils.enum import AgreementStatus, InstallmentStatus, DebtStatus
 
+from debts.exceptions import DebtNotFound
 from .exceptions import (
-    DebtNotFountError,
+    AgreementNotFound,
     AgreementStatusError,
     PendingInstallmentsError,
-    AgreementNotFoundError,
 )
 
 
 class AgreementService:
 
     @staticmethod
-    def get_agreement_or_fail(agreement_id):
-        agreement = Agreement.query.get(agreement_id)
+    def get(agreement_id, session):
+        agreement = session.get(Agreement, agreement_id)
+
         if not agreement:
-            raise AgreementNotFoundError("Agreement not found")
+            raise AgreementNotFound("Agreement not found")
+
         return agreement
 
     @staticmethod
-    def create_agreement(data, session):
+    def create(data, session):
         debt_id = data["debt_id"]
         debt = session.get(Debt, debt_id)
 
         if not debt:
-            raise DebtNotFountError("Debt not found")
+            raise DebtNotFound("Debt not found")
 
         debt_value = Decimal(debt.original_value).quantize(Decimal("0.01"))
         total_to_pay = debt_value
@@ -155,7 +157,7 @@ class AgreementService:
         return agreement
 
     @staticmethod
-    def open_agreement(agreement: Agreement, user: User, session):
+    def activate(agreement: Agreement, user: User, session):
         if not agreement.status == AgreementStatus.DRAFT:
             raise AgreementStatusError("Agreement cannot opened")
 
@@ -188,12 +190,12 @@ class AgreementService:
             session=session
         )
 
-        session.commit()
+        session.flush()
 
         return agreement
 
     @staticmethod
-    def cancel_agreement(agreement: Agreement, session):
+    def cancel(agreement: Agreement, session):
         if agreement.status == AgreementStatus.COMPLETED:
             raise AgreementStatusError("Cannot cancel a completed agreement")
         if agreement.status == AgreementStatus.CANCELLED:
@@ -222,7 +224,7 @@ class AgreementService:
         session.commit()
 
     @staticmethod
-    def complete_agreement(agreement: Agreement, session):
+    def complete(agreement: Agreement, session):
         if agreement.status == AgreementStatus.COMPLETED:
             raise AgreementStatusError("Agreement already completed")
         elif agreement.status == AgreementStatus.CANCELLED:
@@ -236,7 +238,7 @@ class AgreementService:
         ).first()
 
         if pending_installment:
-            raise PendingInstallmentsError("There are outstanding installments")
+            raise PendingInstallmentsError
 
         agreement.status = AgreementStatus.COMPLETED
 
