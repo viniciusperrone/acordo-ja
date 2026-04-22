@@ -1,4 +1,3 @@
-from werkzeug.exceptions import NotFound
 from creditor import Creditor
 from debts import Debt
 from debtor import Debtor
