@@ -1,14 +1,14 @@
 from flask import Blueprint, request, jsonify, g
 from flask_jwt_extended import jwt_required
 
-from common.decorators import transactional, current_user
+from common.decorators import transactional, current_user, permission_roles
 from config.rate_limit import limiter
 
 from users.models import User
 from users.services import UserService
 from users.schemas import UserSchema
 from users.filters import UserFilter
-
+from utils.enum import UserRole
 
 user_bp = Blueprint('user', __name__, url_prefix='/user')
 
@@ -56,13 +56,12 @@ def retrieve_user(user_id, db):
 @limiter.limit("10 per minute")
 @transactional
 @current_user
+@permission_roles(UserRole.ADMIN, UserRole.MANAGER)
 def create_user(db):
-    staff = g.current_user
-
     user_schema = UserSchema()
 
     data = user_schema.load(request.json)
 
-    user = UserService.create_user(data=data, staff=staff, session=db.session)
+    user = UserService.create_user(data=data, session=db.session)
 
     return jsonify(user_schema.dump(user)), 201

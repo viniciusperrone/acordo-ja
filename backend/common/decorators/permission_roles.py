@@ -17,6 +17,8 @@ def permission_roles(*roles):
 
             user = getattr(g, "current_user", None)
 
+            print("user", user)
+
             if not user:
                 raise UnauthorizedError
 
