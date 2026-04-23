@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 
 from common.decorators import transactional, current_user, permission_roles
@@ -6,7 +6,7 @@ from config.rate_limit import limiter
 
 from users.models import User
 from users.services import UserService
-from users.schemas import UserSchema
+from users.schemas import UserSchema, UserUpdateSchema, UserResponseSchema
 from users.filters import UserFilter
 from utils.enum import UserRole
 
@@ -65,3 +65,23 @@ def create_user(db):
     user = UserService.create_user(data=data, session=db.session)
 
     return jsonify(user_schema.dump(user)), 201
+
+@user_bp.route('/<uuid:user_id>/update', methods=['PUT'])
+@jwt_required()
+@limiter.limit("10 per minute")
+@transactional
+@current_user
+@permission_roles(UserRole.ADMIN, UserRole.MANAGER)
+def update_user(user_id, db):
+    schema = UserUpdateSchema()
+    response_schema = UserResponseSchema()
+
+    data = schema.load(request.json)
+
+    user = UserService.update(
+        user_id=user_id,
+        data=data,
+        session=db.session
+    )
+
+    return jsonify(response_schema.dump(user)), 200

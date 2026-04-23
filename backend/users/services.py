@@ -41,3 +41,31 @@ class UserService:
         session.flush()
 
         return user
+
+    @staticmethod
+    def update(user_id, data, session):
+        user = UserService.get(user_id, session)
+
+        if 'email' in data:
+            existing_user = (
+                session.query(User)
+                .filter(
+                    User.email == data['email'],
+                    User.id != user_id
+                )
+                .first()
+            )
+
+            if existing_user:
+                raise EmailAlreadyExists("Email already exists")
+
+            user.email = data['email']
+
+        if 'name' in data:
+            user.name = data['name']
+        if 'role' in data:
+            user.role = UserRole(data['role'])
+
+        session.flush()
+
+        return user

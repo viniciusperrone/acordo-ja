@@ -32,3 +32,17 @@ class UserSchema(Schema):
 
     class Meta:
         unknown = "raise"
+
+class UserUpdateSchema(Schema):
+    name = fields.String(required=False)
+    email = fields.Email(required=False)
+    role = fields.Enum(UserRole, required=False)
+
+    class Meta:
+        unknown = "raise"
+
+class UserResponseSchema(Schema):
+    id = fields.UUID()
+    name = fields.String()
+    email = fields.Email()
+    role = fields.Enum(UserRole)
