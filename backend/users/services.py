@@ -69,3 +69,10 @@ class UserService:
         session.flush()
 
         return user
+
+    @staticmethod
+    def delete(user_id, session):
+        user = UserService.get(user_id, session)
+
+        session.delete(user)
+        session.flush()

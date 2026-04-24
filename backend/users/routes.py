@@ -85,3 +85,16 @@ def update_user(user_id, db):
     )
 
     return jsonify(response_schema.dump(user)), 200
+
+@user_bp.route('/<uuid:user_id>/delete', methods=['DELETE'])
+@jwt_required()
+@transactional
+@current_user
+@permission_roles(UserRole.ADMIN, UserRole.MANAGER)
+def delete_user(user_id, db):
+    UserService.delete(
+        user_id=user_id,
+        session=db.session
+    )
+
+    return jsonify(), 204
