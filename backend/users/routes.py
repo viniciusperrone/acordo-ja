@@ -15,8 +15,7 @@ user_bp = Blueprint('user', __name__, url_prefix='/user')
 @user_bp.route('/list', methods=['GET'])
 @limiter.limit("30 per minute")
 @jwt_required()
-@transactional
-def list_users(db):
+def list_users():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
 
@@ -56,7 +55,7 @@ def retrieve_user(user_id, db):
 @limiter.limit("10 per minute")
 @transactional
 @current_user
-@permission_roles(UserRole.ADMIN, UserRole.MANAGER)
+@permission_roles(UserRole.ADMIN)
 def create_user(db):
     user_schema = UserSchema()
 
@@ -71,7 +70,7 @@ def create_user(db):
 @limiter.limit("10 per minute")
 @transactional
 @current_user
-@permission_roles(UserRole.ADMIN, UserRole.MANAGER)
+@permission_roles(UserRole.ADMIN)
 def update_user(user_id, db):
     schema = UserUpdateSchema()
     response_schema = UserResponseSchema()
@@ -90,7 +89,7 @@ def update_user(user_id, db):
 @jwt_required()
 @transactional
 @current_user
-@permission_roles(UserRole.ADMIN, UserRole.MANAGER)
+@permission_roles(UserRole.ADMIN)
 def delete_user(user_id, db):
     UserService.delete(
         user_id=user_id,
