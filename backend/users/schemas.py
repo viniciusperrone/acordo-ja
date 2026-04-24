@@ -14,6 +14,7 @@ class UserSchema(Schema):
     name = fields.String(required=True)
     email = fields.Email(required=True)
     role = fields.Enum(UserRole, dump_only=True)
+    must_change_password = fields.Boolean(dump_only=True)
 
     password = fields.String(
         required=True,
