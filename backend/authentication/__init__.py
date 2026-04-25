@@ -1,3 +1,3 @@
-from .models import PasswordResetToken
+from .models import PasswordResetToken, TokenBlocklist
 
-__all__ = ["PasswordResetToken"]
+__all__ = ["PasswordResetToken", "TokenBlocklist"]

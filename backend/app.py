@@ -5,13 +5,15 @@ from logging.handlers import RotatingFileHandler
 from flask import Flask
 from flask_migrate import Migrate
 
-from config.db import db
-from config.config import Config
-from config.logging import CustomFormatter
-from config.rate_limit import limiter, rate_limit_handler
-from config.jwt import init_jwt
-
 from common.handlers.error_handlers import register_error_handlers
+from config import (
+    Config,
+    CustomFormatter,
+    db,
+    limiter,
+    rate_limit_handler,
+    init_jwt,
+)
 
 import creditor
 import debts
