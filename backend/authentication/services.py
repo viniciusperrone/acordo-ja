@@ -3,11 +3,19 @@ import datetime
 from flask_jwt_extended import create_access_token, create_refresh_token
 from marshmallow import ValidationError
 
+from users.exceptions import UserNotFoundError
 from users.models import User
+from authentication.models import PasswordResetToken
 from authentication.exceptions import InvalidCredentials
 
 
 class AuthenticationService:
+
+    @staticmethod
+    def __generate_token():
+        import secrets
+
+        return secrets.token_urlsafe(32)
 
     @staticmethod
     def login(email, password, session):
@@ -57,3 +65,23 @@ class AuthenticationService:
         session.flush
 
         return user
+
+    @staticmethod
+    def forgot_password(data, session):
+        email = data["email"]
+
+        if not email:
+            raise ValidationError("Email is required")
+
+        user = session.query(User).filter(User.email == email).first()
+
+        if not user:
+            raise UserNotFoundError
+
+        password_reset_token = PasswordResetToken(
+            user_id=user.id,
+            token=AuthenticationService.__generate_token(),
+        )
+
+        session.add(password_reset_token)
+        session.flush()

@@ -44,3 +44,6 @@ class UpdatePasswordSchema(Schema):
             raise ValidationError(
                 {"confirm_password": ["Passwords do not match."]}
             )
+
+class ForgotPasswordSchema(Schema):
+    email = fields.Email(required=True)
