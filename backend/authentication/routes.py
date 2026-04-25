@@ -4,7 +4,7 @@ from flask_jwt_extended import jwt_required, get_jwt
 from authentication.schemas import AuthenticationSchema, UpdatePasswordSchema, ForgotPasswordSchema,  ResetPasswordSchema
 from authentication.services import AuthenticationService
 from common.decorators import current_user, transactional
-from config.rate_limit import limiter
+from config import limiter
 
 
 authentication_bp = Blueprint("authentication", __name__, url_prefix="/auth")
@@ -23,6 +23,7 @@ def login(db):
 
 @authentication_bp.route("/me/update-password", methods=["PATCH"])
 @jwt_required()
+@limiter.limit("1 per minute")
 @transactional
 @current_user
 def update_password(db):
@@ -39,6 +40,7 @@ def update_password(db):
     return jsonify({"message": "Password changed successfully"}), 200
 
 @authentication_bp.route("/forgot-password", methods=["POST"])
+@limiter.limit("1 per minute")
 @transactional
 def forgot_password(db):
     schema = ForgotPasswordSchema()
@@ -48,7 +50,20 @@ def forgot_password(db):
 
     return jsonify({"message": "The link to reset your password has been sent to your email"})
 
+@authentication_bp.route("/logout", methods=["POST"])
+@jwt_required()
+@limiter.limit("5 per minute")
+@transactional
+def logout(db):
+    jti = get_jwt()["jti"]
+
+    AuthenticationService.logout(jti=jti, session=db.session)
+
+    return jsonify({"message": "Successfully logged out"}), 200
+
+
 @authentication_bp.route("/<string:url_safe>/reset-password", methods=["PUT"])
+@limiter.limit("1 per minute")
 @transactional
 def reset_password(url_safe, db):
     schema = ResetPasswordSchema()
@@ -61,13 +76,3 @@ def reset_password(url_safe, db):
     )
 
     return jsonify({"message": "Password reset requested"}), 200
-
-@authentication_bp.route("/logout", methods=["POST"])
-@jwt_required()
-@transactional
-def logout(db):
-    jti = get_jwt()["jti"]
-
-    AuthenticationService.logout(jti=jti, session=db.session)
-
-    return jsonify({"message": "Successfully logged out"}), 200
