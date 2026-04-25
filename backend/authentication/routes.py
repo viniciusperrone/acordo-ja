@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, g
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt
 
-from authentication.schemas import AuthenticationSchema, UpdatePasswordSchema, ForgotPasswordSchema, ResetPasswordSchema
+from authentication.schemas import AuthenticationSchema, UpdatePasswordSchema, ForgotPasswordSchema,  ResetPasswordSchema
 from authentication.services import AuthenticationService
 from common.decorators import current_user, transactional
 from config.rate_limit import limiter
@@ -62,3 +62,12 @@ def reset_password(url_safe, db):
 
     return jsonify({"message": "Password reset requested"}), 200
 
+@authentication_bp.route("/logout", methods=["POST"])
+@jwt_required()
+@transactional
+def logout(db):
+    jti = get_jwt()["jti"]
+
+    AuthenticationService.logout(jti=jti, session=db.session)
+
+    return jsonify({"message": "Successfully logged out"}), 200

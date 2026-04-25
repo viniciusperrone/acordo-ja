@@ -5,8 +5,8 @@ from marshmallow import ValidationError
 
 from users.exceptions import UserNotFoundError
 from users.models import User
-from authentication.models import PasswordResetToken
-from authentication.exceptions import InvalidCredentials, InvalidPasswordResetToken
+from authentication.models import PasswordResetToken, TokenBlocklist
+from authentication.exceptions import InvalidCredentials, InvalidPasswordResetToken, MissingTokenIdentifier
 
 
 class AuthenticationService:
@@ -110,4 +110,14 @@ class AuthenticationService:
         user.set_password(data["new_password"])
         token.used_at = datetime.utcnow()
 
+        session.flush()
+
+    @staticmethod
+    def logout(jti, session):
+        if not jti:
+            raise MissingTokenIdentifier
+
+        token = TokenBlocklist(jti=jti)
+
+        session.add(token)
         session.flush()
