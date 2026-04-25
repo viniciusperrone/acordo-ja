@@ -38,6 +38,9 @@ class PasswordResetToken(db.Model):
 
     @property
     def is_expired(self) -> bool:
+        if self.is_used:
+            return True
+
         return datetime.utcnow() > self.expires_at
 
     @property

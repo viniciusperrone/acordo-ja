@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 
 from flask_jwt_extended import create_access_token, create_refresh_token
 from marshmallow import ValidationError
@@ -6,7 +6,7 @@ from marshmallow import ValidationError
 from users.exceptions import UserNotFoundError
 from users.models import User
 from authentication.models import PasswordResetToken
-from authentication.exceptions import InvalidCredentials
+from authentication.exceptions import InvalidCredentials, InvalidPasswordResetToken
 
 
 class AuthenticationService:
@@ -84,4 +84,30 @@ class AuthenticationService:
         )
 
         session.add(password_reset_token)
+        session.flush()
+
+    @staticmethod
+    def reset_password(url_safe, data, session):
+        token = session.query(PasswordResetToken).filter(PasswordResetToken.token == url_safe).first()
+
+        if not token:
+            raise InvalidPasswordResetToken
+
+        if token.is_expired:
+            raise InvalidPasswordResetToken
+
+        if token.is_used:
+            raise InvalidPasswordResetToken
+
+        if data["new_password"] != data["confirm_password"]:
+            raise ValidationError("Password and Confirm Password are not equal")
+
+        user = session.query(User).filter(User.id == token.user_id).first()
+
+        if not user:
+            raise UserNotFoundError
+
+        user.set_password(data["new_password"])
+        token.used_at = datetime.utcnow()
+
         session.flush()

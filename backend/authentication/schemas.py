@@ -47,3 +47,22 @@ class UpdatePasswordSchema(Schema):
 
 class ForgotPasswordSchema(Schema):
     email = fields.Email(required=True)
+
+class ResetPasswordSchema(Schema):
+    new_password = fields.String(
+        required=True,
+        load_only=True,
+        validate=password_validators,
+    )
+    confirm_password = fields.String(
+        required=True,
+        load_only=True,
+        validate=password_validators,
+    )
+
+    @validates_schema
+    def validate_passwords_match(self, data, **kwargs):
+        if data.get("new_password") != data.get("confirm_password"):
+            raise ValidationError(
+                {"confirm_password": ["Passwords do not match."]}
+            )
