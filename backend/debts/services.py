@@ -52,3 +52,7 @@ class DebtService:
         DebtHistoryService.record_debt_created(debt, user, session)
 
         return debt
+
+    @staticmethod
+    def get_timeline(debt: Debt, session):
+        return DebtHistoryService.get_by_debt(debt.id, session)

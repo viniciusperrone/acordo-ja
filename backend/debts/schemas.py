@@ -3,7 +3,7 @@ import re
 from marshmallow import Schema, fields, validates, validates_schema, ValidationError
 from validate_docbr import CPF, CNPJ
 
-from utils.enum import DebtStatus
+from utils.enum import DebtStatus, DebtHistoryType
 
 
 class DebtSchema(Schema):
@@ -47,3 +47,23 @@ class DebtSearchByDocumentSchema(Schema):
 
         if not (is_valid_cpf or is_valid_cnpj):
             raise ValidationError("CPF or CNPJ must be valid")
+
+    class Meta:
+        unknown = "raise"
+
+class DebtHistorySchema(Schema):
+    id = fields.UUID()
+    event_type = fields.Enum(DebtHistoryType, by_value=True, dump_only=True)
+
+    old_status = fields.Enum(DebtStatus, by_value=True, dump_only=True)
+    new_status = fields.Enum(DebtStatus, by_value=True, dump_only=True)
+
+    old_value = fields.Decimal(as_string=True)
+    new_value = fields.Decimal(as_string=True)
+
+    changed_at = fields.DateTime()
+    reason = fields.String()
+    extra = fields.Dict()
+
+    class Meta:
+        unknown = "raise"

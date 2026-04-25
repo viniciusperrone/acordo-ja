@@ -61,7 +61,6 @@ def logout(db):
 
     return jsonify({"message": "Successfully logged out"}), 200
 
-
 @authentication_bp.route("/<string:url_safe>/reset-password", methods=["PUT"])
 @limiter.limit("1 per minute")
 @transactional

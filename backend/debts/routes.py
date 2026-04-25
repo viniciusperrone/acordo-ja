@@ -6,7 +6,7 @@ from common.decorators.transactional import transactional
 from config.rate_limit import limiter
 
 from debts import Debt
-from debts.schemas import DebtSchema, DebtSearchByDocumentSchema
+from debts.schemas import DebtSchema, DebtSearchByDocumentSchema, DebtHistorySchema
 from debts.services import DebtService
 from debts.filters import DebtFilter
 
@@ -97,6 +97,32 @@ def search_debt():
     )
 
     result = debts_schema.dump(pagination.items)
+
+    return jsonify({
+        "items": result,
+        "total": pagination.total,
+        "pages": pagination.pages,
+        "current_page": page,
+    }), 200
+
+@debts_bp.route("/<uuid:debt_id>/timeline")
+@jwt_required()
+@limiter.limit("30 per minute")
+@transactional
+def get_debt_timeline(debt_id, db):
+    debt = DebtService.get(debt_id, db.session)
+    schema = DebtHistorySchema(many=True)
+
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+
+    pagination = DebtService.get_timeline(debt, db.session).paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+
+    result = schema.dump(pagination.items)
 
     return jsonify({
         "items": result,

@@ -219,3 +219,11 @@ class DebtHistoryService:
                 stats["value_changes"] += 1
 
         return stats
+
+    @staticmethod
+    def get_by_debt(debt_id, session):
+        return (
+            session.query(DebtHistory)
+            .filter(DebtHistory.debt_id == debt_id)
+            .order_by(DebtHistory.changed_at.desc())
+        )

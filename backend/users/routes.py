@@ -10,6 +10,7 @@ from users.schemas import UserSchema, UserUpdateSchema, UserResponseSchema
 from users.filters import UserFilter
 from utils.enum import UserRole
 
+
 user_bp = Blueprint('user', __name__, url_prefix='/user')
 
 @user_bp.route('/list', methods=['GET'])

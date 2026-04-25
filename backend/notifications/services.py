@@ -102,7 +102,7 @@ class NotificationService:
         return count
 
     @staticmethod
-    def mark_all_read_for_user(user_id: str, session=None) -> int:
+    def mark_all_read_for_user(user_id: str, session = None) -> int:
         notifications = Notification.query.filter(
             Notification.user_id == user_id,
             Notification.is_read == False,
@@ -124,7 +124,7 @@ class NotificationService:
         ).count()
 
     @staticmethod
-    def delete_old_notifications(days: int = 30, session = None):
+    def delete_old_notifications(days: int = 30, session=None):
         from datetime import timedelta
 
         cutoff_date = datetime.utcnow() - timedelta(days=days)
