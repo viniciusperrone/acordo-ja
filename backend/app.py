@@ -21,6 +21,7 @@ import payment
 import users
 import notifications
 import leads
+import authentication
 
 from creditor.routes import creditor_bp
 from debts.routes import debts_bp

@@ -38,3 +38,7 @@ def update_password(db):
     )
 
     return jsonify({"message": "Password changed successfully"}), 200
+
+# POST /auth/password/reset        # resetar com token
+#
+# POST /auth/password/initial      # definir senha inicial
