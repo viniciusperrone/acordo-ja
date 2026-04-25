@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask_jwt_extended import create_access_token, create_refresh_token
 from marshmallow import ValidationError
@@ -26,7 +26,7 @@ class AuthenticationService:
 
         access_token = create_access_token(
             identity=user.id,
-            expires_delta=datetime.timedelta(hours=6),
+            expires_delta=timedelta(hours=6),
             additional_claims={
                 "role": user.role.value
             }
@@ -34,7 +34,7 @@ class AuthenticationService:
 
         refresh_token = create_refresh_token(
             identity=user.id,
-            expires_delta=datetime.timedelta(days=7)
+            expires_delta=timedelta(days=7)
         )
 
         return {
