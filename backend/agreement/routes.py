@@ -5,12 +5,14 @@ from agreement.models import Agreement
 from agreement.schemas import AgreementSchema
 from agreement.services import AgreementService
 
-from common.decorators import transactional, current_user
-
+from config import limiter
+from common.decorators import transactional, current_user, permission_roles
+from utils.enum import UserRole
 
 agreement_bp = Blueprint('agreement', __name__, url_prefix='/agreement')
 
 @agreement_bp.route('/list', methods=['GET'])
+@limiter.limit("30 per minute")
 @jwt_required()
 def list_agreements():
     page = request.args.get('page', 1, type=int)
@@ -35,6 +37,7 @@ def list_agreements():
 
 @agreement_bp.route('/add', methods=['POST'])
 @jwt_required()
+@permission_roles(UserRole.ADMIN, UserRole.MANAGER)
 @transactional
 def create_agreement(db):
     agreement_schema = AgreementSchema()
@@ -58,6 +61,7 @@ def retrieve_agreement(agreement_id, db):
 
 @agreement_bp.route('/<uuid:agreement_id>/activate', methods=['PATCH'])
 @jwt_required()
+@permission_roles(UserRole.ADMIN, UserRole.MANAGER)
 @transactional
 @current_user
 def activate_agreement(agreement_id, db):
@@ -71,6 +75,7 @@ def activate_agreement(agreement_id, db):
 
 @agreement_bp.route('/<uuid:agreement_id>/cancel', methods=['POST'])
 @jwt_required()
+@permission_roles(UserRole.ADMIN, UserRole.MANAGER)
 @transactional
 def cancel_agreement(agreement_id, db):
     agreement = AgreementService.get(agreement_id, db.session)
@@ -80,6 +85,7 @@ def cancel_agreement(agreement_id, db):
     return jsonify(), 204
 
 @agreement_bp.route('/<uuid:agreement_id>/complete', methods=['POST'])
+@permission_roles(UserRole.ADMIN)
 @jwt_required()
 @transactional
 def complete_agreement(agreement_id, db):
