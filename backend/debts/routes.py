@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, g
 from flask_jwt_extended import jwt_required
 
-from common.decorators import current_user
+from common.decorators import current_user, permission_roles
 from common.decorators.transactional import transactional
 from config.rate_limit import limiter
 
@@ -9,7 +9,7 @@ from debts import Debt
 from debts.schemas import DebtSchema, DebtSearchByDocumentSchema, DebtHistorySchema
 from debts.services import DebtService
 from debts.filters import DebtFilter
-
+from utils.enum import UserRole
 
 debts_bp = Blueprint('debts', __name__, url_prefix='/debts')
 
@@ -57,6 +57,7 @@ def retrieve_debt(debt_id, db):
 @jwt_required()
 @limiter.limit("10 per minute")
 @transactional
+@permission_roles(UserRole.MANAGER, UserRole.ADMIN)
 @current_user
 def create_debt(db):
     user = g.current_user
