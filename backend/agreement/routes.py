@@ -37,6 +37,7 @@ def list_agreements():
 
 @agreement_bp.route('/add', methods=['POST'])
 @jwt_required()
+@limiter.limit("3 per minute")
 @permission_roles(UserRole.ADMIN, UserRole.MANAGER)
 @transactional
 def create_agreement(db):
@@ -50,6 +51,7 @@ def create_agreement(db):
 
 @agreement_bp.route('/<uuid:agreement_id>/detail', methods=['GET'])
 @jwt_required()
+@limiter.limit("60 per minute")
 @transactional
 def retrieve_agreement(agreement_id, db):
     agreement = AgreementService.get(agreement_id, db.session)
@@ -61,6 +63,7 @@ def retrieve_agreement(agreement_id, db):
 
 @agreement_bp.route('/<uuid:agreement_id>/activate', methods=['PATCH'])
 @jwt_required()
+@limiter.limit("3 per minute")
 @permission_roles(UserRole.ADMIN, UserRole.MANAGER)
 @transactional
 @current_user
@@ -75,6 +78,7 @@ def activate_agreement(agreement_id, db):
 
 @agreement_bp.route('/<uuid:agreement_id>/cancel', methods=['POST'])
 @jwt_required()
+@limiter.limit("3 per minute")
 @permission_roles(UserRole.ADMIN, UserRole.MANAGER)
 @transactional
 def cancel_agreement(agreement_id, db):
@@ -85,6 +89,7 @@ def cancel_agreement(agreement_id, db):
     return jsonify(), 204
 
 @agreement_bp.route('/<uuid:agreement_id>/complete', methods=['POST'])
+@limiter.limit("3 per minute")
 @permission_roles(UserRole.ADMIN)
 @jwt_required()
 @transactional

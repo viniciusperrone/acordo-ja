@@ -88,6 +88,9 @@ def update_user(user_id, db):
 
 @user_bp.route('/<uuid:user_id>/delete', methods=['DELETE'])
 @jwt_required()
+@limiter.limit("3 per minute")
+@transactional
+@current_user
 @transactional
 @current_user
 @permission_roles(UserRole.ADMIN)
