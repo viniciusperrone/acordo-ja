@@ -1,14 +1,14 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 
-from common.decorators import current_user, transactional
+from common.decorators import current_user, transactional, permission_roles
 from config.rate_limit import limiter
 
 from creditor.schemas import CreditorSchema
 from creditor.models import Creditor
 from creditor.services import CreditorService
 from creditor.filters import CreditorFilter
-
+from utils.enum import UserRole
 
 creditor_bp = Blueprint('creditor', __name__, url_prefix='/creditors')
 
@@ -56,6 +56,7 @@ def retrieve_creditor(creditor_id, db):
 @creditor_bp.route('/add', methods=['POST'])
 @jwt_required()
 @limiter.limit("10 per minute")
+@permission_roles(UserRole.ADMIN)
 @transactional
 @current_user
 def create_creditor(db):
