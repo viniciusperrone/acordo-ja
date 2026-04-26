@@ -1,14 +1,14 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 
-from common.decorators import transactional
+from common.decorators import transactional, permission_roles
 from config.rate_limit import limiter
 
 from debtor.models import Debtor
 from debtor.schemas import DebtorSchema
 from debtor.filters import DebtorFilter
 from debtor.services import DebtorService
-
+from utils.enum import UserRole
 
 debtor_bp = Blueprint('debtor', __name__, url_prefix='/debtor')
 
@@ -55,6 +55,7 @@ def retrieve_debtor(debtor_id, db):
 @debtor_bp.route('/add', methods=['POST'])
 @jwt_required()
 @limiter.limit("10 per minute")
+@permission_roles(UserRole.ADMIN, UserRole.MANAGER)
 @transactional
 def create_debtor(db):
     debtor_schema = DebtorSchema()
