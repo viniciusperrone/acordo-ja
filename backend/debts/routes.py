@@ -73,7 +73,6 @@ def create_debt(db):
     return jsonify(debt_schema.dump(debt)), 201
 
 @debts_bp.route('/search', methods=['GET'])
-@jwt_required()
 @limiter.limit("30 per minute")
 def search_debt():
     debt_schema = DebtSearchByDocumentSchema()
