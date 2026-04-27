@@ -22,6 +22,10 @@ class DebtService:
 
     @staticmethod
     def search(document: str, session) -> dict:
+        from utils.validators import validate_cnpj_or_cpf
+
+        document = validate_cnpj_or_cpf(document)
+
         debts_query = (session.query(Debt)
                        .join(Debt.debtor)
                        .filter(Debt.debtor.has(document=document))
