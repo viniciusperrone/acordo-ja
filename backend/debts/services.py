@@ -21,6 +21,37 @@ class DebtService:
         return debt
 
     @staticmethod
+    def search(document: str, session) -> dict:
+        debts_query = (session.query(Debt)
+                       .join(Debt.debtor)
+                       .filter(Debt.debtor.has(document=document))
+                       .order_by(Debt.created_at.desc()))
+
+        total_amount = 0
+        count = debts_query.count()
+        debts = []
+        for debt in debts_query.all():
+            item = {
+                'id': debt.id,
+                'amount': debt.original_value,
+                'due_date': debt.due_date,
+                'status': debt.status,
+                'creditor': debt.creditor.bank_name,
+            }
+
+            total_amount += debt.original_value
+            debts.append(item)
+
+        return dict(
+            document=document,
+            has_debts=count > 0,
+            debts=debts,
+            total_debts=count,
+            total_amount=total_amount,
+        )
+
+
+    @staticmethod
     def create(data, user, session):
         creditor_id = data['creditor_id']
 

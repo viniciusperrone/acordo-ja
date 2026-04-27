@@ -67,3 +67,44 @@ class DebtHistorySchema(Schema):
 
     class Meta:
         unknown = "raise"
+
+class DebtItemSchema(Schema):
+    id = fields.Str(required=True)
+
+    amount = fields.Decimal(as_string=True, required=True)
+    due_date = fields.Date(required=True)
+
+    status = fields.String(required=True)
+    creditor = fields.String(required=True)
+
+    class Meta:
+        unknown = "raise"
+
+
+class DebtSearchResponseSchema(Schema):
+    document = fields.String(required=True)
+    has_debts = fields.Boolean(required=True)
+
+    debts = fields.List(
+        fields.Nested(DebtItemSchema),
+        required=True
+    )
+
+    total_debts = fields.Int(required=True)
+    total_amount = fields.Decimal(as_string=True, required=True)
+
+    @validates("document")
+    def validate_document(self, value, **kwargs):
+        document = re.sub(r"\D", "", value)
+
+        cpf = CPF()
+        cnpj = CNPJ()
+
+        is_valid_cpf = len(document) == 11 and cpf.validate(document)
+        is_valid_cnpj = len(document) == 14 and cnpj.validate(document)
+
+        if not (is_valid_cpf or is_valid_cnpj):
+            raise ValidationError("CPF or CNPJ must be valid")
+
+    class Meta:
+        unknown = "raise"

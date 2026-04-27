@@ -6,12 +6,26 @@ from common.decorators.transactional import transactional
 from config.rate_limit import limiter
 
 from debts import Debt
-from debts.schemas import DebtSchema, DebtSearchByDocumentSchema, DebtHistorySchema
+from debts.schemas import DebtSchema, DebtSearchByDocumentSchema, DebtHistorySchema, DebtSearchResponseSchema
 from debts.services import DebtService
 from debts.filters import DebtFilter
 from utils.enum import UserRole
 
 debts_bp = Blueprint('debts', __name__, url_prefix='/debts')
+
+
+@debts_bp.route('/search', methods=['GET'])
+@limiter.limit("30 per minute")
+@transactional
+def search_debt(db):
+    debt_schema = DebtSearchByDocumentSchema()
+    data = debt_schema.load(request.args)
+
+    result = DebtService.search(document=data["document"], session=db.session)
+
+    result_schema = DebtSearchResponseSchema()
+
+    return jsonify(result_schema.dump(result)), 200
 
 @debts_bp.route('/list', methods=['GET'])
 @jwt_required()
@@ -72,38 +86,6 @@ def create_debt(db):
     )
 
     return jsonify(debt_schema.dump(debt)), 201
-
-@debts_bp.route('/search', methods=['GET'])
-@limiter.limit("30 per minute")
-def search_debt():
-    debt_schema = DebtSearchByDocumentSchema()
-    debts_schema = DebtSchema(many=True)
-
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 10, type=int)
-
-    data = debt_schema.load(request.args)
-
-    query = (
-        Debt.query
-        .join(Debt.debtor)
-        .filter(Debt.debtor.has(document=data['document']))
-    )
-
-    pagination = query.paginate(
-        page=page,
-        per_page=per_page,
-        error_out=False
-    )
-
-    result = debts_schema.dump(pagination.items)
-
-    return jsonify({
-        "items": result,
-        "total": pagination.total,
-        "pages": pagination.pages,
-        "current_page": page,
-    }), 200
 
 @debts_bp.route("/<uuid:debt_id>/timeline")
 @jwt_required()

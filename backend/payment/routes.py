@@ -37,4 +37,3 @@ def list_payment():
         "pages": pagination.pages,
         "current_page": page
     }), 200
-
