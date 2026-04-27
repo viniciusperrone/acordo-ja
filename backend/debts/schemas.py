@@ -92,6 +92,7 @@ class DebtSearchResponseSchema(Schema):
 
     total_debts = fields.Int(required=True)
     total_amount = fields.Decimal(as_string=True, required=True)
+    redirect_url = fields.String()
 
     @validates("document")
     def validate_document(self, value, **kwargs):

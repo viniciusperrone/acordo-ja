@@ -29,6 +29,8 @@ class DebtService:
 
         total_amount = 0
         count = debts_query.count()
+        has_debts = count > 0
+        redirect_url = f"/leads/add?document={document}" if has_debts else None
         debts = []
         for debt in debts_query.all():
             item = {
@@ -42,14 +44,16 @@ class DebtService:
             total_amount += debt.original_value
             debts.append(item)
 
+
+
         return dict(
             document=document,
             has_debts=count > 0,
             debts=debts,
             total_debts=count,
             total_amount=total_amount,
+            redirect_url=redirect_url
         )
-
 
     @staticmethod
     def create(data, user, session):

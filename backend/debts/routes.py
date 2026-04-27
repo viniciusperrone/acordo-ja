@@ -4,15 +4,20 @@ from flask_jwt_extended import jwt_required
 from common.decorators import current_user, permission_roles
 from common.decorators.transactional import transactional
 from config.rate_limit import limiter
-
-from debts import Debt
-from debts.schemas import DebtSchema, DebtSearchByDocumentSchema, DebtHistorySchema, DebtSearchResponseSchema
-from debts.services import DebtService
-from debts.filters import DebtFilter
 from utils.enum import UserRole
 
-debts_bp = Blueprint('debts', __name__, url_prefix='/debts')
+from debts.models import Debt
+from debts.services import DebtService
+from debts.filters import DebtFilter
+from debts.schemas import (
+    DebtSchema,
+    DebtSearchByDocumentSchema,
+    DebtHistorySchema,
+    DebtSearchResponseSchema
+)
 
+
+debts_bp = Blueprint('debts', __name__, url_prefix='/debts')
 
 @debts_bp.route('/search', methods=['GET'])
 @limiter.limit("30 per minute")
