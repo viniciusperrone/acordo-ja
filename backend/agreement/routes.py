@@ -9,6 +9,7 @@ from config import limiter
 from common.decorators import transactional, current_user, permission_roles
 from utils.enum import UserRole
 
+
 agreement_bp = Blueprint('agreement', __name__, url_prefix='/agreement')
 
 @agreement_bp.route('/list', methods=['GET'])
@@ -38,7 +39,6 @@ def list_agreements():
 @agreement_bp.route('/add', methods=['POST'])
 @jwt_required()
 @limiter.limit("3 per minute")
-@permission_roles(UserRole.ADMIN, UserRole.MANAGER)
 @transactional
 def create_agreement(db):
     agreement_schema = AgreementSchema()
@@ -90,7 +90,7 @@ def cancel_agreement(agreement_id, db):
 
 @agreement_bp.route('/<uuid:agreement_id>/complete', methods=['POST'])
 @limiter.limit("3 per minute")
-@permission_roles(UserRole.ADMIN)
+@permission_roles(UserRole.ADMIN, UserRole.MANAGER)
 @jwt_required()
 @transactional
 def complete_agreement(agreement_id, db):

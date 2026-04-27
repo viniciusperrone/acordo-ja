@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 
-from common.decorators.transactional import transactional
+from common.decorators import transactional
 from config.rate_limit import limiter
 
 from leads.schemas import LeadSchema
