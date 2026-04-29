@@ -123,3 +123,60 @@ class TestCreditorModel:
 
         with pytest.raises(IntegrityError):
             session.commit()
+
+@pytest.mark.unit
+class TestDebtorModel:
+
+    def test_create_debtor(self, session):
+        debtor = Debtor(
+            name="João da Silva",
+            document="12345678900",
+            email = "joao@test.com",
+            phone = "11999999999"
+        )
+
+        session.add(debtor)
+        session.commit()
+
+        assert debtor.id is not None
+        assert debtor.name == "João da Silva"
+        assert debtor.document == "12345678900"
+        assert debtor.email == "joao@test.com"
+        assert debtor.phone == "11999999999"
+
+
+    def test_unique_document(self, session):
+        debtor1 = Debtor(
+            name="João da Silva",
+            document="12345678900",
+            email="joao@test.com",
+            phone="11999999999"
+        )
+
+        session.add(debtor1)
+        session.commit()
+
+        debtor2 = Debtor(
+            name="José da Silva",
+            document="12345678900",
+            email="jose@test.com",
+            phone="11999999999"
+        )
+
+        session.add(debtor2)
+
+        with pytest.raises(IntegrityError):
+            session.commit()
+
+    def test_optional_fields(self, session):
+        debtor = Debtor(
+            name="João da Silva",
+            document="12345678900",
+        )
+
+        session.add(debtor)
+        session.commit()
+
+        assert debtor.id is not None
+        assert debtor.email is None
+        assert debtor.phone is None
