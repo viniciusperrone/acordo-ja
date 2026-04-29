@@ -179,3 +179,38 @@ def lead(session):
     session.commit()
 
     return lead
+
+@pytest.fixture
+def sample_debt_data(debtor, creditor):
+    return {
+        "debtor_id": debtor.id,
+        "creditor_id": str(creditor.id),
+        "original_value": "1500.00",
+        "due_date": "2024-06-01"
+    }
+
+@pytest.fixture
+def sample_creditor_data(creditor, debtor):
+    return {
+        "debt_id": str(debt.id),
+        "installments_quantity": 6,
+        "discount_applied": 0,
+        "entry_value": 0,
+        "first_due_date": "2024-03-01"
+    }
+
+@pytest.fixture
+def mock_datetime(monkeypatch):
+
+    class MockDateTime:
+
+        @staticmethod
+        def utcnow():
+            return datetime(2024, 2, 15, 10, 30, 0)
+
+        @staticmethod
+        def now():
+            return datetime(2024, 2, 15, 10, 30, 0)
+
+    monkeypatch.setattr("datetime.datetime", MockDateTime)
+    return MockDateTime
