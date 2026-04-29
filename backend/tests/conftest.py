@@ -40,14 +40,15 @@ def db(app):
 
 @pytest.fixture(scope="function")
 def session(db, app):
+    from sqlalchemy.orm import sessionmaker, scoped_session
 
-    with app.app_context():
+    with (app.app_context()):
         connection = db.engine.connect()
         transaction = connection.begin()
 
-        session = db.create_scoped_session(
-            options={"bind": connection, "binds": {}}
-        )
+        session_factory = sessionmaker(bind=connection)
+        session = scoped_session(session_factory)
+
         db.session = session
 
         yield session

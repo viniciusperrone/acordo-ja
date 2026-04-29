@@ -79,8 +79,6 @@ def initialize_app():
 
     app.register_error_handler(429, rate_limit_handler)
 
-    setup_logging(app)
-
     app.register_blueprint(creditor_bp)
     app.register_blueprint(debts_bp)
     app.register_blueprint(debtor_bp)
