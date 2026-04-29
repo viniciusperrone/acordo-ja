@@ -20,9 +20,12 @@ def app():
     app = initialize_app()
     app.config.update({
         "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI":  "sqlite:///:memory:",
+        "SQLALCHEMY_DATABASE_URI":  "sqlite://",
         "SQLALCHEMY_TRACK_MODIFICATIONS": False,
-        "JWT_SECRET_KEY": "test-secret-key"
+        "JWT_SECRET_KEY": "test-secret-key",
+        "SQLALCHEMY_ENGINE_OPTIONS": {
+            "connect_args": {"check_same_thread": False}
+        }
     })
 
     yield app
@@ -192,7 +195,7 @@ def sample_debt_data(debtor, creditor):
 @pytest.fixture
 def sample_creditor_data(creditor, debtor):
     return {
-        "debtor_i": str(debtor.id),
+        "debtor_id": debtor.id,
         "installments_quantity": 6,
         "discount_applied": 0,
         "entry_value": 0,
