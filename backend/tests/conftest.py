@@ -22,7 +22,7 @@ def app():
         "TESTING": True,
         "SQLALCHEMY_DATABASE_URI":  "sqlite:///:memory:",
         "SQLALCHEMY_TRACK_MODIFICATIONS": False,
-        "JWT_SECRET_KEY": os.getenv("JWT_SECRET_KEY")
+        "JWT_SECRET_KEY": "test-secret-key"
     })
 
     yield app
@@ -54,7 +54,7 @@ def session(db, app):
         connection.close()
 
 @pytest.fixture(scope="function")
-def client(app):
+def client(app, session):
 
     return app.test_client()
 
@@ -192,18 +192,18 @@ def sample_debt_data(debtor, creditor):
 @pytest.fixture
 def sample_creditor_data(creditor, debtor):
     return {
-        "debt_id": str(debt.id),
+        "debtor_i": str(debtor.id),
         "installments_quantity": 6,
         "discount_applied": 0,
         "entry_value": 0,
         "first_due_date": "2024-03-01"
     }
 
+
 @pytest.fixture
 def mock_datetime(monkeypatch):
 
     class MockDateTime:
-
         @staticmethod
         def utcnow():
             return datetime(2024, 2, 15, 10, 30, 0)
