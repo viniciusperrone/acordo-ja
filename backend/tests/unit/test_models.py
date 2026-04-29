@@ -11,7 +11,7 @@ from agreement.models import Agreement
 
 from sqlalchemy.exc import IntegrityError
 
-from utils.enum import UserRole, DebtStatus
+from utils.enum import UserRole, DebtStatus, AgreementStatus
 
 
 @pytest.mark.unit
@@ -186,7 +186,6 @@ class TestDebtorModel:
 class TestDebtModel:
 
     def test_create_debt(self, session, debtor, creditor):
-
         debt = Debt(
             debtor_id=debtor.id,
             creditor_id=creditor.id,
@@ -207,6 +206,61 @@ class TestDebtModel:
         assert debt.created_at is not None
 
     def test_relationships(self, session, debt):
-
         assert debt.debtor is not None
         assert debt.creditor is not None
+
+@pytest.mark.unit
+class TestAgreementModel:
+
+    def test_create_agreement(self, session, debt):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("900.00"),
+            discount_applied=Decimal("100.00"),
+            installments_quantity=6,
+            installment_value=Decimal("133.33"),
+            entry_value=Decimal("0.00"),
+            first_due_date=date(2024, 3, 2),
+            status=AgreementStatus.ACTIVE
+        )
+
+        session.add(agreement)
+        session.commit()
+
+        assert agreement.id is not None
+        assert agreement.debt_id == debt.id
+        assert agreement.total_traded == Decimal("900.00")
+        assert agreement.discount_applied == Decimal("100.00")
+        assert agreement.installments_quantity == 6
+        assert agreement.installment_value == Decimal("133.33")
+        assert agreement.status == AgreementStatus.ACTIVE
+        assert agreement.created_at is not None
+
+    def test_agreement_default_status(self, session, debt):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=10,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2024, 3, 2),
+        )
+
+        session.add(agreement)
+        session.commit()
+
+        assert agreement.status == AgreementStatus.DRAFT
+
+    def test_agreement_relationship_with_debt(self, session, debt):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=10,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2024, 3, 2),
+        )
+
+        session.add(agreement)
+        session.commit()
+
+        assert agreement.debt is not None
+        assert agreement.debt.id == debt.id
