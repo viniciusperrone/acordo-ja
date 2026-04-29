@@ -3,6 +3,7 @@ import pytest
 from decimal import Decimal
 from datetime import date
 
+from installments import Installments
 from users.models import User
 from creditor.models import Creditor
 from debtor.models import Debtor
@@ -11,7 +12,7 @@ from agreement.models import Agreement
 
 from sqlalchemy.exc import IntegrityError
 
-from utils.enum import UserRole, DebtStatus, AgreementStatus
+from utils.enum import UserRole, DebtStatus, AgreementStatus, InstallmentStatus
 
 
 @pytest.mark.unit
@@ -264,3 +265,110 @@ class TestAgreementModel:
 
         assert agreement.debt is not None
         assert agreement.debt.id == debt.id
+
+@pytest.mark.unit
+class TestInstallmentsModel:
+
+    def test_create_installment(self, session, debt):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=10,
+            installment_value=10,
+            first_due_date=date(2024, 3, 1)
+        )
+
+        session.add(agreement)
+        session.flush()
+
+        installment = Installments(
+            agreement_id=agreement.id,
+            installment_number=1,
+            value=Decimal("100.00"),
+            due_date=date(2024, 3, 1),
+            status=InstallmentStatus.PENDING,
+        )
+
+        session.add(installment)
+        session.commit()
+
+        assert installment.id is not None
+        assert installment.agreement_id == agreement.id
+        assert installment.installment_number == 1
+        assert installment.value == Decimal("100.00")
+        assert installment.due_date == date(2024, 3, 1)
+        assert installment.status == InstallmentStatus.PENDING
+
+    def test_installment_status_transitions(self, session, debt):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("300.00"),
+            installments_quantity=2,
+            installment_value=Decimal("150.00"),
+            first_due_date=date(2024, 3, 1),
+        )
+
+        session.add(agreement)
+        session.flush()
+
+        installment = Installments(
+            agreement_id=agreement.id,
+            installment_number=1,
+            value=Decimal("150.00"),
+            due_date=date(2024, 3, 1),
+            status=InstallmentStatus.PENDING,
+        )
+
+        session.add(installment)
+        session.commit()
+
+        assert installment.status == InstallmentStatus.PENDING
+
+        installment.status = InstallmentStatus.PAID
+        installment.payment_date = date.today()
+
+        session.commit()
+
+        assert installment.status == InstallmentStatus.PAID
+        assert installment.payment_date is not None
+
+        installment2 = Installments(
+            agreement_id=agreement.id,
+            installment_number=2,
+            value=Decimal("150.00"),
+            due_date=date(2024, 4, 1),
+            status=InstallmentStatus.PENDING
+        )
+
+        session.add(installment2)
+        session.commit()
+
+        installment2.status = InstallmentStatus.OVERDUE
+        session.commit()
+
+        assert installment2.status == InstallmentStatus.OVERDUE
+
+    def test_installment_relationship_with_agreement(self, session, debt):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("500.00"),
+            installments_quantity=5,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2024, 3, 1),
+        )
+
+        session.add(agreement)
+        session.flush()
+
+        installment = Installments(
+            agreement_id=agreement.id,
+            installment_number=1,
+            value=Decimal("100.00"),
+            due_date=date(2024, 3, 1),
+        )
+
+        session.add(installment)
+        session.commit()
+
+        assert installment.agreement is not None
+        assert installment.agreement.id == agreement.id
