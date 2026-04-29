@@ -3,7 +3,7 @@ from datetime import datetime, date
 from decimal import Decimal
 import os
 
-from utils.enum import UserRole
+from utils.enum import UserRole, DebtStatus
 
 os.environ["TESTING"] = "True"
 
@@ -119,3 +119,63 @@ def auth_headers_admin(client, admin_user):
         'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json',
     }
+
+@pytest.fixture
+def creditor(session):
+    creditor = Creditor(
+        bank_code="001",
+        interest_rate=Decimal("0.05"),
+        fine_rate=Decimal("0.02"),
+        discount_limit=Decimal("0.20")
+    )
+
+    session.add(creditor)
+    session.commit()
+
+    return creditor
+
+@pytest.fixture
+def debtor(session):
+    debtor = Debtor(
+        name="João da Silva",
+        document="12345678900",
+        email="joao@test.com",
+        phone="11999999999"
+    )
+
+    session.add(debtor)
+    session.commit()
+
+    return debtor
+
+@pytest.fixture
+def debt(session, debtor, creditor):
+    debt = Debt(
+        debtor_id=debtor.id,
+        creditor_id=creditor.id,
+        original_value=Decimal("1000.00"),
+        updated_value=None,
+        due_date=date(2024, 1, 15),
+        status=DebtStatus.OPEN
+    )
+
+    session.add(debt)
+    session.commit()
+
+    return debt
+
+@pytest.fixture
+def lead(session):
+    from leads.models import Lead
+
+    lead = Lead(
+        name="Maria Santos",
+        document="98765432100",
+        email="maria@test.com",
+        phone="11988888888"
+    )
+
+    session.add(lead)
+    session.commit()
+
+    return lead
