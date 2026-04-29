@@ -58,7 +58,7 @@ def client(app):
 
     return app.test_client()
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def admin_user(session):
     user = User(
         name="Admin User",
@@ -74,7 +74,7 @@ def admin_user(session):
 
     return user
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def manager_user(session):
     user = User(
         name="Manager User",
@@ -90,7 +90,7 @@ def manager_user(session):
 
     return user
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def agent_user(session):
     user = User(
         name="Agent User",
@@ -105,3 +105,17 @@ def agent_user(session):
     session.commit()
 
     return user
+
+@pytest.fixture
+def auth_headers_admin(client, admin_user):
+    response = client.post('/auth/login', json={
+        'email': 'admin@test.com',
+        'password': 'AcordoJA@2026'
+    })
+
+    token = response.json.get('access_token')
+
+    return {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json',
+    }
