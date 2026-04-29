@@ -1,6 +1,7 @@
 import pytest
 
 from decimal import Decimal
+from datetime import date
 
 from users.models import User
 from creditor.models import Creditor
@@ -10,7 +11,7 @@ from agreement.models import Agreement
 
 from sqlalchemy.exc import IntegrityError
 
-from utils.enum import UserRole
+from utils.enum import UserRole, DebtStatus
 
 
 @pytest.mark.unit
@@ -180,3 +181,32 @@ class TestDebtorModel:
         assert debtor.id is not None
         assert debtor.email is None
         assert debtor.phone is None
+
+@pytest.mark.unit
+class TestDebtModel:
+
+    def test_create_debt(self, session, debtor, creditor):
+
+        debt = Debt(
+            debtor_id=debtor.id,
+            creditor_id=creditor.id,
+            original_value=Decimal("1000.00"),
+            due_date=date(2026, 12, 31)
+        )
+
+        session.add(debt)
+        session.commit()
+
+        assert debt.id is not None
+        assert debt.debtor_id == debtor.id
+        assert debt.creditor_id == creditor.id
+        assert debt.original_value == Decimal("1000.00")
+        assert debt.updated_value is None
+        assert debt.status == DebtStatus.OPEN
+        assert debt.renegotiation_count == 0
+        assert debt.created_at is not None
+
+    def test_relationships(self, session, debt):
+
+        assert debt.debtor is not None
+        assert debt.creditor is not None
