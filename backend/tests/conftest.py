@@ -3,6 +3,8 @@ from datetime import datetime, date
 from decimal import Decimal
 import os
 
+from utils.enum import UserRole
+
 os.environ["TESTING"] = "True"
 
 from app import initialize_app
@@ -33,7 +35,7 @@ def db(app):
         yield _db
         _db.drop_all()
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def session(db, app):
 
     with app.app_context():
@@ -53,4 +55,53 @@ def session(db, app):
 
 @pytest.fixture(scope="function")
 def client(app):
+
     return app.test_client()
+
+@pytest.fixture(scope="session")
+def admin_user(session):
+    user = User(
+        name="Admin User",
+        email="admin@test.com",
+        role=UserRole.ADMIN,
+        is_active=True,
+    )
+
+    user.set_password("AcordoJA@2026")
+
+    session.add(user)
+    session.commit()
+
+    return user
+
+@pytest.fixture(scope="session")
+def manager_user(session):
+    user = User(
+        name="Manager User",
+        email="manager@test.com",
+        role=UserRole.MANAGER,
+        is_active=True,
+    )
+
+    user.set_password("AcordoJA@2026")
+
+    session.add(user)
+    session.commit()
+
+    return user
+
+@pytest.fixture(scope="session")
+def agent_user(session):
+    user = User(
+        name="Agent User",
+        email="agent@test.com",
+        role=UserRole.AGENT,
+        is_active=True,
+    )
+
+    user.set_password("AcordoJA@2026")
+
+    session.add(user)
+    session.commit()
+
+    return user
