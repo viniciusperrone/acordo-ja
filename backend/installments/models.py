@@ -28,7 +28,7 @@ class Installments(db.Model):
 
     agreement_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey("agreements.id", on_delete='CASCADE'),
+        db.ForeignKey("agreements.id", ondelete='CASCADE'),
         nullable=False
     )
 

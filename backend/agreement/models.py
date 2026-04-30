@@ -29,7 +29,7 @@ class Agreement(db.Model):
 
     debt_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey("debts.id", on_delete='CASCADE'),
+        db.ForeignKey("debts.id", ondelete='CASCADE'),
         nullable=False,
         index=True
     )

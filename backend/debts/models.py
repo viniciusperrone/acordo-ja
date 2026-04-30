@@ -13,14 +13,14 @@ class Debt(db.Model):
 
     debtor_id = db.Column(
         db.Integer,
-        db.ForeignKey('debtors.id', on_delete='RESTRICT'),
+        db.ForeignKey('debtors.id', ondelete='RESTRICT'),
         nullable=False,
         index=True
     )
 
     creditor_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('creditors.id', on_delete='RESTRICT'),
+        db.ForeignKey('creditors.id', ondelete='RESTRICT'),
         nullable=False,
         index=True
     )
