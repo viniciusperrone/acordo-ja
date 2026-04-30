@@ -36,7 +36,7 @@ class Debt(db.Model):
         nullable=False
     )
 
-    agreements = db.relationship("Agreement", back_populates="debt")
+    agreements = db.relationship("Agreement", back_populates="debt", cascade="all, delete-orphan", passive_deletes=True)
     debtor = db.relationship("Debtor", back_populates="debts")
     creditor = db.relationship("Creditor", back_populates="debts")
 
@@ -53,7 +53,7 @@ class DebtHistory(db.Model):
 
     debt_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('debts.id'),
+        db.ForeignKey('debts.id', ondelete='CASCADE'),
         nullable=False,
         index=True
     )

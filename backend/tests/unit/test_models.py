@@ -654,3 +654,106 @@ class TestNotificationModel:
         assert notification.extra["lead_id"] == "abc123"
         assert notification.extra["nested"]["key1"] == "value1"
         assert notification.extra["list"] == [1, 2, 3]
+
+@pytest.mark.unit()
+class TestModelRelationships:
+
+    def test_delete_debtor_with_debts_raises_error(self, session, debtor, creditor):
+        debt = Debt(
+            debtor_id=debtor.id,
+            creditor_id=creditor.id,
+            original_value=Decimal("1000.00"),
+            due_date=date(2024, 1, 1)
+        )
+
+        session.add(debt)
+        session.commit()
+
+        session.delete(debtor)
+
+        with pytest.raises(IntegrityError):
+            session.commit()
+
+    def test_delete_creditor_with_debts_raises_error(self, session, debtor, creditor):
+        debt = Debt(
+            debtor_id=debtor.id,
+            creditor_id=creditor.id,
+            original_value=Decimal("1000.00"),
+            due_date=date(2024, 1, 1)
+        )
+
+        session.add(debt)
+        session.commit()
+
+        session.delete(creditor)
+
+        with pytest.raises(IntegrityError):
+            session.commit()
+
+    def test_cascade_delete_debt_agreements(self, session, debt):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("500.00"),
+            installment_value=Decimal("100.00"),
+            installments_quantity=5,
+            first_due_date=date(2024, 3, 1)
+        )
+
+        session.add(agreement)
+        session.commit()
+
+        agreement_id = agreement.id
+
+        session.delete(debt)
+        session.commit()
+
+        deleted_agreement = session.get(Agreement, agreement_id)
+
+        assert deleted_agreement is None
+
+    def test_full_chain_relationship(self, session, debtor, creditor):
+
+        debt = Debt(
+            debtor_id=debtor.id,
+            creditor_id=creditor.id,
+            original_value=Decimal("1200.00"),
+            due_date=date(2024, 1, 1)
+        )
+
+        session.add(debt)
+        session.flush()
+
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1200.00"),
+            installments_quantity=12,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2024, 3, 1)
+        )
+
+        session.add(agreement)
+        session.flush()
+
+        installment = Installments(
+            agreement_id=agreement.id,
+            installment_number=1,
+            value=Decimal("100.00"),
+            due_date=date(2024, 3, 1)
+        )
+        session.add(installment)
+        session.flush()
+
+        payment = Payment(
+            installment_id=installment.id,
+            amount=Decimal("100.00"),
+            paid_at=datetime.utcnow(),
+            method=MethodPayment.PIX
+        )
+        session.add(payment)
+        session.commit()
+
+        assert payment.installment.id == installment.id
+        assert installment.agreement.id == agreement.id
+        assert agreement.debt.id == debt.id
+        assert debt.debtor.id == debtor.id
+        assert debt.creditor.id == creditor.id

@@ -1,7 +1,8 @@
 import pytest
+import os
+from sqlalchemy import event
 from datetime import datetime, date
 from decimal import Decimal
-import os
 
 from utils.enum import UserRole, DebtStatus
 
@@ -34,6 +35,14 @@ def app():
 def db(app):
 
     with app.app_context():
+        engine = _db.engine
+
+        @event.listens_for(engine, "connect")
+        def set_sqlite_pragma(dbapi_connection, connection_record):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.close()
+
         _db.create_all()
         yield _db
         _db.drop_all()
