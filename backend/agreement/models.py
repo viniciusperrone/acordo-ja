@@ -34,6 +34,12 @@ class Agreement(db.Model):
         index=True
     )
     debt = db.relationship("Debt", back_populates="agreements")
+    installments = db.relationship(
+        "Installments",
+        back_populates="agreement",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
 
     created_at = db.Column(
         db.DateTime,
