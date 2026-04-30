@@ -10,12 +10,10 @@ class LeadService:
     def create(data, document, session):
         from utils.validators import validate_cnpj_or_cpf
 
-        document = validate_cnpj_or_cpf(document)
-
         if not document:
             raise ValidationError('Lead must have a document')
 
-        document = LeadService.validate_document(document)
+        document = validate_cnpj_or_cpf(document)
 
         data = {**data, 'document': document}
         lead = Lead(**data)
