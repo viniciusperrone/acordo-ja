@@ -16,6 +16,10 @@ from debtor.models import Debtor
 from debtor.services import DebtorService
 from debtor.exceptions import DebtorNotFound, DuplicateDocumentDebtor
 
+from creditor.models import Creditor
+from creditor.services import CreditorService
+from creditor.exceptions import CreditorAlreadyExistsError, CreditorNotFound
+
 from utils.enum import UserRole
 
 
@@ -144,3 +148,43 @@ class TestDebtorService:
 
         with pytest.raises(DuplicateDocumentDebtor):
             DebtorService.create(data, session)
+
+@pytest.mark.unit
+class TestCreditorService:
+
+    def test_get_creditor_by_id(self, session, creditor):
+        found_creditor = CreditorService.get(creditor.id, session)
+
+        assert isinstance(found_creditor, Creditor)
+        assert found_creditor.id == creditor.id
+
+    def test_creditor_not_found(self, session):
+
+        pytest.raises(CreditorNotFound, lambda: CreditorService.get(uuid.uuid4(), session))
+
+    def test_create_creditor(self, session):
+        data = {
+            "bank_code": "001",
+            "interest_rate": "0.05",
+            "fine_rate":  "0.02",
+            "discount_limit":  "0.20"
+        }
+
+        creditor = CreditorService.create_creditor(data, session)
+
+        assert isinstance(creditor, Creditor)
+        assert creditor.bank_code == data["bank_code"]
+        assert creditor.interest_rate == data["interest_rate"]
+        assert creditor.fine_rate == data["fine_rate"]
+        assert creditor.discount_limit == data["discount_limit"]
+
+    def test_create_existing_creditor(self, session, creditor):
+        data = {
+            "bank_code": creditor.bank_code,
+            "interest_rate": "0.05",
+            "fine_rate": "0.02",
+            "discount_limit": "0.20"
+        }
+
+        with pytest.raises(CreditorAlreadyExistsError):
+            CreditorService.create_creditor(data, session)
