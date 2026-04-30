@@ -24,7 +24,10 @@ class Installments(db.Model):
        nullable=False
     )
 
-    agreement = db.relationship("Agreement", backref="installments")
+    agreement = db.relationship(
+        "Agreement",
+        back_populates="installments"
+    )
 
     agreement_id = db.Column(
         UUID(as_uuid=True),
