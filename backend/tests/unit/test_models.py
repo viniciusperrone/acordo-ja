@@ -1,9 +1,10 @@
 import pytest
 
 from decimal import Decimal
-from datetime import date
+from datetime import datetime, date
 
 from installments import Installments
+from payment import Payment
 from users.models import User
 from creditor.models import Creditor
 from debtor.models import Debtor
@@ -12,7 +13,7 @@ from agreement.models import Agreement
 
 from sqlalchemy.exc import IntegrityError
 
-from utils.enum import UserRole, DebtStatus, AgreementStatus, InstallmentStatus
+from utils.enum import UserRole, DebtStatus, AgreementStatus, InstallmentStatus, MethodPayment
 
 
 @pytest.mark.unit
@@ -372,3 +373,121 @@ class TestInstallmentsModel:
 
         assert installment.agreement is not None
         assert installment.agreement.id == agreement.id
+
+
+@pytest.mark.unit
+class TestPaymentModel:
+
+    def test_create_payment(self, session, debt):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("300.00"),
+            installments_quantity=1,
+            installment_value=Decimal("300.00"),
+            first_due_date=date(2024, 3, 1),
+        )
+
+        session.add(agreement)
+        session.flush()
+
+        installment = Installments(
+            agreement_id=agreement.id,
+            installment_number=1,
+            value=Decimal("300.00"),
+            due_date=date(2024, 3, 1),
+        )
+
+        session.add(installment)
+        session.flush()
+
+        payment = Payment(
+            installment_id=installment.id,
+            amount=Decimal("100.00"),
+            paid_at=datetime.utcnow(),
+            method=MethodPayment.PIX
+        )
+
+        session.add(payment)
+        session.commit()
+
+        assert payment.id is not None
+        assert payment.installment_id == installment.id
+        assert payment.amount == Decimal("100.00")
+        assert payment.method == MethodPayment.PIX
+        assert payment.paid_at is not None
+        assert payment.created_at is not None
+
+    def test_payment_methods(self, session, debt):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("500.00"),
+            installments_quantity=5,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2024, 3, 1)
+        )
+        session.add(agreement)
+        session.flush()
+
+        installment = Installments(
+            agreement_id=agreement.id,
+            installment_number=1,
+            value=Decimal("100.00"),
+            due_date=date(2024, 3, 1)
+        )
+        session.add(installment)
+        session.flush()
+
+        methods = [
+            MethodPayment.PIX,
+            MethodPayment.BOLETO,
+            MethodPayment.TED,
+            MethodPayment.CARTAO,
+            MethodPayment.DINHEIRO
+        ]
+
+        for method in methods:
+            payment = Payment(
+                installment_id=installment.id,
+                amount=Decimal("100.00"),
+                paid_at=datetime.utcnow(),
+                method=method
+            )
+            session.add(payment)
+            session.commit()
+
+            assert payment.method == method
+
+            session.delete(payment)
+            session.commit()
+
+    def test_payment_relationship_with_installment(self, session, debt):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("200.00"),
+            installments_quantity=2,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2024, 3, 1)
+        )
+        session.add(agreement)
+        session.flush()
+
+        installment = Installments(
+            agreement_id=agreement.id,
+            installment_number=1,
+            value=Decimal("100.00"),
+            due_date=date(2024, 3, 1)
+        )
+        session.add(installment)
+        session.flush()
+
+        payment = Payment(
+            installment_id=installment.id,
+            amount=Decimal("100.00"),
+            paid_at=datetime.utcnow(),
+            method=MethodPayment.PIX
+        )
+        session.add(payment)
+        session.commit()
+
+        assert payment.installment is not None
+        assert payment.installment.id == installment.id
