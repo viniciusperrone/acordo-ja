@@ -1,3 +1,5 @@
+import random
+
 import pytest
 
 import uuid
@@ -9,6 +11,10 @@ from leads.services import LeadService
 from users.models import User
 from users.services import UserService
 from users.exceptions import UserNotFoundError
+
+from debtor.models import Debtor
+from debtor.services import DebtorService
+from debtor.exceptions import DebtorNotFound, DuplicateDocumentDebtor
 
 from utils.enum import UserRole
 
@@ -97,3 +103,44 @@ class TestUserService:
 
         deleted_user = session.get(User, agent_user.id)
         assert deleted_user is None
+
+@pytest.mark.unit
+class TestDebtorService:
+
+    def test_get_debtor_by_id(self, session, debtor):
+        found_debtor = DebtorService.get(debtor.id, session)
+
+        assert isinstance(found_debtor, Debtor)
+        assert found_debtor.id == debtor.id
+
+    def test_debtor_not_found(self, session):
+        debtor_id = random.randint(1, 999999999)
+
+        pytest.raises(DebtorNotFound, lambda: DebtorService.get(debtor_id, session))
+
+    def test_create_debtor(self, session):
+        data = {
+            "name": "Test Debtor",
+            "document": "12345678970",
+            "email": "debtor@test.com",
+            "phone": "11999999999"
+        }
+
+        debtor = DebtorService.create(data, session)
+
+        assert isinstance(debtor, Debtor)
+        assert debtor.name == data["name"]
+        assert debtor.document == data["document"]
+        assert debtor.email == data["email"]
+        assert debtor.phone == data["phone"]
+
+    def test_create_existing_debtor(self, session, debtor):
+        data = {
+            "name": "Test Debtor",
+            "document": debtor.document,
+            "email": "debtor@test.com",
+            "phone": "11999999999"
+        }
+
+        with pytest.raises(DuplicateDocumentDebtor):
+            DebtorService.create(data, session)
