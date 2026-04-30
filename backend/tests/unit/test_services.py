@@ -1,6 +1,10 @@
 import pytest
-""
+
 import uuid
+from marshmallow import ValidationError
+
+from leads.models import Lead
+from leads.services import LeadService
 
 from users.models import User
 from users.services import UserService
@@ -8,6 +12,46 @@ from users.exceptions import UserNotFoundError
 
 from utils.enum import UserRole
 
+
+@pytest.mark.unit
+class TestLeadService:
+
+    def test_create_lead(self, session):
+        document = "52998224725"
+        data = {
+            "name": "Lead Test",
+            "email": "lead@test.com",
+            "phone": "1199999999"
+        }
+
+        lead = LeadService.create(data, document, session)
+
+        assert isinstance(lead, Lead)
+
+    def test_invalid_document(self, session):
+        document = "99999999999"
+        data = {
+            "name": "Lead Test",
+            "email": "lead@test.com",
+            "phone": "1199999999"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            LeadService.create(data, document, session)
+
+            assert err.message == "CPF or CNPJ must be valid"
+
+    def test_missing_document(self, session):
+        data = {
+            "name": "Lead Test",
+            "email": "lead@test.com",
+            "phone": "1199999999"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            LeadService.create(data, None, session)
+
+            assert err.message == "Lead must have a document"
 
 @pytest.mark.unit
 class TestUserService:

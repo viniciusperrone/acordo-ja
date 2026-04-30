@@ -1,8 +1,7 @@
-from utils.enum import UserRole
-from common.exceptions.auth import UnauthorizedError
-
 from users.models import User
 from users.exceptions import EmailAlreadyExists, UserNotFoundError
+
+from utils.enum import UserRole
 
 
 class UserService:
