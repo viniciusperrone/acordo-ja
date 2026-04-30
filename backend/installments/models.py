@@ -2,7 +2,6 @@ from datetime import datetime
 from sqlalchemy.dialects.postgresql import UUID, NUMERIC
 
 from config.db import db
-
 from utils.enum import InstallmentStatus
 
 
@@ -29,7 +28,7 @@ class Installments(db.Model):
 
     agreement_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey("agreements.id"),
+        db.ForeignKey("agreements.id", on_delete='CASCADE'),
         nullable=False
     )
 

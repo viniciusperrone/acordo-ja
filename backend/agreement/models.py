@@ -1,5 +1,4 @@
 import uuid
-
 from datetime import datetime
 from decimal import Decimal
 
@@ -30,7 +29,7 @@ class Agreement(db.Model):
 
     debt_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey("debts.id"),
+        db.ForeignKey("debts.id", on_delete='CASCADE'),
         nullable=False,
         index=True
     )

@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-
 from sqlalchemy import UUID
 
 from config.db import db

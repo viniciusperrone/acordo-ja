@@ -1,6 +1,6 @@
 import uuid
 from sqlalchemy import UUID, NUMERIC
-from datetime import datetime as dt
+from datetime import datetime
 
 from config.db import db
 from utils.enum import DebtStatus, DebtHistoryType
@@ -13,14 +13,14 @@ class Debt(db.Model):
 
     debtor_id = db.Column(
         db.Integer,
-        db.ForeignKey('debtors.id'),
+        db.ForeignKey('debtors.id', on_delete='RESTRICT'),
         nullable=False,
         index=True
     )
 
     creditor_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('creditors.id'),
+        db.ForeignKey('creditors.id', on_delete='RESTRICT'),
         nullable=False,
         index=True
     )
@@ -43,8 +43,8 @@ class Debt(db.Model):
     renegotiation_count = db.Column(db.Integer, default=0)
     last_agreement_date = db.Column(db.DateTime)
 
-    created_at = db.Column(db.DateTime, default=dt.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, onupdate=dt.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
 class DebtHistory(db.Model):
     __tablename__ = 'debt_history'
@@ -69,7 +69,7 @@ class DebtHistory(db.Model):
     old_value = db.Column(NUMERIC(12, 2), nullable=True)
     new_value = db.Column(NUMERIC(12, 2), nullable=True)
 
-    changed_at = db.Column(db.DateTime, default=dt.utcnow, nullable=False)
+    changed_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     reason = db.Column(db.String, nullable=True)
 
     extra = db.Column(db.JSON, nullable=True)
