@@ -6,7 +6,6 @@ from marshmallow import ValidationError
 from decimal import Decimal
 from datetime import date
 
-import agreement
 from leads.models import Lead
 from leads.services import LeadService
 
@@ -30,7 +29,7 @@ from agreement.models import Agreement
 from agreement.services import AgreementService
 from agreement.exceptions import AgreementNotFound, AgreementStatusError, PendingInstallmentsError
 
-from utils.enum import UserRole
+from utils.enum import UserRole, AgreementStatus
 
 
 @pytest.mark.unit
@@ -399,3 +398,61 @@ class TestAgreementService:
             AgreementService.create(data, session)
 
         assert "Installments quantity must be greater than zero" in str(err.value)
+
+    def test_cancel_agreement_updates_status_to_cancelled(self, debt, manager_user, session):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=10,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2026, 5, 6)
+        )
+
+        session.add(agreement)
+        session.commit()
+
+        assert agreement.status is not AgreementStatus.CANCELLED
+
+        AgreementService.cancel(agreement, session)
+
+        agreement = session.get(Agreement, agreement.id)
+
+        assert agreement.status == AgreementStatus.CANCELLED
+
+    def test_cancel_completed_agreement_raises_error(self, debt, manager_user, session):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=10,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2026, 5, 6),
+            status=AgreementStatus.COMPLETED
+        )
+
+        session.add(agreement)
+        session.commit()
+
+        assert agreement.status is not AgreementStatus.CANCELLED
+
+        with pytest.raises(AgreementStatusError) as err:
+            AgreementService.cancel(agreement, session)
+
+        assert str(err.value) == "Cannot cancel a completed agreement"
+
+    def test_cancel_already_cancelled_agreement_raises_error(self, debt, manager_user, session):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=10,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2026, 5, 6),
+            status=AgreementStatus.CANCELLED
+        )
+
+        session.add(agreement)
+        session.commit()
+
+        with pytest.raises(AgreementStatusError) as err:
+            AgreementService.cancel(agreement, session)
+
+        assert str(err.value) == "Agreement already cancelled"
