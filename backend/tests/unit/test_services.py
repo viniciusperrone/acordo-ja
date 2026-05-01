@@ -6,6 +6,7 @@ from marshmallow import ValidationError
 from decimal import Decimal
 from datetime import date
 
+import agreement
 from leads.models import Lead
 from leads.services import LeadService
 
@@ -24,6 +25,10 @@ from creditor.exceptions import CreditorAlreadyExistsError, CreditorNotFound
 from debts.models import Debt
 from debts.services import DebtService
 from debts.exceptions import DebtNotFound
+
+from agreement.models import Agreement
+from agreement.services import AgreementService
+from agreement.exceptions import AgreementNotFound, AgreementStatusError, PendingInstallmentsError
 
 from utils.enum import UserRole
 
@@ -288,3 +293,109 @@ class TestDebtService:
 
         with pytest.raises(DebtorNotFound):
             DebtService.create(data, manager_user, session)
+
+@pytest.mark.unit
+class TestAgreementService:
+
+    def test_get_agreement_by_id(self, debt, session):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("12000.00"),
+            installments_quantity=10,
+            installment_value=Decimal("1200.00"),
+            first_due_date=date(2026, 5, 6)
+        )
+
+        session.add(agreement)
+        session.commit()
+
+        found_agreement = AgreementService.get(agreement.id, session)
+
+        assert isinstance(found_agreement, Agreement)
+        assert found_agreement.id == agreement.id
+        assert found_agreement.total_traded == agreement.total_traded
+        assert found_agreement.installments_quantity == agreement.installments_quantity
+        assert found_agreement.installment_value == agreement.installment_value
+        assert found_agreement.first_due_date == agreement.first_due_date
+
+    def test_get_agreement_not_found(self, session):
+        agreement_id = uuid.uuid4()
+
+        pytest.raises(AgreementNotFound, lambda: AgreementService.get(agreement_id, session))
+
+    def test_create_agreement_success(self, debt, session):
+        data = dict(
+            debt_id=debt.id,
+            installments_quantity=10,
+            first_due_date=date(2026, 5, 6)
+        )
+
+        agreement = AgreementService.create(data, session)
+
+        assert isinstance(agreement, Agreement)
+        assert agreement.debt_id == debt.id
+        assert agreement.installments_quantity == data["installments_quantity"]
+        assert agreement.first_due_date == data["first_due_date"]
+
+    def test_create_agreement_debt_not_found(self, session):
+        data = dict(
+            debt_id=uuid.uuid4(),
+            installments_quantity=10,
+            first_due_date=date(2026, 5, 6)
+        )
+
+        with pytest.raises(DebtNotFound):
+            AgreementService.create(data, session)
+
+    def test_create_agreement_discount_greater_than_total_raises_error(self, debt, session):
+        data = dict(
+            debt_id=debt.id,
+            installments_quantity=5,
+            first_due_date=date(2026, 5, 6),
+            discount_applied=Decimal("10000000000.00"),
+        )
+
+        with pytest.raises(ValueError) as err:
+            AgreementService.create(data, session)
+
+        assert "Discount cannot exceed total debt" in str(err.value)
+
+    def test_create_agreement_discount_greater_than_limit_raises_error(self, debt, session):
+        data = dict(
+            debt_id=debt.id,
+            installments_quantity=10,
+            first_due_date=date(2026, 5, 6),
+            discount_applied=Decimal("10.00")
+        )
+
+        with pytest.raises(ValueError) as err:
+            AgreementService.create(data, session)
+
+        assert "Discount cannot exceed" in str(err.value)
+        assert "Discount cannot exceed total debt" is not str(err.value)
+
+    def test_create_agreement_entry_greater_than_total_raises_error(self, debt, session):
+        data = dict(
+            debt_id=debt.id,
+            installments_quantity=5,
+            first_due_date=date(2026, 5, 6),
+            discount_applied=Decimal("0.00"),
+            entry_value=Decimal("999999.00"),
+        )
+
+        with pytest.raises(ValueError) as err:
+            AgreementService.create(data, session)
+
+        assert "Entry cannot exceed total after discount" in str(err.value)
+
+    def test_create_agreement_installments_quantity_zero_raises_error(self, debt, session):
+        data = dict(
+            debt_id=debt.id,
+            installments_quantity=0,
+            first_due_date=date(2026, 5, 6),
+        )
+
+        with pytest.raises(ValueError) as err:
+            AgreementService.create(data, session)
+
+        assert "Installments quantity must be greater than zero" in str(err.value)
