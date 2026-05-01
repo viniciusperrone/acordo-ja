@@ -29,7 +29,11 @@ from agreement.models import Agreement
 from agreement.services import AgreementService
 from agreement.exceptions import AgreementNotFound, AgreementStatusError, PendingInstallmentsError
 
-from utils.enum import UserRole, AgreementStatus
+from installments.models import Installments
+from installments.services import InstallmentService
+from installments.exceptions import InstallmentError, InstallmentNotFound, InstallmentWithoutAgreement
+
+from utils.enum import UserRole, AgreementStatus, InstallmentStatus
 
 
 @pytest.mark.unit
@@ -538,3 +542,39 @@ class TestAgreementService:
             AgreementService.complete(agreement, session)
 
         assert str(err.value) == "Draft agreement cannot be completed"
+
+class TestInstallmentService:
+
+    def test_get_installment_by_id_success(self, debt, session):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=10,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2026, 5, 6)
+        )
+
+        session.add(agreement)
+        session.flush()
+
+        installment = Installments(
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("100.00"),
+            status=InstallmentStatus.PENDING,
+            agreement_id=agreement.id,
+        )
+
+        session.add(installment)
+        session.commit()
+
+        found_installment = InstallmentService.get(installment.id, session)
+
+        assert found_installment.id == installment.id
+        assert found_installment.agreement_id == agreement.id
+
+    def test_get_installment_by_id_raises_error(self, session):
+        installment_id = random.randint(1, 999999999)
+
+        with pytest.raises(InstallmentNotFound) as err:
+            InstallmentService.get(installment_id, session)
