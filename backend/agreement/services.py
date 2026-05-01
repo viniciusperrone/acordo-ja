@@ -229,7 +229,7 @@ class AgreementService:
         if agreement.status == AgreementStatus.COMPLETED:
             raise AgreementStatusError("Agreement already completed")
         elif agreement.status == AgreementStatus.CANCELLED:
-            raise AgreementStatusError("Agreement is canceled")
+            raise AgreementStatusError("Agreement is cancelled")
         elif agreement.status == AgreementStatus.DRAFT:
             raise AgreementStatusError("Draft agreement cannot be completed")
 

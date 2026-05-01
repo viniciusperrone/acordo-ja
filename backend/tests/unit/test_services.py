@@ -456,3 +456,83 @@ class TestAgreementService:
             AgreementService.cancel(agreement, session)
 
         assert str(err.value) == "Agreement already cancelled"
+
+    def test_complete_agreement_updates_status_to_completed(self, debt, manager_user, session):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=10,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2026, 5, 6),
+            status=AgreementStatus.ACTIVE
+        )
+
+        session.add(agreement)
+        session.commit()
+
+        assert agreement.status is not AgreementStatus.COMPLETED
+
+        AgreementService.complete(agreement, session)
+
+        session.commit()
+
+        agreement = session.get(Agreement, agreement.id)
+
+        assert agreement.status == AgreementStatus.COMPLETED
+
+    def test_complete_already_completed_agreement_raises_error(self, debt, manager_user, session):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=10,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2026, 5, 6),
+            status=AgreementStatus.COMPLETED
+        )
+
+        session.add(agreement)
+        session.commit()
+
+        assert agreement.status is not AgreementStatus.CANCELLED
+
+        with pytest.raises(AgreementStatusError) as err:
+            AgreementService.complete(agreement, session)
+
+        assert str(err.value) == "Agreement already completed"
+
+    def test_complete_cancelled_agreement_raises_error(self, debt, manager_user, session):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=10,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2026, 5, 6),
+            status=AgreementStatus.CANCELLED
+        )
+
+        session.add(agreement)
+        session.commit()
+
+        assert agreement.status is not AgreementStatus.CANCELLED
+
+        with pytest.raises(AgreementStatusError) as err:
+            AgreementService.complete(agreement, session)
+
+        assert str(err.value) == "Agreement is cancelled"
+
+    def test_complete_draft_agreement_raises_error(self, debt, manager_user, session):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=10,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2026, 5, 6)
+        )
+
+        session.add(agreement)
+        session.commit()
+
+        with pytest.raises(AgreementStatusError) as err:
+            AgreementService.complete(agreement, session)
+    
+        assert str(err.value) == "Draft agreement cannot be completed"
