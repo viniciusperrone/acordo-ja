@@ -513,7 +513,7 @@ class TestAgreementService:
         session.add(agreement)
         session.commit()
 
-        assert agreement.status is not AgreementStatus.CANCELLED
+        assert agreement.status == AgreementStatus.CANCELLED
 
         with pytest.raises(AgreementStatusError) as err:
             AgreementService.complete(agreement, session)
@@ -532,7 +532,9 @@ class TestAgreementService:
         session.add(agreement)
         session.commit()
 
+        assert agreement.status == AgreementStatus.DRAFT
+
         with pytest.raises(AgreementStatusError) as err:
             AgreementService.complete(agreement, session)
-    
+
         assert str(err.value) == "Draft agreement cannot be completed"
