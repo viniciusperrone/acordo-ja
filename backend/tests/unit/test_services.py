@@ -27,13 +27,17 @@ from debts.exceptions import DebtNotFound
 
 from agreement.models import Agreement
 from agreement.services import AgreementService
-from agreement.exceptions import AgreementNotFound, AgreementStatusError, PendingInstallmentsError
+from agreement.exceptions import AgreementNotFound, AgreementStatusError
 
 from installments.models import Installments
 from installments.services import InstallmentService
-from installments.exceptions import InstallmentError, InstallmentNotFound, InstallmentWithoutAgreement
+from installments.exceptions import InstallmentNotFound
 
-from utils.enum import UserRole, AgreementStatus, InstallmentStatus
+from payment.models import Payment
+from payment.services import PaymentService
+from payment.exception import PaymentError
+
+from utils.enum import UserRole, AgreementStatus, InstallmentStatus, MethodPayment
 
 
 @pytest.mark.unit
@@ -578,3 +582,140 @@ class TestInstallmentService:
 
         with pytest.raises(InstallmentNotFound) as err:
             InstallmentService.get(installment_id, session)
+
+@pytest.mark.init
+class TestPaymentService:
+
+    def test_payment_installment_success(self, debt, session):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=10,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2026, 5, 6),
+            status=AgreementStatus.ACTIVE
+        )
+
+        session.add(agreement)
+        session.flush()
+
+        installment = Installments(
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("100.00"),
+            status=InstallmentStatus.PENDING,
+            agreement_id=agreement.id,
+        )
+
+        session.add(installment)
+        session.commit()
+
+        payment = PaymentService.process_installment_payment(
+            installment=installment,
+            amount=Decimal("100.00"),
+            method=MethodPayment.PIX,
+            session=session
+        )
+
+        assert isinstance(payment, Payment)
+        assert payment.installment_id == installment.id
+        assert payment.amount == installment.value
+        assert payment.paid_at is not None
+        assert payment.method == MethodPayment.PIX
+
+    def test_payment_installment_invalid_method_raises_error(self, debt, session):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=10,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2026, 5, 6),
+            status=AgreementStatus.ACTIVE
+        )
+
+        session.add(agreement)
+        session.flush()
+
+        installment = Installments(
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("100.00"),
+            status=InstallmentStatus.PENDING,
+            agreement_id=agreement.id,
+        )
+
+        session.add(installment)
+        session.commit()
+
+        with pytest.raises(PaymentError):
+            PaymentService.process_installment_payment(
+                installment=installment,
+                amount=Decimal("100.00"),
+                method="INVALID_METHOD",
+                session=session
+            )
+
+
+    def test_payment_paid_installment_raises_error(self, debt, session):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=10,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2026, 5, 6),
+            status=AgreementStatus.ACTIVE
+        )
+
+        session.add(agreement)
+        session.flush()
+
+        installment = Installments(
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("100.00"),
+            status=InstallmentStatus.PAID,
+            agreement_id=agreement.id,
+        )
+
+        session.add(installment)
+        session.commit()
+
+        with pytest.raises(PaymentError) as err:
+            PaymentService.process_installment_payment(
+                installment=installment,
+                amount=Decimal("100.00"),
+                method="INVALID_METHOD",
+                session=session
+            )
+
+    def test_payment_invalid_amount_raises_error(self, debt, session):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=10,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2026, 5, 6),
+            status=AgreementStatus.ACTIVE
+        )
+
+        session.add(agreement)
+        session.flush()
+
+        installment = Installments(
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("100.00"),
+            status=InstallmentStatus.PAID,
+            agreement_id=agreement.id,
+        )
+
+        session.add(installment)
+        session.commit()
+
+        with pytest.raises(PaymentError) as err:
+            PaymentService.process_installment_payment(
+                installment=installment,
+                amount=Decimal("200.00"),
+                method=MethodPayment.PIX,
+                session=session
+            )

@@ -62,13 +62,14 @@ class PaymentService:
 
             NotificationEvents.on_debt_paid(agreement.debt, session)
 
-            DebtHistoryService.record_status_change(
-                debt=agreement.debt,
-                old_status=old_status,
-                new_status=DebtStatus.PAID,
-                reason=f"Dívida quitada - Acordo {agreement.id} completado",
-                session=session
-            )
+            # Refatorar
+            # DebtHistoryService.record_status_change(
+            #     debt=agreement.debt,
+            #     old_status=old_status,
+            #     new_status=DebtStatus.PAID,
+            #     reason=f"Dívida quitada - Acordo {agreement.id} completado",
+            #     session=session
+            # )
 
         session.flush()
 
