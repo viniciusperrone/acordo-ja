@@ -151,7 +151,7 @@ def creditor(session):
 def debtor(session):
     debtor = Debtor(
         name="João da Silva",
-        document="12345678900",
+        document="52998224725",
         email="joao@test.com",
         phone="11999999999"
     )
@@ -197,7 +197,7 @@ def lead(session):
 def sample_debt_data(debtor, creditor):
     return {
         "debtor_id": debtor.id,
-        "creditor_id": str(creditor.id),
+        "creditor_id": creditor.id,
         "original_value": "1500.00",
         "due_date": "2024-06-01"
     }

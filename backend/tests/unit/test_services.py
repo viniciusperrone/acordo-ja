@@ -1,9 +1,10 @@
-import random
-
 import pytest
 
 import uuid
+import random
 from marshmallow import ValidationError
+from decimal import Decimal
+from datetime import date
 
 from leads.models import Lead
 from leads.services import LeadService
@@ -19,6 +20,10 @@ from debtor.exceptions import DebtorNotFound, DuplicateDocumentDebtor
 from creditor.models import Creditor
 from creditor.services import CreditorService
 from creditor.exceptions import CreditorAlreadyExistsError, CreditorNotFound
+
+from debts.models import Debt
+from debts.services import DebtService
+from debts.exceptions import DebtNotFound
 
 from utils.enum import UserRole
 
@@ -188,3 +193,98 @@ class TestCreditorService:
 
         with pytest.raises(CreditorAlreadyExistsError):
             CreditorService.create_creditor(data, session)
+
+@pytest.mark.unit
+class TestDebtService:
+
+    def test_get_debt_by_id(self, session, debt):
+        found_debt = DebtService.get(debt.id, session)
+
+        assert isinstance(found_debt, Debt)
+        assert found_debt.id == debt.id
+
+    def test_debt_not_found(self, session):
+
+        pytest.raises(DebtNotFound, lambda: DebtService.get(uuid.uuid4(), session))
+
+    def test_search_document(self, session, debt):
+        document = debt.debtor.document
+
+        result = DebtService.search(document, session)
+
+        dict_debt = dict(
+            id=debt.id,
+            amount=debt.original_value,
+            due_date=debt.due_date,
+            status=debt.status,
+            creditor=debt.creditor.bank_name
+        )
+
+        assert isinstance(result, dict)
+        assert result["document"] == document
+        assert result["has_debts"] == True
+        assert result["debts"] == [dict_debt]
+        assert result["total_debts"] == 1
+        assert result["total_amount"] == debt.original_value
+        assert result["redirect_url"] == f"/leads/add?document={document}"
+
+    def test_search_document_debt_empty(self, session):
+        document = "52998224725"
+
+        result = DebtService.search(document, session)
+
+        assert isinstance(result, dict)
+        assert result["document"] == document
+        assert result["has_debts"] == False
+        assert result["debts"] == []
+        assert result["total_debts"] == 0
+        assert result["total_amount"] == 0
+        assert result["redirect_url"] is None
+
+    def test_search_invalid_document(self, session):
+        document = "99999999999"
+
+        with pytest.raises(ValidationError) as err:
+            DebtService.search(document, session)
+
+            assert err.message == "CPF or CNPJ must be valid"
+
+    def test_create_debt(self, creditor, debtor, manager_user, session):
+        data = dict(
+            creditor_id=creditor.id,
+            debtor_id=debtor.id,
+            original_value=Decimal("3000.00"),
+            due_date=date(2026, 5, 6)
+        )
+
+        debt = DebtService.create(data, manager_user, session)
+
+        session.commit()
+
+        assert isinstance(debt, Debt)
+        assert debt.creditor_id == creditor.id
+        assert debt.debtor_id == debtor.id
+        assert debt.original_value == data["original_value"]
+        assert debt.due_date == data["due_date"]
+
+    def test_create_debt_raise_creditor_not_found(self, debtor, manager_user, session):
+        data = dict(
+            creditor_id=uuid.uuid4(),
+            debtor_id=debtor.id,
+            original_value=Decimal("3000.00"),
+            due_date=date(2026, 5, 6)
+        )
+
+        with pytest.raises(CreditorNotFound):
+            DebtService.create(data, manager_user, session)
+
+    def test_create_debt_raise_debtor_not_found(self, creditor, manager_user, session):
+        data = dict(
+            creditor_id=creditor.id,
+            debtor_id=uuid.uuid4(),
+            original_value=Decimal("3000.00"),
+            due_date=date(2026, 5, 6)
+        )
+
+        with pytest.raises(DebtorNotFound):
+            DebtService.create(data, manager_user, session)

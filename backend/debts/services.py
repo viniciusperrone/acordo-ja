@@ -48,8 +48,6 @@ class DebtService:
             total_amount += debt.original_value
             debts.append(item)
 
-
-
         return dict(
             document=document,
             has_debts=count > 0,
