@@ -2,9 +2,10 @@ import pytest
 
 import uuid
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, date
 from marshmallow import ValidationError
 
+import agreement
 from users.schemas import UserSchema, UserUpdateSchema, UserResponseSchema
 from leads.schemas import LeadSchema
 from authentication.schemas import AuthenticationSchema, ResetPasswordSchema, UpdatePasswordSchema, ForgotPasswordSchema
@@ -15,7 +16,7 @@ from agreement.schemas import AgreementSchema
 from installments.schemas import InstallmentSchema
 from payment.schemas import PaymentSchema
 
-from utils.enum import UserRole, MethodPayment
+from utils.enum import UserRole, MethodPayment, InstallmentStatus
 
 
 @pytest.mark.unit
@@ -541,3 +542,146 @@ class TestPaymentSchema:
         assert result["amount"] == str(data["amount"])
         assert result["method"] == data["method"].value
         assert result["paid_at"] == data["paid_at"].isoformat()
+
+@pytest.mark.unit
+class TestInstallmentSchema:
+
+    def test_should_raise_error_when_installment_number_is_missing(self):
+        schema = InstallmentSchema()
+
+        data = {
+            "due_date": "2026-12-01",
+            "value": Decimal("150.00"),
+            "agreement_id": uuid.uuid4(),
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "installment_number" in err.value.messages
+
+    def test_should_raise_error_when_due_date_is_missing(self):
+        schema = InstallmentSchema()
+
+        data = {
+            "installment_number": 1,
+            "value": Decimal("150.00"),
+            "agreement_id": uuid.uuid4(),
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "due_date" in err.value.messages
+
+    def test_should_raise_error_when_value_is_zero_or_negative(self):
+        schema = InstallmentSchema()
+
+        data = {
+            "installment_number": 1,
+            "due_date": "2026-12-01",
+            "value": Decimal("-50.00"),
+            "agreement_id": uuid.uuid4(),
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "Installment value must be greater than zero." in str(err.value)
+
+    def test_should_raise_error_when_value_is_zero(self):
+        schema = InstallmentSchema()
+
+        data = {
+            "installment_number": 1,
+            "due_date": "2026-12-01",
+            "value": Decimal("0.00"),
+            "agreement_id": uuid.uuid4(),
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "Installment value must be greater than zero." in str(err.value)
+
+    def test_should_raise_error_when_installment_number_is_invalid_type(self):
+        schema = InstallmentSchema()
+
+        data = {
+            "installment_number": "invalid_string",
+            "due_date": "2026-12-01",
+            "value": Decimal("150.00"),
+            "agreement_id": uuid.uuid4(),
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "installment_number" in err.value.messages
+
+    def test_should_raise_error_when_value_is_invalid_type(self):
+        schema = InstallmentSchema()
+
+        data = {
+            "installment_number": 1,
+            "due_date": "2026-12-01",
+            "value": "invalid_value",
+            "agreement_id": uuid.uuid4(),
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "value" in err.value.messages
+
+    def test_should_raise_error_when_unknown_field_is_provided(self):
+        schema = InstallmentSchema()
+
+        data = {
+            "installment_number": 1,
+            "due_date": "2026-12-01",
+            "value": Decimal("150.00"),
+            "agreement_id": uuid.uuid4(),
+            "extra_field": "unexpected_value",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "extra_field" in err.value.messages
+
+    def test_should_load_successfully_with_valid_data(self):
+        schema = InstallmentSchema()
+
+        data = {
+            "installment_number": 1,
+            "due_date": "2026-12-01",
+            "value": Decimal("150.00"),
+            "agreement_id": uuid.uuid4()
+        }
+
+        result = schema.load(data)
+
+        assert result["installment_number"] == data["installment_number"]
+        assert result["due_date"] == date(2026, 12, 1)
+        assert result["value"] == data["value"]
+        assert result["agreement_id"] == data["agreement_id"]
+
+    def test_should_dump_successfully_with_valid_data(self):
+        schema = InstallmentSchema()
+
+        data = {
+            "installment_number": 1,
+            "due_date": date(2026, 12, 1),
+            "value": Decimal("150.00"),
+            "status": InstallmentStatus.PENDING,  # Status "PENDING"
+            "agreement_id": uuid.uuid4()
+        }
+
+        result = schema.dump(data)
+
+        assert result["installment_number"] == data["installment_number"]
+        assert result["due_date"] == "2026-12-01"
+        assert result["value"] == data["value"]
+        assert result["status"] == data["status"].value
+        assert result["agreement_id"] == str(data["agreement_id"])
