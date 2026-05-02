@@ -1,6 +1,8 @@
-import uuid
-
 import pytest
+
+import uuid
+from decimal import Decimal
+from datetime import datetime
 from marshmallow import ValidationError
 
 from users.schemas import UserSchema, UserUpdateSchema, UserResponseSchema
@@ -13,7 +15,7 @@ from agreement.schemas import AgreementSchema
 from installments.schemas import InstallmentSchema
 from payment.schemas import PaymentSchema
 
-from utils.enum import UserRole
+from utils.enum import UserRole, MethodPayment
 
 
 @pytest.mark.unit
@@ -394,7 +396,7 @@ class TestForgotPasswordSchema:
 
         assert "email" in err.value.messages
 
-    def test_should_raise_error_when_email_has_invalid_typez(self):
+    def test_should_raise_error_when_email_has_invalid_type(self):
         schema = ForgotPasswordSchema()
 
         data = {
@@ -460,3 +462,82 @@ class TestResetPasswordSchema:
 
         assert result["new_password"] == "AcordoJA@2026"
         assert result["confirm_password"] == "AcordoJA@2026"
+
+@pytest.mark.unit
+class TestPaymentSchema:
+
+    def test_invalid_payment_method_raises_error(self):
+        schema = PaymentSchema()
+
+        data = {
+            "amount": Decimal("200.00"),
+            "method": "INVALID_METHOD",
+            "paid_at": datetime.utcnow()
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "method" in err.value.messages
+
+
+    def test_invalid_data_type_raises_error(self):
+        schema = PaymentSchema()
+
+        data = {
+            "amount": "invalid_amount",
+            "method": 123456,
+            "paid_at": 12345
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "amount" in err.value.messages
+        assert "method" in err.value.messages
+        assert "paid_at" in err.value.messages
+
+    def test_unknown_field_raises_error(self):
+        schema = PaymentSchema()
+
+        data = {
+            "amount": Decimal("200.00"),
+            "method": MethodPayment.PIX,
+            "paid_at": datetime.utcnow(),
+            "unknown_field": 12345
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "unknown_field" in err.value.messages
+
+    def test_loads_with_valid_data(self):
+        schema = PaymentSchema()
+
+        data = {
+            "amount": Decimal("200.00"),
+            "method": MethodPayment.PIX,
+            "paid_at": datetime.utcnow()
+        }
+
+        result = schema.load(data)
+
+        assert result["amount"] == data["amount"]
+        assert result["method"] == data["method"]
+        assert result["paid_at"] == data["paid_at"]
+
+    def test_dumps_with_valid_data(self):
+        schema = PaymentSchema()
+
+        data = {
+            "amount": Decimal("200.00"),
+            "method": MethodPayment.PIX,
+            "paid_at": datetime.utcnow()
+        }
+
+        result = schema.dump(data)
+
+        assert result["amount"] == str(data["amount"])
+        assert result["method"] == data["method"].value
+        assert result["paid_at"] == data["paid_at"].isoformat()
