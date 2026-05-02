@@ -5,7 +5,6 @@ from decimal import Decimal
 from datetime import datetime, date
 from marshmallow import ValidationError
 
-import agreement
 from users.schemas import UserSchema, UserUpdateSchema, UserResponseSchema
 from leads.schemas import LeadSchema
 from authentication.schemas import AuthenticationSchema, ResetPasswordSchema, UpdatePasswordSchema, ForgotPasswordSchema
@@ -465,83 +464,177 @@ class TestResetPasswordSchema:
         assert result["confirm_password"] == "AcordoJA@2026"
 
 @pytest.mark.unit
-class TestPaymentSchema:
+class TestCreditorSchema:
 
-    def test_invalid_payment_method_raises_error(self):
-        schema = PaymentSchema()
+    def test_should_raise_error_when_bank_code_is_missing(self):
+        schema = CreditorSchema()
 
         data = {
-            "amount": Decimal("200.00"),
-            "method": "INVALID_METHOD",
-            "paid_at": datetime.utcnow()
+            "interest_rate": Decimal("10.00"),
+            "fine_rate": Decimal("5.00"),
+            "discount_limit": Decimal("15.00"),
         }
 
         with pytest.raises(ValidationError) as err:
             schema.load(data)
 
-        assert "method" in err.value.messages
+        assert "bank_code" in err.value.messages
 
-
-    def test_invalid_data_type_raises_error(self):
-        schema = PaymentSchema()
+    def test_should_raise_error_when_interest_rate_is_missing(self):
+        schema = CreditorSchema()
 
         data = {
-            "amount": "invalid_amount",
-            "method": 123456,
-            "paid_at": 12345
+            "bank_code": "001",
+            "fine_rate": Decimal("5.00"),
+            "discount_limit": Decimal("15.00"),
         }
 
         with pytest.raises(ValidationError) as err:
             schema.load(data)
 
-        assert "amount" in err.value.messages
-        assert "method" in err.value.messages
-        assert "paid_at" in err.value.messages
+        assert "interest_rate" in err.value.messages
 
-    def test_unknown_field_raises_error(self):
-        schema = PaymentSchema()
+    def test_should_raise_error_when_fine_rate_is_missing(self):
+        schema = CreditorSchema()
 
         data = {
-            "amount": Decimal("200.00"),
-            "method": MethodPayment.PIX,
-            "paid_at": datetime.utcnow(),
-            "unknown_field": 12345
+            "bank_code": "001",
+            "interest_rate": Decimal("10.00"),
+            "discount_limit": Decimal("15.00"),
         }
 
         with pytest.raises(ValidationError) as err:
             schema.load(data)
 
-        assert "unknown_field" in err.value.messages
+        assert "fine_rate" in err.value.messages
 
-    def test_loads_with_valid_data(self):
-        schema = PaymentSchema()
+    def test_should_raise_error_when_discount_limit_is_missing(self):
+        schema = CreditorSchema()
 
         data = {
-            "amount": Decimal("200.00"),
-            "method": MethodPayment.PIX,
-            "paid_at": datetime.utcnow()
+            "bank_code": "001",
+            "interest_rate": Decimal("10.00"),
+            "fine_rate": Decimal("5.00"),
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "discount_limit" in err.value.messages
+
+    def test_should_raise_error_when_interest_rate_is_out_of_range(self):
+        schema = CreditorSchema()
+
+        data = {
+            "bank_code": "001",
+            "interest_rate": Decimal("150.00"),
+            "fine_rate": Decimal("5.00"),
+            "discount_limit": Decimal("15.00"),
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "interest_rate" in err.value.messages
+        assert "Must be greater than or equal to 0 and less than or equal to 100" in str(err.value)
+
+    def test_should_raise_error_when_fine_rate_is_out_of_range(self):
+        schema = CreditorSchema()
+
+        data = {
+            "bank_code": "001",
+            "interest_rate": Decimal("10.00"),
+            "fine_rate": Decimal("-5.00"),
+            "discount_limit": Decimal("15.00")
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "fine_rate" in err.value.messages
+        assert "Must be greater than or equal to 0 and less than or equal to 100." in str(err.value)
+
+    def test_should_raise_error_when_discount_limit_is_out_of_range(self):
+        schema = CreditorSchema()
+
+        data = {
+            "bank_code": "001",
+            "interest_rate": Decimal("10.00"),
+            "fine_rate": Decimal("5.00"),
+            "discount_limit": Decimal("150.00")
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "discount_limit" in err.value.messages
+        assert "Must be greater than or equal to 0 and less than or equal to 100." in str(err.value)
+
+    def test_should_raise_error_when_bank_code_is_invalid(self):
+        schema = CreditorSchema()
+
+        data = {
+            "bank_code": "999",
+            "interest_rate": Decimal("10.00"),
+            "fine_rate": Decimal("5.00"),
+            "discount_limit": Decimal("15.00")
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "bank_code" in err.value.messages
+        assert "Must be one of" in str(err.value)
+
+    def test_should_raise_error_when_unknown_field_is_provided(self):
+        schema = CreditorSchema()
+
+        data = {
+            "bank_code": "001",
+            "interest_rate": Decimal("10.00"),
+            "fine_rate": Decimal("5.00"),
+            "discount_limit": Decimal("15.00"),
+            "extra_field": "unexpected_value"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "extra_field" in err.value.messages
+
+    def test_should_load_successfully_with_valid_data(self):
+        schema = CreditorSchema()
+
+        data = {
+            "bank_code": "001",
+            "interest_rate": Decimal("10.00"),
+            "fine_rate": Decimal("5.00"),
+            "discount_limit": Decimal("15.00")
         }
 
         result = schema.load(data)
 
-        assert result["amount"] == data["amount"]
-        assert result["method"] == data["method"]
-        assert result["paid_at"] == data["paid_at"]
+        assert result["bank_code"] == data["bank_code"]
+        assert result["interest_rate"] == data["interest_rate"]
+        assert result["fine_rate"] == data["fine_rate"]
+        assert result["discount_limit"] == data["discount_limit"]
 
-    def test_dumps_with_valid_data(self):
-        schema = PaymentSchema()
+    def test_should_dump_successfully_with_valid_data(self):
+        schema = CreditorSchema()
 
         data = {
-            "amount": Decimal("200.00"),
-            "method": MethodPayment.PIX,
-            "paid_at": datetime.utcnow()
+            "bank_code": "001",
+            "interest_rate": Decimal("10.00"),
+            "fine_rate": Decimal("5.00"),
+            "discount_limit": Decimal("15.00")
         }
 
         result = schema.dump(data)
 
-        assert result["amount"] == str(data["amount"])
-        assert result["method"] == data["method"].value
-        assert result["paid_at"] == data["paid_at"].isoformat()
+        assert result["bank_code"] == data["bank_code"]
+        assert result["interest_rate"] == str(data["interest_rate"])
+        assert result["fine_rate"] == str(data["fine_rate"])
+        assert result["discount_limit"] == str(data["discount_limit"])
 
 @pytest.mark.unit
 class TestInstallmentSchema:
@@ -685,3 +778,82 @@ class TestInstallmentSchema:
         assert result["value"] == data["value"]
         assert result["status"] == data["status"].value
         assert result["agreement_id"] == str(data["agreement_id"])
+
+@pytest.mark.unit
+class TestPaymentSchema:
+
+    def test_invalid_payment_method_raises_error(self):
+        schema = PaymentSchema()
+
+        data = {
+            "amount": Decimal("200.00"),
+            "method": "INVALID_METHOD",
+            "paid_at": datetime.utcnow()
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "method" in err.value.messages
+
+
+    def test_invalid_data_type_raises_error(self):
+        schema = PaymentSchema()
+
+        data = {
+            "amount": "invalid_amount",
+            "method": 123456,
+            "paid_at": 12345
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "amount" in err.value.messages
+        assert "method" in err.value.messages
+        assert "paid_at" in err.value.messages
+
+    def test_unknown_field_raises_error(self):
+        schema = PaymentSchema()
+
+        data = {
+            "amount": Decimal("200.00"),
+            "method": MethodPayment.PIX,
+            "paid_at": datetime.utcnow(),
+            "unknown_field": 12345
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "unknown_field" in err.value.messages
+
+    def test_loads_with_valid_data(self):
+        schema = PaymentSchema()
+
+        data = {
+            "amount": Decimal("200.00"),
+            "method": MethodPayment.PIX,
+            "paid_at": datetime.utcnow()
+        }
+
+        result = schema.load(data)
+
+        assert result["amount"] == data["amount"]
+        assert result["method"] == data["method"]
+        assert result["paid_at"] == data["paid_at"]
+
+    def test_dumps_with_valid_data(self):
+        schema = PaymentSchema()
+
+        data = {
+            "amount": Decimal("200.00"),
+            "method": MethodPayment.PIX,
+            "paid_at": datetime.utcnow()
+        }
+
+        result = schema.dump(data)
+
+        assert result["amount"] == str(data["amount"])
+        assert result["method"] == data["method"].value
+        assert result["paid_at"] == data["paid_at"].isoformat()
