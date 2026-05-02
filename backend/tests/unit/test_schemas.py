@@ -637,6 +637,190 @@ class TestCreditorSchema:
         assert result["discount_limit"] == str(data["discount_limit"])
 
 @pytest.mark.unit
+class TestDebtorSchema:
+
+    def test_should_raise_error_when_name_is_missing(self):
+        schema = DebtorSchema()
+
+        data = {
+            "document": "12345678901",
+            "email": "test@gmail.com",
+            "phone": "11999999999"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "name" in err.value.messages
+
+    def test_should_raise_error_when_document_is_missing(self):
+        schema = DebtorSchema()
+
+        data = {
+            "name": "João Silva",
+            "email": "test@gmail.com",
+            "phone": "11999999999"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "document" in err.value.messages
+
+    def test_should_raise_when_email_is_missing(self):
+        schema = DebtorSchema()
+
+        data = {
+            "name": "João Silva",
+            "document": "12345678901",
+            "phone": "11999999999"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "email" in err.value.messages
+
+    def test_should_raise_error_when_phone_is_missing(self):
+        schema = DebtorSchema()
+
+        data = {
+            "name": "João Silva",
+            "document": "12345678901",
+            "email": "test@gmail.com"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "phone" in err.value.messages
+
+    def test_should_raise_error_document_is_invalid_cpf(self):
+        schema = DebtorSchema()
+
+        data = {
+            "name": "João Silva",
+            "document": "12345678900",
+            "email": "test@gmail.com",
+            "phone": "11999999999"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "CPF or CNPJ must be valid" in str(err.value)
+
+    def test_should_raise_error_when_document_is_invalid_cnpj(self):
+        schema = DebtorSchema()
+
+        data = {
+            "name": "João Silva",
+            "document": "99999999999999",
+            "email": "test@gmail.com",
+            "phone": "11999999999"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "CPF or CNPJ must be valid" in str(err.value)
+
+    def test_should_raise_error_when_phone_is_invalid_length(self):
+        schema = DebtorSchema()
+
+        data = {
+            "name": "João Silva",
+            "document": "12345678901",
+            "email": "test@gmail.com",
+            "phone": "12345"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "Phone number must be 10 or 11" in str(err.value)
+
+    def test_should_raise_error_when_phone_is_invalid_length_too_long(self):
+        schema = DebtorSchema()
+
+        data = {
+            "name": "João Silva",
+            "document": "12345678901",
+            "email": "test@gmail.com",
+            "phone": "123456789012"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "Phone number must be 10 or 11" in str(err.value)
+
+    def test_should_normalize_document_and_phone_on_pre_load(self):
+        schema = DebtorSchema()
+
+        data = {
+            "name": "João Silva",
+            "document": "529.982.247-25",
+            "email": "test@gmail.com",
+            "phone": "(11) 99999-9999"
+        }
+
+        normalized_data = schema.load(data)
+
+        assert normalized_data["document"] == "52998224725"
+        assert normalized_data["phone"] == "11999999999"
+
+    def test_should_raise_error_when_unknown_field_is_provided(self):
+        schema = DebtorSchema()
+
+        data = {
+            "name": "João Silva",
+            "document": "12345678901",
+            "email": "test@gmail.com",
+            "phone": "11999999999",
+            "unknown_field": "some_value"  # Campo não esperado
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "unknown_field" in err.value.messages
+
+    def test_should_load_successfully_with_valid_data(self):
+        schema = CreditorSchema()
+
+        data = {
+            "bank_code": "001",
+            "interest_rate": Decimal("5.00"),
+            "fine_rate": Decimal("2.00"),
+            "discount_limit": Decimal("10.00")
+        }
+
+        result = schema.load(data)
+
+        assert result["bank_code"] == data["bank_code"]
+        assert result["interest_rate"] == data["interest_rate"]
+        assert result["fine_rate"] == data["fine_rate"]
+        assert result["discount_limit"] == data["discount_limit"]
+
+    def test_should_dump_successfully_with_valid_data(self):
+        schema = CreditorSchema()
+
+        creditor = {
+            "bank_code": "001",
+            "interest_rate": Decimal("5.00"),
+            "fine_rate": Decimal("2.00"),
+            "discount_limit": Decimal("10.00")
+        }
+
+        result = schema.dump(creditor)
+
+        assert result["bank_code"] == creditor["bank_code"]
+        assert result["interest_rate"] == str(creditor["interest_rate"])
+        assert result["fine_rate"] == str(creditor["fine_rate"])
+        assert result["discount_limit"] == str(creditor["discount_limit"])
+
+@pytest.mark.unit
 class TestInstallmentSchema:
 
     def test_should_raise_error_when_installment_number_is_missing(self):
