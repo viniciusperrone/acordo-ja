@@ -5,7 +5,7 @@ from marshmallow import ValidationError
 
 from users.schemas import UserSchema, UserUpdateSchema, UserResponseSchema
 from leads.schemas import LeadSchema
-from authentication.schemas import AuthenticationSchema, ResetPasswordSchema, UpdatePasswordSchema
+from authentication.schemas import AuthenticationSchema, ResetPasswordSchema, UpdatePasswordSchema, ForgotPasswordSchema
 from creditor.schemas import CreditorSchema
 from debtor.schemas import DebtorSchema
 from debts.schemas import DebtSchema, DebtHistorySchema, DebtSearchResponseSchema, DebtItemSchema
@@ -159,3 +159,304 @@ class TestLeadSchema:
         assert result["document"] == lead["document"]
         assert result["email"] == lead["email"]
         assert result["phone"] == lead["phone"]
+
+@pytest.mark.unit
+class TestAuthenticationSchema:
+
+    def test_should_raise_error_when_password_is_missing(self):
+        schema = AuthenticationSchema()
+
+        data = {
+            "email": "test@gmail.com"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "password" in err.value.messages
+
+    def test_should_raise_error_when_email_is_missing(self):
+        schema = AuthenticationSchema()
+
+        data = {
+            "password": "AcordoJA@2026"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "email" in err.value.messages
+
+    def test_should_raise_error_when_email_is_invalid(self):
+        schema = AuthenticationSchema()
+
+        data = {
+            "email": "joao.silva",
+            "password": "AcordoJA@2026"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "email" in err.value.messages
+
+    def test_should_load_successfully_with_valid_data(self):
+        schema = AuthenticationSchema()
+
+        data = {
+            "email": "joao.silva@gmail.com",
+            "password": "AcordoJA@2026"
+        }
+
+        result = schema.load(data)
+
+        assert result["email"] == data["email"]
+        assert result["password"] == data["password"]
+
+    def test_should_raise_error_when_unknown_field_is_provided(self):
+        schema = AuthenticationSchema()
+
+        data = {
+            "email": "joao.silva@gmail.com",
+            "password": "AcordoJA@2026",
+            "extra": "campo_invalido"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "extra" in err.value.messages
+
+    def test_should_raise_error_when_email_is_not_string(self):
+        schema = AuthenticationSchema()
+
+        data = {
+            "email": 123,
+            "password": "AcordoJA@2026"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "email" in err.value.messages
+
+    def test_should_raise_error_when_password_is_not_string(self):
+        schema = AuthenticationSchema()
+
+        data = {
+            "email": "joao.silva@gmail.com",
+            "password": True
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "password" in err.value.messages
+
+@pytest.mark.unit
+class TestUpdatePasswordSchema:
+
+    def test_should_raise_error_when_old_password_is_missing(self):
+        schema = UpdatePasswordSchema()
+
+        data = {
+            "new_password": "AcordoJA@2026",
+            "confirm_password": "AcordoJA@2026",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "old_password" in err.value.messages
+
+    def test_should_raise_error_when_new_password_is_missing(self):
+        schema = UpdatePasswordSchema()
+
+        data = {
+            "old_password": "AcordoJA@2026",
+            "confirm_password": "AcordoJA@2026",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "new_password" in err.value.messages
+
+    def test_should_raise_error_when_confirm_password_is_missing(self):
+        schema = UpdatePasswordSchema()
+
+        data = {
+            "old_password": "AcordoJA@2026",
+            "new_password": "AcordoJA@2026",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "confirm_password" in err.value.messages
+
+    def test_should_raise_error_when_data_has_invalid_type(self):
+        schema = UpdatePasswordSchema()
+
+        data = {
+            "old_password": 123,
+            "new_password": 123,
+            "confirm_password": 123
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "old_password" in err.value.messages
+        assert "new_password" in err.value.messages
+        assert "confirm_password" in err.value.messages
+
+    def test_should_raise_error_when_new_password_is_invalid_format(self):
+        schema = UpdatePasswordSchema()
+
+        data = {
+            "old_password": "AcordoJA@2025",
+            "new_password": "abc",
+            "confirm_password": "AcordoJA@2026",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "new_password" in err.value.messages
+
+    def test_should_raise_error_when_confirm_password_is_invalid_format(self):
+        schema = UpdatePasswordSchema()
+
+        data = {
+            "old_password": "AcordoJA@2025",
+            "new_password": "AcordoJA@2026",
+            "confirm_password": "abc",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "confirm_password" in err.value.messages
+
+    def test_should_raise_error_when_password_does_not_match(self):
+        schema = UpdatePasswordSchema()
+
+        data = {
+            "old_password": "AcordoJA@2025",
+            "new_password": "AcordoJA@2026",
+            "confirm_password": "AcordoJA@2025",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "confirm_password" in err.value.messages
+
+    def test_should_load_successfully_with_valid_data(self):
+        schema = UpdatePasswordSchema()
+
+        data = {
+            "old_password": "AcordoJA@2025",
+            "new_password": "AcordoJA@2026",
+            "confirm_password": "AcordoJA@2026",
+        }
+
+        result = schema.load(data)
+
+        assert result["old_password"] == "AcordoJA@2025"
+        assert result["new_password"] == "AcordoJA@2026"
+        assert result["confirm_password"] == "AcordoJA@2026"
+
+
+@pytest.mark.unit
+class TestForgotPasswordSchema:
+
+    def test_should_raise_error_when_email_is_missing(self):
+        schema = ForgotPasswordSchema()
+
+        data = {}
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "email" in err.value.messages
+
+    def test_should_raise_error_when_email_has_invalid_format(self):
+        schema = ForgotPasswordSchema()
+
+        data = {
+            "email": "joao.silva"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "email" in err.value.messages
+
+    def test_should_raise_error_when_email_has_invalid_typez(self):
+        schema = ForgotPasswordSchema()
+
+        data = {
+            "email": 123
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "email" in err.value.messages
+
+    def test_should_load_successfully_with_valid_data(self):
+        schema = ForgotPasswordSchema()
+
+        data = {
+            "email": "joao.silva@gmail.com"
+        }
+
+        result = schema.load(data)
+
+        assert result["email"] == data["email"]
+
+
+@pytest.mark.unit
+class TestResetPasswordSchema:
+
+    def test_should_raise_error_when_data_has_invalid_format(self):
+        schema = ResetPasswordSchema()
+
+        data = {
+            "new_password": 123,
+            "confirm_password": 123,
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "new_password" in err.value.messages
+        assert "confirm_password" in err.value.messages
+
+    def test_should_raise_error_when_passwords_does_not_match(self):
+        schema = ResetPasswordSchema()
+
+        data = {
+            "new_password": "AcordoJA@2025",
+            "confirm_password": "AcordoJA@2026",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "confirm_password" in err.value.messages
+
+    def test_should_load_successfully_with_valid_data(self):
+        schema = ResetPasswordSchema()
+
+        data = {
+            "new_password": "AcordoJA@2026",
+            "confirm_password": "AcordoJA@2026",
+        }
+
+        result = schema.load(data)
+
+        assert result["new_password"] == "AcordoJA@2026"
+        assert result["confirm_password"] == "AcordoJA@2026"
