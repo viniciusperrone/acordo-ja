@@ -31,3 +31,6 @@ class LeadSchema(Schema):
 
         if len(phone) not in (10, 11):
             raise ValidationError("Phone number must be 10 or 11")
+
+    class Meta:
+        unknown = "raise"

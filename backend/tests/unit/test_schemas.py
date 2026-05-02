@@ -95,3 +95,67 @@ class TestUserResponseSchema:
         assert result["name"] == "João"
         assert "password" not in result
 
+@pytest.mark.unit
+class TestLeadSchema:
+
+    def test_lead_schema_invalid_document_raise_error(self):
+        schema = LeadSchema()
+
+        lead = {
+            "name": "João Silva",
+            "document": "123456789",
+            "email": "joao@test.gmail",
+            "phone": "11999999999"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(lead)
+
+        assert "document" in err.value.messages
+
+    def test_lead_schema_invalid_id_parameter_raise_error(self):
+        schema = LeadSchema()
+
+        lead = {
+            "id": uuid.uuid4(),
+            "name": "João Silva",
+            "document": "123456789",
+            "email": "joao@test.gmail",
+            "phone": "11999999999"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(lead)
+
+        assert "id" in err.value.messages
+
+    def test_lead_schema_invalid_phone_raise_error(self):
+        schema = LeadSchema()
+
+        lead = {
+            "name": "João Silva",
+            "email": "joao@test.gmail",
+            "phone": "2132434"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(lead)
+
+        assert "phone" in err.value.messages
+
+    def test_lead_schema_success(self):
+        schema = LeadSchema()
+
+        lead = {
+            "name": "João Silva",
+            "document": "52998224725",
+            "email": "joao@test.gmail",
+            "phone": "11999999999"
+        }
+
+        result = schema.dump(lead)
+
+        assert result["name"] == lead["name"]
+        assert result["document"] == lead["document"]
+        assert result["email"] == lead["email"]
+        assert result["phone"] == lead["phone"]
