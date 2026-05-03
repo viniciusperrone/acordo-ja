@@ -1,6 +1,6 @@
 import re
 
-from marshmallow import Schema, fields, validates, validates_schema, ValidationError
+from marshmallow import Schema, fields, validates, ValidationError
 from validate_docbr import CPF, CNPJ
 
 from utils.enum import DebtStatus, DebtHistoryType

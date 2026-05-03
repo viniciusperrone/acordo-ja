@@ -10,12 +10,12 @@ from leads.schemas import LeadSchema
 from authentication.schemas import AuthenticationSchema, ResetPasswordSchema, UpdatePasswordSchema, ForgotPasswordSchema
 from creditor.schemas import CreditorSchema
 from debtor.schemas import DebtorSchema
-from debts.schemas import DebtSchema, DebtHistorySchema, DebtSearchResponseSchema, DebtItemSchema
+from debts.schemas import DebtSchema, DebtSearchResponseSchema, DebtItemSchema, DebtHistorySchema, DebtSearchByDocumentSchema
 from agreement.schemas import AgreementSchema
 from installments.schemas import InstallmentSchema
 from payment.schemas import PaymentSchema
 
-from utils.enum import UserRole, MethodPayment, InstallmentStatus
+from utils.enum import UserRole, MethodPayment, InstallmentStatus, DebtStatus, DebtHistoryType
 
 
 @pytest.mark.unit
@@ -819,6 +819,500 @@ class TestDebtorSchema:
         assert result["interest_rate"] == str(creditor["interest_rate"])
         assert result["fine_rate"] == str(creditor["fine_rate"])
         assert result["discount_limit"] == str(creditor["discount_limit"])
+
+@pytest.mark.unit
+class TestDebtSchema:
+
+    def test_should_raise_error_when_debtor_id_is_missing(self):
+        schema = DebtSchema()
+
+        data = {
+            "creditor_id": uuid.uuid4(),
+            "original_value": Decimal("5000.00"),
+            "updated_value": Decimal("5000.00"),
+            "due_date": "2026-12-01"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "debtor_id" in err.value.messages
+
+    def test_should_raise_error_when_creditor_id_is_missing(self):
+        schema = DebtSchema()
+
+        data = {
+            "debtor_id": 1,
+            "original_value": Decimal("5000.00"),
+            "updated_value": Decimal("5000.00"),
+            "due_date": "2026-12-01"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "creditor_id" in err.value.messages
+
+    def test_should_raise_error_when_original_value_is_missing(self):
+        schema = DebtSchema()
+
+        data = {
+            "debtor_id": 1,
+            "creditor_id": uuid.uuid4(),
+            "updated_value": Decimal("5000.00"),
+            "due_date": "2026-12-01"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "original_value" in err.value.messages
+
+    def test_should_raise_error_when_due_date_is_missing(self):
+        schema = DebtSchema()
+
+        data = {
+            "debtor_id": 1,
+            "creditor_id": uuid.uuid4(),
+            "original_value": Decimal("5000.00"),
+            "updated_value": Decimal("5000.00")
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "due_date" in err.value.messages
+
+    def test_should_raise_error_when_data_has_invalid_type(self):
+        schema = DebtSchema()
+
+        data = {
+            "debtor_id": "invalid_type",
+            "creditor_id": "invalid_type",
+            "original_value": "invalid_type",
+            "updated_value": "invalid_type",
+            "due_date": "invalid_type",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "debtor_id" in err.value.messages
+        assert "creditor_id" in err.value.messages
+        assert "original_value" in err.value.messages
+        assert "updated_value" in err.value.messages
+        assert "due_date" in err.value.messages
+
+    def test_should_raise_error_when_unknown_field_is_provided(self):
+        schema = DebtSchema()
+
+        data = {
+            "debtor_id": 1,
+            "creditor_id": uuid.uuid4(),
+            "original_value": Decimal("5000.00"),
+            "updated_value": Decimal("5000.00"),
+            "due_date": "2026-12-01",
+            "unknown_field": "unexpected_value"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "unknown_field" in err.value.messages
+
+    def test_should_load_successfully_with_valid_data(self):
+        schema = DebtSchema()
+
+        data = {
+            "debtor_id": 1,
+            "creditor_id": uuid.uuid4(),
+            "original_value": Decimal("5000.00"),
+            "updated_value": Decimal("5000.00"),
+            "due_date": "2026-12-01"
+        }
+
+        result = schema.load(data)
+
+        assert result["debtor_id"] == data["debtor_id"]
+        assert result["creditor_id"] == data["creditor_id"]
+        assert result["original_value"] == data["original_value"]
+        assert result["updated_value"] == data["updated_value"]
+        assert result["due_date"] == date(2026, 12, 1)
+
+    def test_should_dump_successfully_with_valid_data(self):
+        schema = DebtSchema()
+
+        data = {
+            "id": uuid.uuid4(),
+            "debtor_id": 1,
+            "creditor_id": uuid.uuid4(),
+            "original_value": Decimal("5000.00"),
+            "updated_value": Decimal("5000.00"),
+            "due_date": date(2026, 12, 1),
+            "last_agreement_date": datetime.utcnow(),
+            "status": DebtStatus.OPEN,
+            "renegotiation_count": 1,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+
+        result = schema.dump(data)
+
+        assert result["id"] == str(data["id"])
+        assert result["debtor_id"] == data["debtor_id"]
+        assert result["creditor_id"] == str(data["creditor_id"])
+        assert result["original_value"] == str(data["original_value"])
+        assert result["updated_value"] == str(data["updated_value"])
+        assert result["due_date"] == str(data["due_date"])
+        assert result["last_agreement_date"] == data["last_agreement_date"].isoformat()
+        assert result["status"] == data["status"].value
+        assert result["renegotiation_count"] == data["renegotiation_count"]
+        assert result["created_at"] == data["created_at"].isoformat()
+        assert result["updated_at"] == data["updated_at"].isoformat()
+
+@pytest.mark.unit
+class TestDebtSearchByDocumentSchema:
+
+    def test_should_raise_error_when_document_is_missing(self):
+        schema = DebtSearchByDocumentSchema()
+
+        data = {}
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "document" in err.value.messages
+
+    def test_should_raise_error_when_document_is_invalid(self):
+        schema = DebtSearchByDocumentSchema()
+
+        data = {
+            "document": "12345678900"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "document" in err.value.messages
+
+    def test_should_load_successfully_with_valid_cpf(self):
+        schema = DebtSearchByDocumentSchema()
+
+        data = {
+            "document": "52998224725"
+        }
+
+        result = schema.load(data)
+
+        assert result["document"] == data["document"]
+
+    def test_should_load_successfully_with_valid_cnpj(self):
+        schema = DebtSearchByDocumentSchema()
+
+        data = {
+            "document": "11222333000181"
+        }
+
+        result = schema.load(data)
+
+        assert result["document"] == data["document"]
+
+    def test_should_accept_formatted_document(self):
+        schema = DebtSearchByDocumentSchema()
+
+        data = {
+            "document": "529.982.247-25"
+        }
+
+        result = schema.load(data)
+
+        assert result["document"] == data["document"]
+
+    def test_should_raise_error_when_unknown_field_is_provided(self):
+        schema = DebtSearchByDocumentSchema()
+
+        data = {
+            "document": "52998224725",
+            "unexpected": "value"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "unexpected" in err.value.messages
+
+@pytest.mark.unit
+class TestDebtSearchResponseSchema:
+
+    def test_should_raise_error_when_document_is_missing(self):
+        schema = DebtSearchResponseSchema()
+
+        data = {
+            "has_debts": True,
+            "debts": [],
+            "total_debts": 0,
+            "total_amount": Decimal("0.00")
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "document" in err.value.messages
+
+    def test_should_raise_error_when_has_debts_is_missing(self):
+        schema = DebtSearchResponseSchema()
+
+        data = {
+            "document": "52998224725",
+            "debts": [],
+            "total_debts": 0,
+            "total_amount": Decimal("0.00")
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "has_debts" in err.value.messages
+
+    def test_should_raise_error_when_debts_is_missing(self):
+        schema = DebtSearchResponseSchema()
+
+        data = {
+            "document": "52998224725",
+            "has_debts": True,
+            "total_debts": 0,
+            "total_amount": Decimal("0.00")
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "debts" in err.value.messages
+
+    def test_should_raise_error_when_total_debts_is_missing(self):
+        schema = DebtSearchResponseSchema()
+
+        data = {
+            "document": "52998224725",
+            "has_debts": True,
+            "debts": [],
+            "total_amount": Decimal("0.00")
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "total_debts" in err.value.messages
+
+    def test_should_raise_error_when_total_amount_is_missing(self):
+        schema = DebtSearchResponseSchema()
+
+        data = {
+            "document": "52998224725",
+            "has_debts": True,
+            "debts": [],
+            "total_debts": 0
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "total_amount" in err.value.messages
+
+    def test_should_raise_error_when_document_is_invalid(self):
+        schema = DebtSearchResponseSchema()
+
+        data = {
+            "document": "12345678900",
+            "has_debts": True,
+            "debts": [],
+            "total_debts": 0,
+            "total_amount": Decimal("0.00")
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "document" in err.value.messages
+
+    def test_should_raise_error_when_data_has_invalid_type(self):
+        schema = DebtSearchResponseSchema()
+
+        data = {
+            "document": 123,
+            "has_debts": "invalid",
+            "debts": "invalid",
+            "total_debts": "invalid",
+            "total_amount": "invalid"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "document" in err.value.messages
+        assert "has_debts" in err.value.messages
+        assert "debts" in err.value.messages
+        assert "total_debts" in err.value.messages
+        assert "total_amount" in err.value.messages
+
+    def test_should_raise_error_when_unknown_field_is_provided(self):
+        schema = DebtSearchResponseSchema()
+
+        data = {
+            "document": "52998224725",
+            "has_debts": True,
+            "debts": [],
+            "total_debts": 0,
+            "total_amount": Decimal("0.00"),
+            "unknown_field": "unexpected"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "unknown_field" in err.value.messages
+
+    def test_should_load_successfully_with_valid_data(self):
+        schema = DebtSearchResponseSchema()
+
+        data = {
+            "document": "52998224725",
+            "has_debts": True,
+            "debts": [],
+            "total_debts": 0,
+            "total_amount": Decimal("0.00"),
+            "redirect_url": "https://example.com"
+        }
+
+        result = schema.load(data)
+
+        assert result["document"] == data["document"]
+        assert result["has_debts"] == data["has_debts"]
+        assert result["debts"] == data["debts"]
+        assert result["total_debts"] == data["total_debts"]
+        assert result["total_amount"] == Decimal("0.00")
+        assert result["redirect_url"] == data["redirect_url"]
+
+    def test_should_load_successfully_without_optional_redirect_url(self):
+        schema = DebtSearchResponseSchema()
+
+        data = {
+            "document": "52998224725",
+            "has_debts": True,
+            "debts": [],
+            "total_debts": 0,
+            "total_amount": "0.00"
+        }
+
+        result = schema.load(data)
+
+        assert "redirect_url" not in result
+
+    def test_should_dump_successfully_with_valid_data(self):
+        schema = DebtSearchResponseSchema()
+
+        data = {
+            "document": "52998224725",
+            "has_debts": True,
+            "debts": [],
+            "total_debts": 1,
+            "total_amount": Decimal("123.45"),
+            "redirect_url": "/leads/add?document=52998224725"
+        }
+
+        result = schema.dump(data)
+
+        assert result["document"] == data["document"]
+        assert result["has_debts"] == data["has_debts"]
+        assert result["debts"] == data["debts"]
+        assert result["total_debts"] == data["total_debts"]
+        assert result["total_amount"] == "123.45"
+        assert result["redirect_url"] == data["redirect_url"]
+
+@pytest.mark.unit
+class TestDebtHistorySchema:
+
+    def test_should_raise_error_when_unknown_field_is_provided(self):
+        schema = DebtHistorySchema()
+
+        data = {
+            "id": str(uuid.uuid4()),
+            "unknown": "value"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "unknown" in err.value.messages
+
+    def test_should_load_successfully_with_valid_data(self):
+        schema = DebtHistorySchema()
+
+        data = {
+            "id": str(uuid.uuid4()),
+            "old_value": "100.00",
+            "new_value": "150.00",
+            "changed_at": datetime.utcnow().isoformat(),
+            "reason": "update",
+            "extra": {"key": "value"}
+        }
+
+        result = schema.load(data)
+
+        assert result["id"] is not None
+        assert result["old_value"] == Decimal("100.00")
+        assert result["new_value"] == Decimal("150.00")
+        assert result["reason"] == data["reason"]
+        assert result["extra"] == data["extra"]
+
+    def test_should_raise_error_when_invalid_types_are_provided(self):
+        schema = DebtHistorySchema()
+
+        data = {
+            "id": "invalid_uuid",
+            "old_value": "invalid",
+            "new_value": "invalid",
+            "changed_at": "invalid",
+            "extra": "invalid"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        errors = err.value.messages
+
+        assert "id" in errors
+        assert "old_value" in errors
+        assert "new_value" in errors
+        assert "changed_at" in errors
+        assert "extra" in errors
+
+    def test_should_dump_successfully_with_valid_data(self):
+        schema = DebtHistorySchema()
+
+        data = {
+            "id": uuid.uuid4(),
+            "event_type": DebtHistoryType.UPDATED,
+            "old_status": DebtStatus.OPEN,
+            "new_status": DebtStatus.PAID,
+            "old_value": Decimal("100.00"),
+            "new_value": Decimal("150.00"),
+            "changed_at": datetime.utcnow(),
+            "reason": "update",
+            "extra": {"key": "value"}
+        }
+
+        result = schema.dump(data)
+
+        assert result["id"] == str(data["id"])
+        assert result["event_type"] == data["event_type"].value
+        assert result["old_status"] == data["old_status"].value
+        assert result["new_status"] == data["new_status"].value
+        assert result["old_value"] == "100.00"
+        assert result["new_value"] == "150.00"
+        assert result["changed_at"] == data["changed_at"].isoformat()
+        assert result["reason"] == data["reason"]
+        assert result["extra"] == data["extra"]
 
 @pytest.mark.unit
 class TestInstallmentSchema:
