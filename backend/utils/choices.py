@@ -1,4 +1,4 @@
-from enum import Enum
+
 
 DEBT_STATUS_CHOICES = (
     ("OPEN", "Aberta"),
