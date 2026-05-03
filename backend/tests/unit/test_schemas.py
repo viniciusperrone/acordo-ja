@@ -10,7 +10,7 @@ from leads.schemas import LeadSchema
 from authentication.schemas import AuthenticationSchema, ResetPasswordSchema, UpdatePasswordSchema, ForgotPasswordSchema
 from creditor.schemas import CreditorSchema
 from debtor.schemas import DebtorSchema
-from debts.schemas import DebtSchema, DebtSearchResponseSchema, DebtItemSchema, DebtHistorySchema, DebtSearchByDocumentSchema
+from debts.schemas import DebtSchema, DebtSearchResponseSchema, DebtHistorySchema, DebtSearchByDocumentSchema
 from agreement.schemas import AgreementSchema
 from installments.schemas import InstallmentSchema
 from payment.schemas import PaymentSchema
@@ -1313,6 +1313,175 @@ class TestDebtHistorySchema:
         assert result["changed_at"] == data["changed_at"].isoformat()
         assert result["reason"] == data["reason"]
         assert result["extra"] == data["extra"]
+
+@pytest.mark.unit
+class TestAgreementSchema:
+    """
+        id (dump), debt_id, status (dump), total_traded (dump),
+        installment_value (dump), installment_quantity,
+        entry_value (optional), discount_applied (optional)
+        first_due_date, created_at (dump), updated_at (dump)
+    """
+
+    def test_should_raise_error_when_debt_id_is_missing(self):
+        schema = AgreementSchema()
+
+        data = {
+            "installments_quantity": 1,
+            "entry_value": Decimal("150.00"),
+            "discount_applied": Decimal("0.05"),
+            "first_due_date": date(2026, 5, 6)
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "debt_id" in err.value.messages
+
+    def test_should_raise_error_when_first_due_date_is_missing(self):
+        schema = AgreementSchema()
+
+        data = {
+            "debt_id": uuid.uuid4(),
+            "installments_quantity": 1,
+            "entry_value": Decimal("150.00"),
+            "discount_applied": Decimal("0.05"),
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "first_due_date" in err.value.messages
+
+    def test_should_raise_error_when_installment_quantity_is_missing(self):
+        schema = AgreementSchema()
+
+        data = {
+            "debt_id": uuid.uuid4(),
+            "installments_quantity": 1,
+            "entry_value": Decimal("150.00"),
+            "discount_applied": Decimal("0.05")
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "first_due_date" in err.value.messages
+
+    def test_should_raise_error_when_installment_quantity_is_zero_or_negative(self):
+        schema = AgreementSchema()
+
+        data = {
+            "debt_id": uuid.uuid4(),
+            "installments_quantity": -1,
+            "entry_value": Decimal("150.00"),
+            "discount_applied": Decimal("0.05"),
+            "first_due_date": date(2026, 5, 6)
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "installments_quantity" in err.value.messages
+        assert "Must be greater than or equal to 1." in str(err.value)
+
+    def test_should_raise_error_when_installment_quantity_is_zero(self):
+        schema = AgreementSchema()
+
+        data = {
+            "debt_id": uuid.uuid4(),
+            "installments_quantity": 0,
+            "entry_value": Decimal("150.00"),
+            "discount_applied": Decimal("0.05"),
+            "first_due_date": date(2026, 5, 6)
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "installments_quantity" in err.value.messages
+        assert "Must be greater than or equal to 1." in str(err.value)
+
+    def test_should_raise_when_data_has_invalid_type(self):
+        schema = AgreementSchema()
+
+        data = {
+            "debt_id": 123456,
+            "installments_quantity": "invalid_type",
+            "entry_value": "invalid_type",
+            "discount_applied": "invalid_type",
+            "first_due_date": 123456
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "debt_id" in err.value.messages
+        assert "installments_quantity" in err.value.messages
+        assert "entry_value" in err.value.messages
+        assert "discount_applied" in err.value.messages
+        assert "first_due_date" in err.value.messages
+
+    def test_should_raise_error_when_unknown_field_is_provided(self):
+        schema = AgreementSchema()
+
+        data = {
+            "debt_id": uuid.uuid4(),
+            "installments_quantity": 1,
+            "entry_value": Decimal("150.00"),
+            "discount_applied": Decimal("0.05"),
+            "first_due_date": date(2026, 5, 6),
+            "unknown_field": "unexpected_value"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "unknown_field" in err.value.messages
+
+    def test_should_load_successfully_with_valid_data(self):
+        schema = AgreementSchema()
+
+        data = {
+            "debt_id": uuid.uuid4(),
+            "installments_quantity": 1,
+            "entry_value": Decimal("150.00"),
+            "discount_applied": Decimal("0.05"),
+            "first_due_date": date(2026, 5, 6),
+        }
+
+        result = schema.load(data)
+
+        assert result["debt_id"] == data["debt_id"]
+        assert result["installments_quantity"] == data["installments_quantity"]
+        assert result["entry_value"] == data["entry_value"]
+        assert result["discount_applied"] == data["discount_applied"]
+        assert result["first_due_date"] == data["first_due_date"]
+
+    def test_should_dump_successfully_with_valid_data(self):
+        schema = AgreementSchema()
+
+        data = {
+            "id": uuid.uuid4(),
+            "debt_id": uuid.uuid4(),
+            "installments_quantity": 1,
+            "entry_value": Decimal("150.00"),
+            "discount_applied": Decimal("0.05"),
+            "first_due_date": date(2026, 5, 6),
+            "total_traded": Decimal("200.00"),
+            "installment_value": Decimal("50.00")
+        }
+
+        result = schema.dump(data)
+
+        assert result["id"] == str(data["id"])
+        assert result["debt_id"] == str(data["debt_id"])
+        assert result["installments_quantity"] == data["installments_quantity"]
+        assert result["entry_value"] == str(data["entry_value"])
+        assert result["discount_applied"] == str(data["discount_applied"])
+        assert result["first_due_date"] == data["first_due_date"].isoformat()
+        assert result["total_traded"] == data["total_traded"]
+        assert result["installment_value"] == data["installment_value"]
 
 @pytest.mark.unit
 class TestInstallmentSchema:
