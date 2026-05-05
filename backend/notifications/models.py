@@ -26,7 +26,7 @@ class Notification(db.Model):
     is_read = db.Column(db.Boolean, nullable=False, default=False)
     read_at = db.Column(db.DateTime, nullable=True)
 
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
 
     @validates("extra")
     def validate_extra(self, key, value):

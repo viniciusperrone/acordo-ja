@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime
 from decimal import Decimal
 
 from config.db import db
@@ -43,13 +42,13 @@ class Agreement(db.Model):
 
     created_at = db.Column(
         db.DateTime,
-        default=datetime.utcnow,
+        server_default=db.func.now(),
         nullable=False
     )
 
     updated_at = db.Column(
         db.DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        server_default=db.func.now(),
+        onupdate=db.func.now(),
         nullable=False
     )

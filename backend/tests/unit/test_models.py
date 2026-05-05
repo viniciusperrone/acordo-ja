@@ -4,8 +4,6 @@ import uuid
 from decimal import Decimal
 from datetime import datetime, date
 
-from sqlalchemy import UUID
-
 from installments import Installments
 from notifications import Notification
 from payment import Payment

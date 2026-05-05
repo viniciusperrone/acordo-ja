@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime
 from sqlalchemy import UUID, NUMERIC
 
 from config.db import db
@@ -19,4 +18,4 @@ class Payment(db.Model):
         nullable=False,
     )
 
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())

@@ -1,4 +1,3 @@
-from datetime import datetime
 from sqlalchemy.dialects.postgresql import UUID, NUMERIC
 
 from config.db import db
@@ -41,5 +40,5 @@ class Installments(db.Model):
         cascade="all, delete-orphan"
     )
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now(), nullable=False)

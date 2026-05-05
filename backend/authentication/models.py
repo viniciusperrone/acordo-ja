@@ -27,7 +27,7 @@ class PasswordResetToken(db.Model):
     created_at = db.Column(
         db.DateTime,
         nullable=False,
-        default=datetime.utcnow
+        server_default=db.func.now()
     )
     used_at = db.Column(
         db.DateTime,
@@ -54,4 +54,4 @@ class TokenBlocklist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     jti = db.Column(db.String(36), nullable=False)
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)

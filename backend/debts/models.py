@@ -43,8 +43,12 @@ class Debt(db.Model):
     renegotiation_count = db.Column(db.Integer, default=0)
     last_agreement_date = db.Column(db.DateTime)
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
+    updated_at = db.Column(
+        db.DateTime,
+        server_default=db.func.now(),
+        onupdate=db.func.now()
+    )
 
 class DebtHistory(db.Model):
     __tablename__ = 'debt_history'
