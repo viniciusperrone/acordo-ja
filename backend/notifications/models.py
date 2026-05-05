@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from sqlalchemy import UUID
+from sqlalchemy.orm import validates
 
 from config.db import db
 from utils.enum import NotificationType
@@ -26,6 +27,12 @@ class Notification(db.Model):
     read_at = db.Column(db.DateTime, nullable=True)
 
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    @validates("extra")
+    def validate_extra(self, key, value):
+        if value is None:
+            raise ValueError("extra cannot be None")
+        return value
 
     def mark_as_read(self):
         self.is_read = True

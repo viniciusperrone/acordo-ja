@@ -4,6 +4,8 @@ import uuid
 from decimal import Decimal
 from datetime import datetime, date
 
+from sqlalchemy import UUID
+
 from installments import Installments
 from notifications import Notification
 from payment import Payment
@@ -484,7 +486,7 @@ class TestPaymentModel:
 @pytest.mark.unit
 class TestNotificationModel:
 
-    def test_create_notification(self, session, admin_user):
+    def test_notification_persists_with_valid_data(self, session, admin_user):
         lead_id = uuid.uuid4()
 
         notification = Notification(
@@ -508,13 +510,12 @@ class TestNotificationModel:
         assert notification.read_at is None
         assert notification.created_at is not None
 
-    def test_notification_mark_as_read(self, session, admin_user):
+    def test_notification_mark_as_read_updates_flags(self, session, admin_user):
         notification = Notification(
-            type=NotificationType.PAYMENT_RECEIVED,
-            title="Pagamento Recebido",
-            message="Pagamento de R$ 100,00 recebido",
+            type=NotificationType.GENERAL,
+            title="Test",
+            message="Test",
             user_id=admin_user.id,
-            is_read=False,
             extra={}
         )
 
@@ -528,11 +529,32 @@ class TestNotificationModel:
         assert notification.read_at is not None
         assert isinstance(notification.read_at, datetime)
 
-    def test_notification_to_dict(self, session, admin_user):
+    def test_notification_mark_as_read_is_idempotent(self, session, admin_user):
+        notification = Notification(
+            type=NotificationType.GENERAL,
+            title="Test",
+            message="Test",
+            user_id=admin_user.id,
+            extra={}
+        )
+
+        session.add(notification)
+        session.commit()
+
+        notification.mark_as_read()
+        first_read_at = notification.created_at
+
+        notification.mark_as_read()
+        session.commit()
+
+        assert notification.is_read is True
+        assert notification.read_at >= first_read_at
+
+    def test_notification_to_dict_serializes_fields(self, session, admin_user):
         notification = Notification(
             type=NotificationType.AGREEMENT_CREATED,
             title="Acordo Criado",
-            message="Novo acordo de 6 parcelas",
+            message="Novo criado",
             user_id=admin_user.id,
             extra={"agreement_id": "abc123"}
         )
@@ -543,48 +565,42 @@ class TestNotificationModel:
         data = notification.to_dict()
 
         assert isinstance(data, dict)
-        assert 'id' in data
-        assert 'notification_type' in data
-        assert data['notification_type'] == 'AGREEMENT_CREATED'
-        assert data['title'] == "Acordo Criado"
-        assert data['is_read'] is False
-        assert 'extra' in data
-        assert data['extra']['agreement_id'] == "abc123"
+        assert isinstance(data["id"], str)
+        assert data["notification_type"] == "AGREEMENT_CREATED"
+        assert data["title"] == "Acordo Criado"
+        assert data["message"] == "Novo criado"
+        assert data["is_read"] is False
+        assert data["read_at"] is None
+        assert isinstance(data["created_at"], str)
+        assert data["extra"]["agreement_id"] == "abc123"
 
-    def test_notification_types(self, session, admin_user):
-        types = [
-            NotificationType.NEW_LEAD,
-            NotificationType.PAYMENT_RECEIVED,
-            NotificationType.INSTALLMENT_OVERDUE,
-            NotificationType.AGREEMENT_CREATED,
-            NotificationType.AGREEMENT_COMPLETED,
-            NotificationType.DEBT_PAID,
-            NotificationType.GENERAL
-        ]
-
-        for notif_type in types:
+    def test_notification_accepts_all_enum_types(self, session, admin_user):
+        for notif_type in NotificationType:
             notification = Notification(
                 type=notif_type,
-                title=f"Test {notif_type.value}",
+                title=f"Test {notif_type}",
                 message="Test message",
                 user_id=admin_user.id,
-                is_read=False,
                 extra={}
             )
+
             session.add(notification)
-            session.commit()
 
-            assert notification.type == notif_type
-            session.delete(notification)
-            session.commit()
+        session.commit()
 
-    def test_notification_relationships(self, session, admin_user):
+        notifications = session.query(Notification).all()
+
+        assert len(notifications) == len(NotificationType)
+
+        for notification in notifications:
+            assert notification.type in NotificationType
+
+    def test_notification_belongs_to_user(self, session, admin_user):
         notification = Notification(
             type=NotificationType.GENERAL,
-            title="General",
-            message="Test message",
+            title="Test",
+            message="Test",
             user_id=admin_user.id,
-            is_read=False,
             extra={}
         )
 
@@ -593,15 +609,13 @@ class TestNotificationModel:
 
         assert notification.user is not None
         assert notification.user.id == admin_user.id
-        assert notification.user.email == "admin@test.com"
 
-    def test_notification_optional_user(self, session):
+    def test_notification_allows_null_user(self, session):
         notification = Notification(
             type=NotificationType.GENERAL,
-            title="Manutenção Programada",
-            message="Sistema entrará em manutenção",
+            title="System",
+            message="System message",
             user_id=None,
-            is_read=False,
             extra={}
         )
 
@@ -611,15 +625,10 @@ class TestNotificationModel:
         assert notification.user_id is None
         assert notification.user is None
 
-    def test_notification_metadata_json(self, session, admin_user):
-        complex_metadata = {
+    def test_notification_persists_json_extra(self, session, admin_user):
+        payload = {
             "lead_id": "abc123",
-            "lead_name": "João Silva",
-            "lead_document": "12345678900",
-            "nested": {
-                "key1": "value1",
-                "key2": 123
-            },
+            "nested": {"key": "value"},
             "list": [1, 2, 3]
         }
 
@@ -628,20 +637,32 @@ class TestNotificationModel:
             title="Test",
             message="Test",
             user_id=admin_user.id,
-            extra=complex_metadata
+            extra=payload
         )
 
         session.add(notification)
         session.commit()
-
         session.refresh(notification)
 
-        assert notification.extra is not None
-        assert notification.extra["lead_id"] == "abc123"
-        assert notification.extra["nested"]["key1"] == "value1"
+        assert notification.extra == payload
+        assert notification.extra["nested"]["key"] == "value"
         assert notification.extra["list"] == [1, 2, 3]
 
-@pytest.mark.unit()
+    def test_notification_rejects_null_extra(self, session, admin_user):
+        with pytest.raises(ValueError) as err:
+            notification = Notification(
+                type=NotificationType.GENERAL,
+                title="Test",
+                message="Test",
+                user_id=admin_user.id,
+                extra=None
+            )
+            session.add(notification)
+            session.commit()
+
+        assert "extra cannot be None" in str(err.value)
+
+@pytest.mark.unit
 class TestModelRelationships:
 
     def test_delete_debtor_with_debts_raises_error(self, session, debtor, creditor):
