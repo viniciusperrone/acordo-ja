@@ -132,7 +132,7 @@ class TestCreditorModel:
 @pytest.mark.unit
 class TestDebtorModel:
 
-    def test_create_debtor(self, session):
+    def test_debtor_creation_persist_fields(self, session):
         debtor = Debtor(
             name="João da Silva",
             document="12345678900",
@@ -149,8 +149,7 @@ class TestDebtorModel:
         assert debtor.email == "joao@test.com"
         assert debtor.phone == "11999999999"
 
-
-    def test_unique_document(self, session):
+    def test_debtor_document_must_be_unique(self, session):
         debtor1 = Debtor(
             name="João da Silva",
             document="12345678900",
@@ -173,7 +172,7 @@ class TestDebtorModel:
         with pytest.raises(IntegrityError):
             session.commit()
 
-    def test_optional_fields(self, session):
+    def test_debtor_optional_fields_default_to_none(self, session):
         debtor = Debtor(
             name="João da Silva",
             document="12345678900",
@@ -189,7 +188,7 @@ class TestDebtorModel:
 @pytest.mark.unit
 class TestDebtModel:
 
-    def test_create_debt(self, session, debtor, creditor):
+    def test_debt_creation_persists_fields(self, session, debtor, creditor):
         debt = Debt(
             debtor_id=debtor.id,
             creditor_id=creditor.id,
@@ -209,14 +208,32 @@ class TestDebtModel:
         assert debt.renegotiation_count == 0
         assert debt.created_at is not None
 
-    def test_relationships(self, session, debt):
+    def test_debt_has_debtor_and_creditor_relationships(self, session, debt):
         assert debt.debtor is not None
         assert debt.creditor is not None
+
+    def test_debt_initial_agreements_is_empty(self, session, debt):
+        assert debt.agreements == []
+
+    def test_debt_defaults_are_correct(self, session, debtor, creditor):
+        debt = Debt(
+            debtor_id=debtor.id,
+            creditor_id=creditor.id,
+            original_value=1000.00,
+            due_date="2024-01-15"
+        )
+
+        session.add(debt)
+        session.commit()
+
+        assert debt.updated_value is None
+        assert debt.renegotiation_count == 0
+
 
 @pytest.mark.unit
 class TestAgreementModel:
 
-    def test_create_agreement(self, session, debt):
+    def test_agreement_creation_persists_fields(self, session, debt):
         agreement = Agreement(
             debt_id=debt.id,
             total_traded=Decimal("900.00"),
@@ -240,7 +257,7 @@ class TestAgreementModel:
         assert agreement.status == AgreementStatus.ACTIVE
         assert agreement.created_at is not None
 
-    def test_agreement_default_status(self, session, debt):
+    def test_agreement_defaults_to_draft_status(self, session, debt):
         agreement = Agreement(
             debt_id=debt.id,
             total_traded=Decimal("1000.00"),
@@ -254,7 +271,7 @@ class TestAgreementModel:
 
         assert agreement.status == AgreementStatus.DRAFT
 
-    def test_agreement_relationship_with_debt(self, session, debt):
+    def test_agreement_has_debt_relationship(self, session, debt):
         agreement = Agreement(
             debt_id=debt.id,
             total_traded=Decimal("1000.00"),
@@ -268,6 +285,35 @@ class TestAgreementModel:
 
         assert agreement.debt is not None
         assert agreement.debt.id == debt.id
+
+    def test_agreement_initial_installments_is_empty(self, session, debt):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=10,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2024, 3, 2),
+        )
+
+        session.add(agreement)
+        session.commit()
+
+        assert agreement.installments == []
+
+    def test_agreement_entry_and_discount_defaults(self, session, debt):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=10,
+            installment_value=Decimal("100.00"),
+            first_due_date=date(2024, 3, 2),
+        )
+
+        session.add(agreement)
+        session.commit()
+
+        assert agreement.entry_value == Decimal("0.00")
+        assert agreement.discount_applied == Decimal("0.00")
 
 @pytest.mark.unit
 class TestInstallmentsModel:
