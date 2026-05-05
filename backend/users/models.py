@@ -23,7 +23,13 @@ class User(db.Model):
         nullable=False
     )
 
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
+    updated_at = db.Column(
+        db.DateTime,
+        server_default=db.func.now(),
+        onupdate=db.func.now(),
+        nullable=False
+    )
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
