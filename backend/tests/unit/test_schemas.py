@@ -1306,6 +1306,21 @@ class TestDebtSchema:
 
         assert "creditor_id" in err.value.messages
 
+    def test_should_raise_error_when_creditor_id_is_invalid_uuid(self):
+        schema = DebtSchema()
+
+        data = {
+            "debtor_id": 1,
+            "creditor_id": "invalid-uuid",
+            "original_value": Decimal("5000.00"),
+            "due_date": "2026-12-01",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "creditor_id" in err.value.messages
+
     def test_should_raise_error_when_original_value_is_missing(self):
         schema = DebtSchema()
 
@@ -1329,6 +1344,21 @@ class TestDebtSchema:
             "creditor_id": uuid.uuid4(),
             "original_value": Decimal("5000.00"),
             "updated_value": Decimal("5000.00")
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "due_date" in err.value.messages
+
+    def test_should_raise_error_when_due_date_has_invalid_format(self):
+        schema = DebtSchema()
+
+        data = {
+            "debtor_id": 1,
+            "creditor_id": uuid.uuid4(),
+            "original_value": Decimal("5000.00"),
+            "due_date": "01/12/2026"
         }
 
         with pytest.raises(ValidationError) as err:
@@ -1373,6 +1403,63 @@ class TestDebtSchema:
 
         assert "unknown_field" in err.value.messages
 
+    def test_should_raise_error_when_dump_only_fields_are_provided(self):
+        schema = DebtSchema()
+
+        data = {
+            "id": str(uuid.uuid4()),
+            "status": "OPEN",
+            "renegotiation_count": 1,
+            "created_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat(),
+            "last_agreement_date": datetime.utcnow().isoformat(),
+            "debtor_id": 1,
+            "creditor_id": uuid.uuid4(),
+            "original_value": Decimal("5000.00"),
+            "due_date": "2026-12-01",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "id" in err.value.messages
+        assert "status" in err.value.messages
+        assert "renegotiation_count" in err.value.messages
+        assert "created_at" in err.value.messages
+        assert "updated_at" in err.value.messages
+        assert "last_agreement_date" in err.value.messages
+
+    def test_should_load_successfully_without_updated_value(self):
+        schema = DebtSchema()
+
+        data = {
+            "debtor_id": 1,
+            "creditor_id": uuid.uuid4(),
+            "original_value": Decimal("5000.00"),
+            "due_date": "2026-12-01",
+        }
+
+        result = schema.load(data)
+
+        assert result["original_value"] == Decimal("5000.00")
+        assert "updated_value" not in result
+
+    def test_should_load_successfully_with_decimal_string_values(self):
+        schema = DebtSchema()
+
+        data = {
+            "debtor_id": 1,
+            "creditor_id": uuid.uuid4(),
+            "original_value": "5000.50",
+            "updated_value": "4500.25",
+            "due_date": "2026-12-01",
+        }
+
+        result = schema.load(data)
+
+        assert result["original_value"] == Decimal("5000.50")
+        assert result["updated_value"] == Decimal("4500.25")
+        
     def test_should_load_successfully_with_valid_data(self):
         schema = DebtSchema()
 
