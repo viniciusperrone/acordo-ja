@@ -907,6 +907,48 @@ class TestCreditorSchema:
         assert "bank_code" in err.value.messages
         assert "Must be one of" in str(err.value)
 
+    def test_should_raise_validation_error_when_dump_only_fields_are_provided(self):
+        schema = CreditorSchema()
+
+        data = {
+            "id": str(uuid.uuid4()),
+            "bank_name": "Banco do Brasil",
+            "created_at": "2026-01-01T10:00:00",
+            "bank_code": "001",
+            "interest_rate": Decimal("10.00"),
+            "fine_rate": Decimal("5.00"),
+            "discount_limit": Decimal("15.00"),
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "id" in err.value.messages
+        assert "bank_name" in err.value.messages
+        assert "created_at" in err.value.messages
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "interest_rate",
+            "fine_rate",
+            "discount_limit",
+        ],
+    )
+    def test_should_raise_validation_error_when_decimal_field_has_invalid_type(
+            self,
+            field,
+    ):
+        schema = CreditorSchema()
+
+        data = {"bank_code": "001", "interest_rate": Decimal("10.00"), "fine_rate": Decimal("5.00"),
+                "discount_limit": Decimal("15.00"), field: "invalid"}
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert field in err.value.messages
+
     def test_should_raise_error_when_unknown_field_is_provided(self):
         schema = CreditorSchema()
 
@@ -922,6 +964,29 @@ class TestCreditorSchema:
             schema.load(data)
 
         assert "extra_field" in err.value.messages
+
+    @pytest.mark.parametrize(
+        "value",
+        [
+            Decimal("0.00"),
+            Decimal("100.00"),
+        ]
+    )
+    def test_should_accept_boundary_values_for_rates(self, value):
+        schema = CreditorSchema()
+
+        data = {
+            "bank_code": "001",
+            "interest_rate": value,
+            "fine_rate": value,
+            "discount_limit": value,
+        }
+
+        result = schema.load(data)
+
+        assert result["interest_rate"] == value
+        assert result["fine_rate"] == value
+        assert result["discount_limit"] == value
 
     def test_should_load_successfully_with_valid_data(self):
         schema = CreditorSchema()
@@ -944,18 +1009,24 @@ class TestCreditorSchema:
         schema = CreditorSchema()
 
         data = {
+            "id": uuid.uuid4(),
             "bank_code": "001",
+            "bank_name": "Banco do Brasil",
             "interest_rate": Decimal("10.00"),
             "fine_rate": Decimal("5.00"),
-            "discount_limit": Decimal("15.00")
+            "discount_limit": Decimal("15.00"),
+            "created_at": datetime.now(),
         }
 
         result = schema.dump(data)
 
+        assert result["id"] == str(data["id"])
         assert result["bank_code"] == data["bank_code"]
+        assert result["bank_name"] == data["bank_name"]
         assert result["interest_rate"] == str(data["interest_rate"])
         assert result["fine_rate"] == str(data["fine_rate"])
         assert result["discount_limit"] == str(data["discount_limit"])
+        assert result["created_at"] == data["created_at"].isoformat()
 
 @pytest.mark.unit
 class TestDebtorSchema:
