@@ -558,6 +558,32 @@ class TestUpdatePasswordSchema:
 
         assert "confirm_password" in err.value.messages
 
+    @pytest.mark.parametrize(
+        "password",
+        [
+            "lowercase123@",
+            "UPPERCASE123@",
+            "NoNumber@",
+            "NoSpecial123",
+        ],
+    )
+    def test_should_raise_validation_error_when_new_password_does_not_match_regex(
+        self,
+        password,
+    ):
+        schema = UpdatePasswordSchema()
+
+        data = {
+            "old_password": "AcordoJA@2025",
+            "new_password": password,
+            "confirm_password": password,
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "new_password" in err.value.messages
+
     def test_should_raise_error_when_password_does_not_match(self):
         schema = UpdatePasswordSchema()
 
@@ -571,6 +597,34 @@ class TestUpdatePasswordSchema:
             schema.load(data)
 
         assert "confirm_password" in err.value.messages
+
+    def test_should_raise_validation_error_when_unknown_field_is_provided(self):
+        schema = UpdatePasswordSchema()
+
+        data = {
+            "old_password": "AcordoJA@2025",
+            "new_password": "AcordoJA@2026",
+            "confirm_password": "AcordoJA@2026",
+            "unknown": "unexpected field",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "unknown" in err.value.messages
+
+    def test_should_not_include_password_fields_in_dump(self):
+        schema = UpdatePasswordSchema()
+
+        data = {
+            "old_password": "AcordoJA@2025",
+            "new_password": "AcordoJA@2026",
+            "confirm_password": "AcordoJA@2026",
+        }
+
+        result = schema.dump(data)
+
+        assert result == {}
 
     def test_should_load_successfully_with_valid_data(self):
         schema = UpdatePasswordSchema()
@@ -586,7 +640,6 @@ class TestUpdatePasswordSchema:
         assert result["old_password"] == "AcordoJA@2025"
         assert result["new_password"] == "AcordoJA@2026"
         assert result["confirm_password"] == "AcordoJA@2026"
-
 
 @pytest.mark.unit
 class TestForgotPasswordSchema:
@@ -624,6 +677,19 @@ class TestForgotPasswordSchema:
             schema.load(data)
 
         assert "email" in err.value.messages
+
+    def test_should_raise_validation_error_when_unknown_field_is_provided(self):
+        schema = ForgotPasswordSchema()
+
+        data = {
+            "email": "joao@gmail.com",
+            "unknown": "unexpected field",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "unknown" in err.value.messages
 
     def test_should_load_successfully_with_valid_data(self):
         schema = ForgotPasswordSchema()
@@ -666,6 +732,44 @@ class TestResetPasswordSchema:
             schema.load(data)
 
         assert "confirm_password" in err.value.messages
+
+    def test_should_raise_validation_error_when_new_password_is_missing(self):
+        schema = ResetPasswordSchema()
+
+        data = {
+            "confirm_password": "AcordoJA@2026",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "new_password" in err.value.messages
+
+    def test_should_raise_validation_error_when_confirm_password_is_missing(self):
+        schema = ResetPasswordSchema()
+
+        data = {
+            "new_password": "AcordoJA@2026",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "confirm_password" in err.value.messages
+
+    def test_should_raise_validation_error_when_unknown_field_is_provided(self):
+        schema = ResetPasswordSchema()
+
+        data = {
+            "new_password": "AcordoJA@2026",
+            "confirm_password": "AcordoJA@2026",
+            "unknown": "unexpected field",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "unknown" in err.value.messages
 
     def test_should_load_successfully_with_valid_data(self):
         schema = ResetPasswordSchema()
