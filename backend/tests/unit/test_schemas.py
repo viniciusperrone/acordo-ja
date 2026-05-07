@@ -215,30 +215,148 @@ class TestUserResponseSchema:
 @pytest.mark.unit
 class TestLeadSchema:
 
-    def test_lead_schema_invalid_document_raise_error(self):
+    def test_should_load_valid_lead_data(self):
+        schema = LeadSchema()
+
+        lead = {
+            "name": "João Silva",
+            "document": "52998224725",
+            "email": "joao@test.com",
+            "phone": "11999999999",
+        }
+
+        result = schema.load(lead)
+
+        assert result["name"] == lead["name"]
+        assert result["document"] == lead["document"]
+        assert result["email"] == lead["email"]
+        assert result["phone"] == lead["phone"]
+
+    def test_should_raise_validation_error_when_required_fields_are_missing(
+        self,
+    ):
+        schema = LeadSchema()
+
+        with pytest.raises(ValidationError) as err:
+            schema.load({})
+
+        assert "name" in err.value.messages
+        assert "email" in err.value.messages
+        assert "phone" in err.value.messages
+
+    def test_should_raise_validation_error_when_document_is_invalid(self):
         schema = LeadSchema()
 
         lead = {
             "name": "João Silva",
             "document": "123456789",
-            "email": "joao@test.gmail",
-            "phone": "11999999999"
+            "email": "joao@test.com",
+            "phone": "11999999999",
         }
 
         with pytest.raises(ValidationError) as err:
             schema.load(lead)
 
         assert "document" in err.value.messages
+        assert (
+            err.value.messages["document"][0]
+            == "CPF or CNPJ must be valid"
+        )
 
-    def test_lead_schema_invalid_id_parameter_raise_error(self):
+    @pytest.mark.parametrize(
+        "document",
+        [
+            "52998224725",
+            "04.252.011/0001-10",
+        ],
+    )
+    def test_should_accept_valid_cpf_and_cnpj_documents(
+        self,
+        document,
+    ):
         schema = LeadSchema()
 
         lead = {
-            "id": uuid.uuid4(),
             "name": "João Silva",
-            "document": "123456789",
-            "email": "joao@test.gmail",
-            "phone": "11999999999"
+            "document": document,
+            "email": "joao@test.com",
+            "phone": "11999999999",
+        }
+
+        result = schema.load(lead)
+
+        assert result["document"] == document
+
+    @pytest.mark.parametrize(
+        "phone",
+        [
+            "2132434",
+            "123",
+            "999999999999",
+        ],
+    )
+    def test_should_raise_validation_error_when_phone_is_invalid(
+        self,
+        phone,
+    ):
+        schema = LeadSchema()
+
+        lead = {
+            "name": "João Silva",
+            "document": "52998224725",
+            "email": "joao@test.com",
+            "phone": phone,
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(lead)
+
+        assert "phone" in err.value.messages
+        assert (
+            err.value.messages["phone"][0]
+            == "Phone number must be 10 or 11"
+        )
+
+    def test_should_raise_validation_error_when_email_is_invalid(self):
+        schema = LeadSchema()
+
+        lead = {
+            "name": "João Silva",
+            "document": "52998224725",
+            "email": "invalid-email",
+            "phone": "11999999999",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(lead)
+
+        assert "email" in err.value.messages
+
+    def test_should_raise_validation_error_when_unknown_field_is_provided(self):
+        schema = LeadSchema()
+
+        lead = {
+            "name": "João Silva",
+            "document": "52998224725",
+            "email": "joao@test.com",
+            "phone": "11999999999",
+            "unexpected": "field",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(lead)
+
+        assert "unexpected" in err.value.messages
+
+    def test_should_raise_validation_error_when_dump_only_id_is_provided(self):
+        schema = LeadSchema()
+
+        lead = {
+            "id": str(uuid.uuid4()),
+            "name": "João Silva",
+            "document": "52998224725",
+            "email": "joao@test.com",
+            "phone": "11999999999",
         }
 
         with pytest.raises(ValidationError) as err:
@@ -246,36 +364,20 @@ class TestLeadSchema:
 
         assert "id" in err.value.messages
 
-    def test_lead_schema_invalid_phone_raise_error(self):
-        schema = LeadSchema()
-
-        lead = {
-            "name": "João Silva",
-            "email": "joao@test.gmail",
-            "phone": "2132434"
-        }
-
-        with pytest.raises(ValidationError) as err:
-            schema.load(lead)
-
-        assert "phone" in err.value.messages
-
-    def test_lead_schema_success(self):
+    def test_should_not_include_dump_only_fields_in_load_result(self):
         schema = LeadSchema()
 
         lead = {
             "name": "João Silva",
             "document": "52998224725",
-            "email": "joao@test.gmail",
-            "phone": "11999999999"
+            "email": "joao@test.com",
+            "phone": "11999999999",
         }
 
-        result = schema.dump(lead)
+        result = schema.load(lead)
 
-        assert result["name"] == lead["name"]
-        assert result["document"] == lead["document"]
-        assert result["email"] == lead["email"]
-        assert result["phone"] == lead["phone"]
+        assert "id" not in result
+        assert "created_at" not in result
 
 @pytest.mark.unit
 class TestAuthenticationSchema:
