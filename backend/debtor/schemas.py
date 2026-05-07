@@ -35,10 +35,10 @@ class DebtorSchema(Schema):
 
     @pre_load
     def normalize_fields(self, data, **kwargs):
-        if "document" in data:
+        if "document" in data and isinstance(data["document"], str):
             data["document"] = re.sub(r"\D", "", data["document"])
 
-        if "phone" in data:
+        if "phone" in data and isinstance(data["phone"], str):
             data["phone"] = re.sub(r"\D", "", data["phone"])
 
         return data

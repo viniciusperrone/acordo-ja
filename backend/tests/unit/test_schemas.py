@@ -1059,6 +1059,20 @@ class TestDebtorSchema:
 
         assert "document" in err.value.messages
 
+    def test_should_load_successfully_with_valid_cnpj(self):
+        schema = DebtorSchema()
+
+        data = {
+            "name": "Empresa LTDA",
+            "document": "04.252.011/0001-10",
+            "email": "empresa@test.com",
+            "phone": "1133334444",
+        }
+
+        result = schema.load(data)
+
+        assert result["document"] == "04252011000110"
+
     def test_should_raise_when_email_is_missing(self):
         schema = DebtorSchema()
 
@@ -1066,6 +1080,21 @@ class TestDebtorSchema:
             "name": "João Silva",
             "document": "12345678901",
             "phone": "11999999999"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "email" in err.value.messages
+
+    def test_should_raise_validation_error_when_email_is_invalid(self):
+        schema = DebtorSchema()
+
+        data = {
+            "name": "João Silva",
+            "document": "52998224725",
+            "email": "invalid-email",
+            "phone": "11999999999",
         }
 
         with pytest.raises(ValidationError) as err:
@@ -1162,6 +1191,35 @@ class TestDebtorSchema:
         assert normalized_data["document"] == "52998224725"
         assert normalized_data["phone"] == "11999999999"
 
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("email", True),
+            ("phone", []),
+            ("document", {}),
+        ],
+    )
+    def test_should_raise_validation_error_when_field_has_invalid_type(
+            self,
+            field,
+            value,
+    ):
+        schema = DebtorSchema()
+
+        data = {
+            "name": "João Silva",
+            "document": "52998224725",
+            "email": "test@gmail.com",
+            "phone": "11999999999",
+        }
+
+        data[field] = value
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert field in err.value.messages
+
     def test_should_raise_error_when_unknown_field_is_provided(self):
         schema = DebtorSchema()
 
@@ -1179,38 +1237,41 @@ class TestDebtorSchema:
         assert "unknown_field" in err.value.messages
 
     def test_should_load_successfully_with_valid_data(self):
-        schema = CreditorSchema()
+        schema = DebtorSchema()
 
         data = {
-            "bank_code": "001",
-            "interest_rate": Decimal("5.00"),
-            "fine_rate": Decimal("2.00"),
-            "discount_limit": Decimal("10.00")
+            "name": "João Silva",
+            "document": "52998224725",
+            "email": "test@gmail.com",
+            "phone": "11999999999",
         }
 
         result = schema.load(data)
 
-        assert result["bank_code"] == data["bank_code"]
-        assert result["interest_rate"] == data["interest_rate"]
-        assert result["fine_rate"] == data["fine_rate"]
-        assert result["discount_limit"] == data["discount_limit"]
+        assert result["name"] == data["name"]
+        assert result["document"] == data["document"]
+        assert result["email"] == data["email"]
+        assert result["phone"] == data["phone"]
 
     def test_should_dump_successfully_with_valid_data(self):
-        schema = CreditorSchema()
+        schema = DebtorSchema()
 
-        creditor = {
-            "bank_code": "001",
-            "interest_rate": Decimal("5.00"),
-            "fine_rate": Decimal("2.00"),
-            "discount_limit": Decimal("10.00")
+        data = {
+            "id": "123",
+            "created_at": "2026-01-01T10:00:00",
+            "updated_at": "2026-01-01T10:00:00",
+            "name": "João Silva",
+            "document": "52998224725",
+            "email": "test@gmail.com",
+            "phone": "11999999999",
         }
 
-        result = schema.dump(creditor)
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
 
-        assert result["bank_code"] == creditor["bank_code"]
-        assert result["interest_rate"] == str(creditor["interest_rate"])
-        assert result["fine_rate"] == str(creditor["fine_rate"])
-        assert result["discount_limit"] == str(creditor["discount_limit"])
+        assert "id" in err.value.messages
+        assert "created_at" in err.value.messages
+        assert "updated_at" in err.value.messages
 
 @pytest.mark.unit
 class TestDebtSchema:
