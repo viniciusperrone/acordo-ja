@@ -21,36 +21,109 @@ from utils.enum import UserRole, MethodPayment, InstallmentStatus, DebtStatus, D
 @pytest.mark.unit
 class TestUserSchema:
 
-    def test_user_schema_invalid_password(self):
+    def test_should_load_valid_user_data(self):
         schema = UserSchema()
 
         data = {
             "name": "João",
             "email": "joao@email.com",
-            "password": "weak"
+            "password": "Strong@123"
+        }
+
+        result = schema.load(data)
+
+        assert result["name"] == data["name"]
+        assert result["email"] == data["email"]
+        assert result["password"] == data["password"]
+
+    def test_should_raise_validation_error_when_required_fields_are_missing(self):
+        schema = UserSchema()
+
+        with pytest.raises(ValidationError) as err:
+            schema.load({})
+
+        assert "name" in err.value.messages
+        assert "email" in err.value.messages
+        assert "password" in err.value.messages
+
+    def test_should_raise_validation_error_when_email_is_invalid(self):
+        schema = UserSchema()
+
+        data = {
+            "name": "João",
+            "email": "invalid-email",
+            "password": "Strong@123",
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "email" in err.value.messages
+
+    def test_should_raise_validation_error_when_password_is_too_short(self):
+        schema = UserSchema()
+
+        data = {
+            "name": "João",
+            "email": "joao@email.com",
+            "password": "Aa1@",
         }
 
         with pytest.raises(ValidationError) as err:
             schema.load(data)
 
         assert "password" in err.value.messages
+        assert (
+            err.value.messages["password"][0]
+            == "Password must be at least 8 characters long."
+        )
 
-    def test_user_schema_unknown_field(self):
+    @pytest.mark.parametrize(
+        "password",
+        [
+            "lowercase123@",
+            "UPPERCASE123@",
+            "NoNumber@",
+            "NoSpecial123",
+        ]
+    )
+    def test_should_raise_validation_error_when_password_does_not_match_regex(self, password):
+        schema = UserSchema()
+
+        data = {
+            "name": "João",
+            "email": "joao@email.com",
+            "password": password,
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "password" in err.value.messages
+        assert (
+            err.value.messages["password"][0]
+            == (
+                "Password must contain at least one uppercase letter, "
+                "one lowercase letter, one number and one special character."
+            )
+        )
+
+    def test_should_raise_validation_error_when_unknown_field_is_provided(self):
         schema = UserSchema()
 
         data = {
             "name": "João",
             "email": "joao@email.com",
             "password": "Strong@123",
-            "unexpected": "field"
+            "unknown": "unexpected field"
         }
 
         with pytest.raises(ValidationError) as err:
             schema.load(data)
 
-        assert "unexpected" in err.value.messages
+        assert "unknown" in err.value.messages
 
-    def test_dump_only_field_raises_error_on_load(self):
+    def test_should_raise_validation_error_when_dump_only_field_is_provided(self):
         schema = UserSchema()
 
         data = {
@@ -65,10 +138,26 @@ class TestUserSchema:
 
         assert "id" in err.value.messages
 
+    def test_should_not_include_password_in_dump(self):
+        schema = UserSchema()
+
+        user = {
+            "id": uuid.uuid4(),
+            "name": "João",
+            "email": "joao@email.com",
+            "password": "Strong@123",
+            "role": UserRole.ADMIN,
+            "must_change_password": False,
+        }
+
+        result = schema.dump(user)
+
+        assert "password" not in result
+
 @pytest.mark.unit
 class TestUserUpdateSchema:
 
-    def test_user_update_partial(self):
+    def test_should_load_partial_user_update_data(self):
         schema = UserUpdateSchema()
 
         data = {
@@ -79,10 +168,34 @@ class TestUserUpdateSchema:
 
         assert result["name"] == "Novo Nome"
 
+    def test_should_raise_validation_error_when_email_is_invalid(self):
+        schema = UserUpdateSchema()
+
+        data = {
+            "email": "invalid-email"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "email" in err.value.messages
+
+    def test_should_raise_validation_error_when_role_is_invalid(self):
+        schema = UserUpdateSchema()
+
+        data = {
+            "role": "INVALID_ROLE"
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "role" in err.value.messages
+
 @pytest.mark.unit
 class TestUserResponseSchema:
 
-    def test_user_response_schema_dump(self):
+    def test_should_dump_user_response_schema_correctly(self):
         schema = UserResponseSchema()
 
         user = {
@@ -95,6 +208,8 @@ class TestUserResponseSchema:
         result = schema.dump(user)
 
         assert result["name"] == "João"
+        assert result["email"] == "joao@email.com"
+        assert result["role"] == UserRole.ADMIN.value
         assert "password" not in result
 
 @pytest.mark.unit
