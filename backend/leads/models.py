@@ -13,4 +13,4 @@ class Lead(db.Model):
     email = db.Column(db.String(150))
     phone = db.Column(db.String(20))
 
-    created_at = db.Column(db.DateTime, default=db.func.now(), nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
