@@ -762,15 +762,16 @@ class TestAgreementService:
                 session,
             )
 
+@pytest.mark.unit
 class TestInstallmentService:
 
-    def test_get_installment_by_id_success(self, debt, session):
+    def test_should_return_installment_when_id_exists(self, debt, session):
         agreement = Agreement(
             debt_id=debt.id,
             total_traded=Decimal("1000.00"),
             installments_quantity=10,
             installment_value=Decimal("100.00"),
-            first_due_date=date(2026, 5, 6)
+            first_due_date=date(2026, 5, 6),
         )
 
         session.add(agreement)
@@ -787,15 +788,21 @@ class TestInstallmentService:
         session.add(installment)
         session.commit()
 
-        found_installment = InstallmentService.get(installment.id, session)
+        found_installment = InstallmentService.get(
+            installment.id,
+            session,
+        )
 
+        assert isinstance(found_installment, Installments)
         assert found_installment.id == installment.id
         assert found_installment.agreement_id == agreement.id
+        assert found_installment.installment_number == 1
+        assert found_installment.status == InstallmentStatus.PENDING
 
-    def test_get_installment_by_id_raises_error(self, session):
+    def test_should_raise_installment_not_found_when_id_does_not_exist(self, session):
         installment_id = random.randint(1, 999999999)
 
-        with pytest.raises(InstallmentNotFound) as err:
+        with pytest.raises(InstallmentNotFound):
             InstallmentService.get(installment_id, session)
 
 @pytest.mark.init
