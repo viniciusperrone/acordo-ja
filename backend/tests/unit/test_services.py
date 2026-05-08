@@ -215,6 +215,79 @@ class TestUserService:
         assert deleted_user is None
 
 @pytest.mark.unit
+class TestCreditorService:
+
+    def test_should_return_creditor_when_creditor_exist(self, session, creditor):
+        found_creditor = CreditorService.get(
+            creditor.id,
+            session,
+        )
+
+        assert isinstance(found_creditor, Creditor)
+        assert found_creditor.id == creditor.id
+
+    def test_should_raise_creditor_not_found_when_creditor_does_not_exist(self, session):
+        with pytest.raises(CreditorNotFound):
+            CreditorService.get(uuid.uuid4(), session)
+
+    def test_should_create_creditor_successfully(self, session):
+        data = {
+            "bank_code": "001",
+            "interest_rate": Decimal("5.00"),
+            "fine_rate": Decimal("2.00"),
+            "discount_limit": Decimal("20.00"),
+        }
+
+        creditor = CreditorService.create_creditor(
+            data,
+            session,
+        )
+
+        assert isinstance(creditor, Creditor)
+
+        assert creditor.id is not None
+        assert creditor.bank_code == data["bank_code"]
+        assert creditor.interest_rate == data["interest_rate"]
+        assert creditor.fine_rate == data["fine_rate"]
+        assert creditor.discount_limit == data["discount_limit"]
+
+    def test_should_persist_creditor_after_creation(self, session):
+        data = {
+            "bank_code": "001",
+            "interest_rate": Decimal("5.00"),
+            "fine_rate": Decimal("2.00"),
+            "discount_limit": Decimal("20.00"),
+        }
+
+        creditor = CreditorService.create_creditor(
+            data,
+            session,
+        )
+
+        persisted_creditor = session.get(
+            Creditor,
+            creditor.id,
+        )
+
+        assert persisted_creditor is not None
+        assert persisted_creditor.id == creditor.id
+        assert persisted_creditor.bank_code == data["bank_code"]
+
+    def test_should_raise_creditor_already_exists_when_bank_code_is_duplicated(self, session, creditor):
+        data = {
+            "bank_code": creditor.bank_code,
+            "interest_rate": Decimal("5.00"),
+            "fine_rate": Decimal("2.00"),
+            "discount_limit": Decimal("20.00"),
+        }
+
+        with pytest.raises(CreditorAlreadyExistsError):
+            CreditorService.create_creditor(
+                data,
+                session,
+            )
+
+@pytest.mark.unit
 class TestDebtorService:
 
     def test_get_debtor_by_id(self, session, debtor):
@@ -254,46 +327,6 @@ class TestDebtorService:
 
         with pytest.raises(DuplicateDocumentDebtor):
             DebtorService.create(data, session)
-
-@pytest.mark.unit
-class TestCreditorService:
-
-    def test_get_creditor_by_id(self, session, creditor):
-        found_creditor = CreditorService.get(creditor.id, session)
-
-        assert isinstance(found_creditor, Creditor)
-        assert found_creditor.id == creditor.id
-
-    def test_creditor_not_found(self, session):
-
-        pytest.raises(CreditorNotFound, lambda: CreditorService.get(uuid.uuid4(), session))
-
-    def test_create_creditor(self, session):
-        data = {
-            "bank_code": "001",
-            "interest_rate": "0.05",
-            "fine_rate":  "0.02",
-            "discount_limit":  "0.20"
-        }
-
-        creditor = CreditorService.create_creditor(data, session)
-
-        assert isinstance(creditor, Creditor)
-        assert creditor.bank_code == data["bank_code"]
-        assert creditor.interest_rate == data["interest_rate"]
-        assert creditor.fine_rate == data["fine_rate"]
-        assert creditor.discount_limit == data["discount_limit"]
-
-    def test_create_existing_creditor(self, session, creditor):
-        data = {
-            "bank_code": creditor.bank_code,
-            "interest_rate": "0.05",
-            "fine_rate": "0.02",
-            "discount_limit": "0.20"
-        }
-
-        with pytest.raises(CreditorAlreadyExistsError):
-            CreditorService.create_creditor(data, session)
 
 @pytest.mark.unit
 class TestDebtService:
