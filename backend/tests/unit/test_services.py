@@ -290,43 +290,71 @@ class TestCreditorService:
 @pytest.mark.unit
 class TestDebtorService:
 
-    def test_get_debtor_by_id(self, session, debtor):
+    def test_should_return_debtor_when_debtor_exist(self, debtor, session):
         found_debtor = DebtorService.get(debtor.id, session)
 
         assert isinstance(found_debtor, Debtor)
         assert found_debtor.id == debtor.id
 
-    def test_debtor_not_found(self, session):
+    def test_should_raise_debtor_not_found_when_debtor_does_not_exist(self, session):
         debtor_id = random.randint(1, 999999999)
 
-        pytest.raises(DebtorNotFound, lambda: DebtorService.get(debtor_id, session))
+        with pytest.raises(DebtorNotFound) as err:
+            DebtorService.get(debtor_id, session)
 
-    def test_create_debtor(self, session):
+        assert str(err.value) == "Debtor not found"
+
+    def test_should_create_debtor_successfully(self, session):
         data = {
             "name": "Test Debtor",
             "document": "12345678970",
             "email": "debtor@test.com",
-            "phone": "11999999999"
+            "phone": "11999999999",
         }
 
         debtor = DebtorService.create(data, session)
 
         assert isinstance(debtor, Debtor)
+
+        assert debtor.id is not None
         assert debtor.name == data["name"]
         assert debtor.document == data["document"]
         assert debtor.email == data["email"]
         assert debtor.phone == data["phone"]
 
-    def test_create_existing_debtor(self, session, debtor):
+    def test_should_persist_debtor_after_creation(self, session):
         data = {
-            "name": "Test Debtor",
+            "name": "Persisted Debtor",
+            "document": "98765432100",
+            "email": "persisted@test.com",
+            "phone": "11999999999",
+        }
+
+        debtor = DebtorService.create(data, session)
+
+        persisted_debtor = session.get(Debtor, debtor.id)
+
+        assert persisted_debtor is not None
+        assert persisted_debtor.id == debtor.id
+        assert persisted_debtor.document == data["document"]
+
+    def test_should_raise_duplicate_document_debtor_when_document_already_exists(
+        self,
+        session,
+        debtor
+    ):
+        data = {
+            "name": "Another Debtor",
             "document": debtor.document,
-            "email": "debtor@test.com",
-            "phone": "11999999999"
+            "email": "another@test.com",
+            "phone": "11999999999",
         }
 
         with pytest.raises(DuplicateDocumentDebtor):
-            DebtorService.create(data, session)
+            DebtorService.create(
+                data,
+                session,
+            )
 
 @pytest.mark.unit
 class TestDebtService:
