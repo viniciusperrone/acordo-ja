@@ -1,4 +1,5 @@
 import pytest
+
 from unittest.mock import patch
 
 import uuid
@@ -40,6 +41,7 @@ from payment.exception import PaymentError
 
 from utils.enum import UserRole, AgreementStatus, InstallmentStatus, MethodPayment, DebtStatus
 
+pytest.ExceptionInfo
 
 @pytest.mark.unit
 class TestLeadService:
@@ -83,8 +85,10 @@ class TestUserService:
         assert found_user.id == agent_user.id
 
     def test_should_raise_user_not_found_error_when_user_does_not_exist(self, session):
-        with pytest.raises(UserNotFoundError):
+        with pytest.raises(UserNotFoundError) as err:
             UserService.get(uuid.uuid4(), session)
+
+        assert err.value.message == "User not found"
 
     def test_should_create_user_successfully(self, session):
         data = {
@@ -133,7 +137,7 @@ class TestUserService:
         with pytest.raises(EmailAlreadyExists) as err:
             UserService.create_user(data, session)
 
-        assert str(err.value) == "Email already exists"
+        assert err.value.message == "Email already exists"
 
     def test_should_update_user_name_successfully(self, session, agent_user):
         data = {
@@ -205,7 +209,7 @@ class TestUserService:
                 session,
             )
 
-        assert str(err.value) == "Email already exists"
+        assert err.value.message == "Email already exists"
 
     def test_should_delete_user_successfully(self, session, agent_user):
         UserService.delete(agent_user.id, session)
@@ -227,8 +231,10 @@ class TestCreditorService:
         assert found_creditor.id == creditor.id
 
     def test_should_raise_creditor_not_found_when_creditor_does_not_exist(self, session):
-        with pytest.raises(CreditorNotFound):
+        with pytest.raises(CreditorNotFound) as err:
             CreditorService.get(uuid.uuid4(), session)
+
+        assert err.value.message == "Creditor not found"
 
     def test_should_create_creditor_successfully(self, session):
         data = {
@@ -281,11 +287,13 @@ class TestCreditorService:
             "discount_limit": Decimal("20.00"),
         }
 
-        with pytest.raises(CreditorAlreadyExistsError):
+        with pytest.raises(CreditorAlreadyExistsError) as err:
             CreditorService.create_creditor(
                 data,
                 session,
             )
+
+        assert err.value.message == "Creditor already exists"
 
 @pytest.mark.unit
 class TestDebtorService:
@@ -302,7 +310,7 @@ class TestDebtorService:
         with pytest.raises(DebtorNotFound) as err:
             DebtorService.get(debtor_id, session)
 
-        assert str(err.value) == "Debtor not found"
+        assert err.value.message == "Debtor not found"
 
     def test_should_create_debtor_successfully(self, session):
         data = {
@@ -350,11 +358,13 @@ class TestDebtorService:
             "phone": "11999999999",
         }
 
-        with pytest.raises(DuplicateDocumentDebtor):
+        with pytest.raises(DuplicateDocumentDebtor) as err:
             DebtorService.create(
                 data,
                 session,
             )
+
+        assert err.value.message == "Duplicate document debtor"
 
 @pytest.mark.unit
 class TestDebtService:
@@ -369,7 +379,7 @@ class TestDebtService:
         with pytest.raises(DebtNotFound) as err:
             DebtService.get(uuid.uuid4(), session)
 
-        # assert str(err.message) == "Debt not found"
+        assert err.value.message == "Debt not found"
 
     def test_should_return_debts_when_document_has_debt(self, session, debt):
         document = debt.debtor.document
@@ -501,12 +511,14 @@ class TestDebtService:
             "due_date": date(2026, 5, 6),
         }
 
-        with pytest.raises(CreditorNotFound):
+        with pytest.raises(CreditorNotFound) as err:
             DebtService.create(
                 data,
                 manager_user,
                 session,
             )
+
+        assert err.value.message == "Creditor not found"
 
     def test_should_raise_debtor_not_found_when_debtor_does_not_exist(self, creditor, manager_user, session):
         data = {
@@ -516,12 +528,14 @@ class TestDebtService:
             "due_date": date(2026, 5, 6),
         }
 
-        with pytest.raises(DebtorNotFound):
+        with pytest.raises(DebtorNotFound) as err:
             DebtService.create(
                 data,
                 manager_user,
                 session,
             )
+
+        assert err.value.message == "Debtor not found"
 
     @patch("debts.services.DebtHistoryService.get_by_debt")
     def test_should_return_debt_timeline(self, mock_get_by_debt, debt, session):
@@ -558,6 +572,8 @@ class TestAgreementService:
     def test_should_raise_agreement_not_found_when_agreement_does_not_exist(self, session):
         with pytest.raises(AgreementNotFound) as err:
             AgreementService.get(uuid.uuid4(), session)
+
+        assert err.value.message == "Agreement not found"
 
     @patch("agreement.services.NotificationEvents.on_agreement_created")
     def test_should_create_agreement_successfully(self, mock_notification, debt, session):
@@ -598,8 +614,10 @@ class TestAgreementService:
             "first_due_date": date(2026, 5, 6),
         }
 
-        with pytest.raises(DebtNotFound):
+        with pytest.raises(DebtNotFound) as err:
             AgreementService.create(data, session)
+
+        assert err.value.message == "Debt not found"
 
     def test_should_raise_error_when_discount_exceeds_total_debt(self, debt, session):
         data = {
@@ -670,7 +688,7 @@ class TestAgreementService:
         with pytest.raises(AgreementStatusError) as err:
             AgreementService.activate(agreement, manager_user, session)
 
-        assert str(err.value) == "Agreement cannot opened"
+        assert err.value.message == "Agreement cannot opened"
 
     @patch("agreement.services.DebtHistoryService.record_agreement_cancelled")
     def test_should_cancel_agreement_successfully(self, mock_history, agreement, session):
@@ -693,7 +711,7 @@ class TestAgreementService:
         with pytest.raises(AgreementStatusError) as err:
             AgreementService.cancel(agreement, session)
 
-        assert str(err.value) == "Cannot cancel a completed agreement"
+        assert err.value.message == "Cannot cancel a completed agreement"
 
     @patch("agreement.services.NotificationEvents.on_agreement_completed")
     def test_should_complete_agreement_successfully(self, mock_notification, debt, session):
@@ -756,11 +774,13 @@ class TestAgreementService:
         session.add(installment)
         session.flush()
 
-        with pytest.raises(PendingInstallmentsError):
+        with pytest.raises(PendingInstallmentsError) as err:
             AgreementService.complete(
                 agreement,
                 session,
             )
+
+        assert err.value.message == "There are outstanding installments"
 
 @pytest.mark.unit
 class TestInstallmentService:
@@ -802,8 +822,10 @@ class TestInstallmentService:
     def test_should_raise_installment_not_found_when_id_does_not_exist(self, session):
         installment_id = random.randint(1, 999999999)
 
-        with pytest.raises(InstallmentNotFound):
+        with pytest.raises(InstallmentNotFound) as err:
             InstallmentService.get(installment_id, session)
+
+        assert err.value.message == "Installment not found"
 
 @pytest.mark.unit
 class TestPaymentService:
@@ -878,13 +900,15 @@ class TestPaymentService:
             status=InstallmentStatus.PENDING,
         )
 
-        with pytest.raises(InstallmentWithoutAgreement):
+        with pytest.raises(InstallmentWithoutAgreement) as err:
             PaymentService.process_installment_payment(
                 installment=installment,
                 amount=Decimal("100.00"),
                 method=MethodPayment.PIX,
                 session=session,
             )
+
+        assert "has no agreement associated" in err.value.message
 
     def test_should_raise_error_when_payment_method_is_invalid(
         self,
@@ -904,7 +928,7 @@ class TestPaymentService:
                 session=session,
             )
 
-        assert str(err.value) == "Invalid payment method"
+        assert err.value.message == "Invalid payment method"
 
     def test_should_raise_error_when_installment_is_already_paid(
         self,
@@ -925,7 +949,7 @@ class TestPaymentService:
                 session=session,
             )
 
-        assert str(err.value) == "Installment already paid"
+        assert err.value.message == "Installment already paid"
 
     def test_should_raise_error_when_agreement_is_not_active(
         self,
@@ -966,7 +990,7 @@ class TestPaymentService:
                 session=session,
             )
 
-        assert str(err.value) == "Payment must match installment value"
+        assert err.value.message == "Payment must match installment value"
 
     def test_should_complete_agreement_when_all_installments_are_paid(
         self,
