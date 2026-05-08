@@ -6,8 +6,10 @@ class AppException(Exception):
     message = "Unexpected error"
 
     def __init__(self, message=None, status_code=None, code=None, details=None):
-        super().__init__(message)
         self.message = message or self.message
+
+        super().__init__(message)
+
         self.code = code
         self.details = details
         self.status_code = status_code if status_code else self.status_code

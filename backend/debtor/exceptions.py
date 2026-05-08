@@ -1,5 +1,6 @@
 from common.exceptions import AppException
 
+
 class DebtorNotFound(AppException):
     message = "Debtor not found"
     status_code = 404
