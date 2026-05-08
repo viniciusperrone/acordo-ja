@@ -12,7 +12,7 @@ from leads.services import LeadService
 
 from users.models import User
 from users.services import UserService
-from users.exceptions import UserNotFoundError
+from users.exceptions import UserNotFoundError, EmailAlreadyExists
 
 from debtor.models import Debtor
 from debtor.services import DebtorService
@@ -76,17 +76,17 @@ class TestLeadService:
 @pytest.mark.unit
 class TestUserService:
 
-    def test_get_user_by_id(self, session, agent_user):
+    def test_should_return_user_when_user_exists(self, session, agent_user):
         found_user = UserService.get(agent_user.id, session)
 
-        assert found_user.id is not None
+        assert found_user is not None
         assert found_user.id == agent_user.id
 
-    def test_user_not_found(self, session):
+    def test_should_raise_user_not_found_error_when_user_does_not_exist(self, session):
+        with pytest.raises(UserNotFoundError):
+            UserService.get(uuid.uuid4(), session)
 
-        pytest.raises(UserNotFoundError, lambda: UserService.get(uuid.uuid4(), session))
-
-    def test_create_user_success(self, session):
+    def test_should_create_user_successfully(self, session):
         data = {
             "name": "Test User",
             "email": "user@test.com",
@@ -96,26 +96,122 @@ class TestUserService:
         user = UserService.create_user(data, session)
 
         assert isinstance(user, User)
+
+        assert user.id is not None
         assert user.name == data["name"]
         assert user.email == data["email"]
         assert user.role == UserRole.AGENT
+
         assert user.check_password(data["password"])
 
-    def test_update_user(self, session, agent_user):
+    def test_should_persist_user_after_creation(self, session):
         data = {
-            "name": "Teste User"
+            "name": "Test User",
+            "email": "user@test.com",
+            "password": "Teste@2026"
         }
 
-        updated_user = UserService.update(agent_user.id, data, session)
+        user = UserService.create_user(data, session)
 
-        assert isinstance(updated_user, User)
+        persisted_user = session.get(User, user.id)
+
+        assert persisted_user is not None
+        assert persisted_user.id == user.id
+        assert persisted_user.email == data["email"]
+
+    def test_should_raise_email_already_exists_when_updating_to_existing_email(
+        self,
+        agent_user,
+        session
+    ):
+        data = {
+            "name": "Another User",
+            "email": agent_user.email,
+            "password": "Teste@2026",
+        }
+
+        with pytest.raises(EmailAlreadyExists) as err:
+            UserService.create_user(data, session)
+
+        assert str(err.value) == "Email already exists"
+
+    def test_should_update_user_name_successfully(self, session, agent_user):
+        data = {
+            "name": "Updated User"
+        }
+
+        updated_user = UserService.update(
+            agent_user.id,
+            data,
+            session
+        )
+
         assert updated_user.name == data["name"]
 
-    def test_delete_user(self, session, agent_user):
+    def test_should_updated_user_email_successfully(self, session, agent_user):
+        data = {
+            "email": "updated@test,com"
+        }
+
+        updated_user = UserService.update(
+            agent_user.id,
+            data,
+            session,
+        )
+
+        assert updated_user.email == data["email"]
+
+    def test_should_update_user_role_successfully(
+        self,
+        session,
+        agent_user,
+    ):
+        data = {
+            "role": UserRole.ADMIN.value,
+        }
+
+        updated_user = UserService.update(
+            agent_user.id,
+            data,
+            session,
+        )
+
+        assert updated_user.role == UserRole.ADMIN
+
+    def test_should_raise_email_already_exists_when_updating_to_existing_email(
+            self,
+            session,
+            agent_user,
+    ):
+        another_user = User(
+            name="Another User",
+            email="another@test.com",
+            role=UserRole.AGENT,
+        )
+
+        another_user.set_password("Teste@2026")
+
+        session.add(another_user)
+        session.flush()
+
+        data = {
+            "email": another_user.email,
+        }
+
+        with pytest.raises(EmailAlreadyExists) as err:
+            UserService.update(
+                agent_user.id,
+                data,
+                session,
+            )
+
+        assert str(err.value) == "Email already exists"
+
+    def test_should_delete_user_successfully(self, session, agent_user):
         UserService.delete(agent_user.id, session)
-        session.commit()
 
         deleted_user = session.get(User, agent_user.id)
+
         assert deleted_user is None
 
 @pytest.mark.unit
