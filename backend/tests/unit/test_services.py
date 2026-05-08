@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch
 
 import uuid
 import random
@@ -43,42 +44,34 @@ from utils.enum import UserRole, AgreementStatus, InstallmentStatus, MethodPayme
 @pytest.mark.unit
 class TestLeadService:
 
-    def test_create_lead(self, session):
-        document = "52998224725"
+    @patch("leads.services.NotificationEvents.on_lead_created")
+    def test_should_create_lead_successfully(self, mock_on_lead_created, session):
         data = {
             "name": "Lead Test",
             "email": "lead@test.com",
-            "phone": "1199999999"
+            "phone": "1199999999",
+            "document": "52998224725"
         }
 
-        lead = LeadService.create(data, document, session)
+        lead = LeadService.create(data, session)
 
         assert isinstance(lead, Lead)
 
-    def test_invalid_document(self, session):
-        document = "99999999999"
-        data = {
-            "name": "Lead Test",
-            "email": "lead@test.com",
-            "phone": "1199999999"
-        }
+        assert lead.id is not None
+        assert lead.name == data["name"]
+        assert lead.email == data["email"]
+        assert lead.phone == data["phone"]
+        assert lead.document == data["document"]
 
-        with pytest.raises(ValidationError) as err:
-            LeadService.create(data, document, session)
+        persisted_lead = session.get(Lead, lead.id)
 
-            assert err.message == "CPF or CNPJ must be valid"
+        assert persisted_lead is not None
+        assert persisted_lead.id == lead.id
 
-    def test_missing_document(self, session):
-        data = {
-            "name": "Lead Test",
-            "email": "lead@test.com",
-            "phone": "1199999999"
-        }
-
-        with pytest.raises(ValidationError) as err:
-            LeadService.create(data, None, session)
-
-            assert err.message == "Lead must have a document"
+        mock_on_lead_created.assert_called_once_with(
+            lead,
+            session,
+        )
 
 @pytest.mark.unit
 class TestUserService:
