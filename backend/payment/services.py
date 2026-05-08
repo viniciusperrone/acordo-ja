@@ -4,7 +4,6 @@ from installments.exceptions import InstallmentWithoutAgreement
 from notifications.events import NotificationEvents
 from payment.models import Payment
 from payment.exception import PaymentError
-from debts.history_service import DebtHistoryService
 
 from utils.enum import (
     InstallmentStatus,
