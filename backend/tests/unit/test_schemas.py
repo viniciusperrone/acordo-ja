@@ -1459,7 +1459,7 @@ class TestDebtSchema:
 
         assert result["original_value"] == Decimal("5000.50")
         assert result["updated_value"] == Decimal("4500.25")
-        
+
     def test_should_load_successfully_with_valid_data(self):
         schema = DebtSchema()
 
@@ -1856,12 +1856,6 @@ class TestDebtHistorySchema:
 
 @pytest.mark.unit
 class TestAgreementSchema:
-    """
-        id (dump), debt_id, status (dump), total_traded (dump),
-        installment_value (dump), installment_quantity,
-        entry_value (optional), discount_applied (optional)
-        first_due_date, created_at (dump), updated_at (dump)
-    """
 
     def test_should_raise_error_when_debt_id_is_missing(self):
         schema = AgreementSchema()

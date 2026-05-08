@@ -242,7 +242,7 @@ class TestDebtModel:
             debtor_id=debtor.id,
             creditor_id=creditor.id,
             original_value=1000.00,
-            due_date="2024-01-15"
+            due_date=date(2024, 1, 15)
         )
 
         session.add(debt)
