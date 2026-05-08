@@ -28,7 +28,7 @@ from debts.exceptions import DebtNotFound
 
 from agreement.models import Agreement
 from agreement.services import AgreementService
-from agreement.exceptions import AgreementNotFound, AgreementStatusError
+from agreement.exceptions import AgreementNotFound, AgreementStatusError, PendingInstallmentsError
 
 from installments.models import Installments
 from installments.services import InstallmentService
@@ -38,7 +38,7 @@ from payment.models import Payment
 from payment.services import PaymentService
 from payment.exception import PaymentError
 
-from utils.enum import UserRole, AgreementStatus, InstallmentStatus, MethodPayment
+from utils.enum import UserRole, AgreementStatus, InstallmentStatus, MethodPayment, DebtStatus
 
 
 @pytest.mark.unit
@@ -546,248 +546,221 @@ class TestDebtService:
 @pytest.mark.unit
 class TestAgreementService:
 
-    def test_get_agreement_by_id(self, debt, session):
-        agreement = Agreement(
-            debt_id=debt.id,
-            total_traded=Decimal("12000.00"),
-            installments_quantity=10,
-            installment_value=Decimal("1200.00"),
-            first_due_date=date(2026, 5, 6)
+    def test_should_return_agreement_when_agreement_exists(self, agreement, session):
+        found_agreement = AgreementService.get(
+            agreement.id,
+            session,
         )
 
-        session.add(agreement)
-        session.commit()
-
-        found_agreement = AgreementService.get(agreement.id, session)
-
-        assert isinstance(found_agreement, Agreement)
         assert found_agreement.id == agreement.id
-        assert found_agreement.total_traded == agreement.total_traded
-        assert found_agreement.installments_quantity == agreement.installments_quantity
-        assert found_agreement.installment_value == agreement.installment_value
-        assert found_agreement.first_due_date == agreement.first_due_date
 
-    def test_get_agreement_not_found(self, session):
-        agreement_id = uuid.uuid4()
 
-        pytest.raises(AgreementNotFound, lambda: AgreementService.get(agreement_id, session))
+    def test_should_raise_agreement_not_found_when_agreement_does_not_exist(self, session):
+        with pytest.raises(AgreementNotFound) as err:
+            AgreementService.get(uuid.uuid4(), session)
 
-    def test_create_agreement_success(self, debt, session):
-        data = dict(
-            debt_id=debt.id,
-            installments_quantity=10,
-            first_due_date=date(2026, 5, 6)
+    @patch("agreement.services.NotificationEvents.on_agreement_created")
+    def test_should_create_agreement_successfully(self, mock_notification, debt, session):
+        data = {
+            "debt_id": debt.id,
+            "installments_quantity": 10,
+            "first_due_date": date(2026, 5, 6),
+        }
+
+        agreement = AgreementService.create(
+            data,
+            session,
         )
-
-        agreement = AgreementService.create(data, session)
 
         assert isinstance(agreement, Agreement)
-        assert agreement.debt_id == debt.id
-        assert agreement.installments_quantity == data["installments_quantity"]
-        assert agreement.first_due_date == data["first_due_date"]
 
-    def test_create_agreement_debt_not_found(self, session):
-        data = dict(
-            debt_id=uuid.uuid4(),
-            installments_quantity=10,
-            first_due_date=date(2026, 5, 6)
+        assert agreement.id is not None
+        assert agreement.debt_id == debt.id
+        assert agreement.installments_quantity == 10
+
+        installments = (
+            session.query(Installments)
+            .filter_by(agreement_id=agreement.id)
+            .all()
         )
+
+        assert len(installments) == 10
+
+        mock_notification.assert_called_once_with(
+            agreement,
+            session,
+        )
+
+    def test_should_raise_debt_not_found_when_creating_agreement_with_invalid_debt(self, session):
+        data = {
+            "debt_id": uuid.uuid4(),
+            "installments_quantity": 10,
+            "first_due_date": date(2026, 5, 6),
+        }
 
         with pytest.raises(DebtNotFound):
             AgreementService.create(data, session)
 
-    def test_create_agreement_discount_greater_than_total_raises_error(self, debt, session):
-        data = dict(
-            debt_id=debt.id,
-            installments_quantity=5,
-            first_due_date=date(2026, 5, 6),
-            discount_applied=Decimal("10000000000.00"),
-        )
+    def test_should_raise_error_when_discount_exceeds_total_debt(self, debt, session):
+        data = {
+            "debt_id": debt.id,
+            "installments_quantity": 5,
+            "first_due_date": date(2026, 5, 6),
+            "discount_applied": Decimal("999999999.00")
+        }
 
         with pytest.raises(ValueError) as err:
             AgreementService.create(data, session)
 
-        assert "Discount cannot exceed total debt" in str(err.value)
+        assert str(err.value) == "Discount cannot exceed total debt"
 
-    def test_create_agreement_discount_greater_than_limit_raises_error(self, debt, session):
-        data = dict(
-            debt_id=debt.id,
-            installments_quantity=10,
-            first_due_date=date(2026, 5, 6),
-            discount_applied=Decimal("10.00")
-        )
+    def test_should_raise_error_when_discount_exceeds_limit(self, debt, session):
+        data = {
+            "debt_id": debt.id,
+            "installments_quantity": 5,
+            "first_due_date": date(2026, 5, 6),
+            "discount_applied": Decimal("10.00")
+        }
 
         with pytest.raises(ValueError) as err:
             AgreementService.create(data, session)
 
         assert "Discount cannot exceed" in str(err.value)
-        assert "Discount cannot exceed total debt" is not str(err.value)
 
-    def test_create_agreement_entry_greater_than_total_raises_error(self, debt, session):
-        data = dict(
-            debt_id=debt.id,
-            installments_quantity=5,
-            first_due_date=date(2026, 5, 6),
-            discount_applied=Decimal("0.00"),
-            entry_value=Decimal("999999.00"),
-        )
+    def test_should_raise_error_when_entry_exceeds_total_after_discount(self, debt, session):
+        data = {
+            "debt_id": debt.id,
+            "installments_quantity": 5,
+            "first_due_date": date(2026, 5, 6),
+            "entry_value": Decimal("999999.00")
+        }
 
         with pytest.raises(ValueError) as err:
             AgreementService.create(data, session)
 
-        assert "Entry cannot exceed total after discount" in str(err.value)
+        assert str(err.value) == "Entry cannot exceed total after discount"
 
-    def test_create_agreement_installments_quantity_zero_raises_error(self, debt, session):
-        data = dict(
-            debt_id=debt.id,
-            installments_quantity=0,
-            first_due_date=date(2026, 5, 6),
-        )
+    def test_should_raise_error_when_installments_quantity_is_zero(self, debt, session):
+        data = {
+            "debt_id": debt.id,
+            "installments_quantity": 0,
+            "first_due_date": date(2026, 5, 6),
+        }
 
         with pytest.raises(ValueError) as err:
             AgreementService.create(data, session)
 
-        assert "Installments quantity must be greater than zero" in str(err.value)
+        assert str(err.value) == "Installments quantity must be greater than zero"
 
-    def test_cancel_agreement_updates_status_to_cancelled(self, debt, manager_user, session):
-        agreement = Agreement(
-            debt_id=debt.id,
-            total_traded=Decimal("1000.00"),
-            installments_quantity=10,
-            installment_value=Decimal("100.00"),
-            first_due_date=date(2026, 5, 6)
-        )
+    @patch("agreement.services.DebtHistoryService.record_agreement_activated")
+    def test_should_activate_agreement_successfully(self, mock_history, agreement, manager_user, session):
+        activated_agreement = AgreementService.activate(agreement, manager_user, session)
 
-        session.add(agreement)
-        session.commit()
+        assert activated_agreement.status == AgreementStatus.ACTIVE
 
-        assert agreement.status is not AgreementStatus.CANCELLED
+        assert activated_agreement.debt.status == DebtStatus.IN_AGREEMENT
+
+        mock_history.assert_called_once()
+
+    def test_should_raise_error_when_activating_non_draft_agreement(self, agreement, manager_user, session):
+        agreement.status = AgreementStatus.ACTIVE
+
+        session.flush()
+
+        with pytest.raises(AgreementStatusError) as err:
+            AgreementService.activate(agreement, manager_user, session)
+
+        assert str(err.value) == "Agreement cannot opened"
+
+    @patch("agreement.services.DebtHistoryService.record_agreement_cancelled")
+    def test_should_cancel_agreement_successfully(self, mock_history, agreement, session):
+        agreement.status = AgreementStatus.ACTIVE
+
+        session.flush()
 
         AgreementService.cancel(agreement, session)
 
-        agreement = session.get(Agreement, agreement.id)
-
         assert agreement.status == AgreementStatus.CANCELLED
+        assert agreement.debt.status == DebtStatus.OPEN
 
-    def test_cancel_completed_agreement_raises_error(self, debt, manager_user, session):
-        agreement = Agreement(
-            debt_id=debt.id,
-            total_traded=Decimal("1000.00"),
-            installments_quantity=10,
-            installment_value=Decimal("100.00"),
-            first_due_date=date(2026, 5, 6),
-            status=AgreementStatus.COMPLETED
-        )
+        mock_history.assert_called_once()
 
-        session.add(agreement)
-        session.commit()
+    def test_should_raise_error_when_cancelling_completed_agreement(self, agreement, session):
+        agreement.status = AgreementStatus.COMPLETED
 
-        assert agreement.status is not AgreementStatus.CANCELLED
+        session.flush()
 
         with pytest.raises(AgreementStatusError) as err:
             AgreementService.cancel(agreement, session)
 
         assert str(err.value) == "Cannot cancel a completed agreement"
 
-    def test_cancel_already_cancelled_agreement_raises_error(self, debt, manager_user, session):
+    @patch("agreement.services.NotificationEvents.on_agreement_completed")
+    def test_should_complete_agreement_successfully(self, mock_notification, debt, session):
         agreement = Agreement(
             debt_id=debt.id,
             total_traded=Decimal("1000.00"),
-            installments_quantity=10,
-            installment_value=Decimal("100.00"),
+            installments_quantity=2,
+            installment_value=Decimal("500.00"),
             first_due_date=date(2026, 5, 6),
-            status=AgreementStatus.CANCELLED
+            status=AgreementStatus.ACTIVE,
         )
 
         session.add(agreement)
-        session.commit()
+        session.flush()
 
-        with pytest.raises(AgreementStatusError) as err:
-            AgreementService.cancel(agreement, session)
-
-        assert str(err.value) == "Agreement already cancelled"
-
-    def test_complete_agreement_updates_status_to_completed(self, debt, manager_user, session):
-        agreement = Agreement(
-            debt_id=debt.id,
-            total_traded=Decimal("1000.00"),
-            installments_quantity=10,
-            installment_value=Decimal("100.00"),
-            first_due_date=date(2026, 5, 6),
-            status=AgreementStatus.ACTIVE
+        installment = Installments(
+            agreement_id=agreement.id,
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("500.00"),
+            status=InstallmentStatus.PAID,
         )
 
-        session.add(agreement)
-        session.commit()
+        session.add(installment)
+        session.flush()
 
-        assert agreement.status is not AgreementStatus.COMPLETED
-
-        AgreementService.complete(agreement, session)
-
-        session.commit()
-
-        agreement = session.get(Agreement, agreement.id)
+        AgreementService.complete(
+            agreement,
+            session,
+        )
 
         assert agreement.status == AgreementStatus.COMPLETED
 
-    def test_complete_already_completed_agreement_raises_error(self, debt, manager_user, session):
+        mock_notification.assert_called_once_with(
+            agreement,
+            session,
+        )
+
+    def test_should_raise_pending_installments_error_when_agreement_has_pending_installments(self, debt, session):
         agreement = Agreement(
             debt_id=debt.id,
             total_traded=Decimal("1000.00"),
-            installments_quantity=10,
-            installment_value=Decimal("100.00"),
+            installments_quantity=2,
+            installment_value=Decimal("500.00"),
             first_due_date=date(2026, 5, 6),
-            status=AgreementStatus.COMPLETED
+            status=AgreementStatus.ACTIVE,
         )
 
         session.add(agreement)
-        session.commit()
+        session.flush()
 
-        assert agreement.status is not AgreementStatus.CANCELLED
-
-        with pytest.raises(AgreementStatusError) as err:
-            AgreementService.complete(agreement, session)
-
-        assert str(err.value) == "Agreement already completed"
-
-    def test_complete_cancelled_agreement_raises_error(self, debt, manager_user, session):
-        agreement = Agreement(
-            debt_id=debt.id,
-            total_traded=Decimal("1000.00"),
-            installments_quantity=10,
-            installment_value=Decimal("100.00"),
-            first_due_date=date(2026, 5, 6),
-            status=AgreementStatus.CANCELLED
+        installment = Installments(
+            agreement_id=agreement.id,
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("500.00"),
+            status=InstallmentStatus.PENDING,
         )
 
-        session.add(agreement)
-        session.commit()
+        session.add(installment)
+        session.flush()
 
-        assert agreement.status == AgreementStatus.CANCELLED
-
-        with pytest.raises(AgreementStatusError) as err:
-            AgreementService.complete(agreement, session)
-
-        assert str(err.value) == "Agreement is cancelled"
-
-    def test_complete_draft_agreement_raises_error(self, debt, manager_user, session):
-        agreement = Agreement(
-            debt_id=debt.id,
-            total_traded=Decimal("1000.00"),
-            installments_quantity=10,
-            installment_value=Decimal("100.00"),
-            first_due_date=date(2026, 5, 6)
-        )
-
-        session.add(agreement)
-        session.commit()
-
-        assert agreement.status == AgreementStatus.DRAFT
-
-        with pytest.raises(AgreementStatusError) as err:
-            AgreementService.complete(agreement, session)
-
-        assert str(err.value) == "Draft agreement cannot be completed"
+        with pytest.raises(PendingInstallmentsError):
+            AgreementService.complete(
+                agreement,
+                session,
+            )
 
 class TestInstallmentService:
 

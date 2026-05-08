@@ -15,6 +15,7 @@ from users.models import User
 from debtor.models import Debtor
 from creditor.models import Creditor
 from debts.models import Debt
+from agreement.models import Agreement
 
 
 @pytest.fixture(scope="session")
@@ -177,6 +178,22 @@ def debt(session, debtor, creditor):
     session.commit()
 
     return debt
+
+@pytest.fixture
+def agreement(session, debt):
+    agreement = Agreement(
+        debt_id=debt.id,
+        total_traded=Decimal("12000.00"),
+        installments_quantity=10,
+        installment_value=Decimal("1200.00"),
+        first_due_date=date(2026, 5, 6),
+    )
+
+    session.add(agreement)
+    session.commit()
+
+    return agreement
+
 
 @pytest.fixture
 def lead(session):
