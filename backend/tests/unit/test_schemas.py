@@ -2,7 +2,7 @@ import pytest
 
 import uuid
 from decimal import Decimal
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from marshmallow import ValidationError
 
 from users.schemas import UserSchema, UserUpdateSchema, UserResponseSchema
@@ -1886,6 +1886,23 @@ class TestAgreementSchema:
             schema.load(data)
 
         assert "first_due_date" in err.value.messages
+
+    def test_should_raise_error_when_first_due_date_is_in_the_past(self):
+        schema = AgreementSchema()
+
+        data = {
+            "debt_id": uuid.uuid4(),
+            "installments_quantity": 1,
+            "entry_value": Decimal("150.00"),
+            "discount_applied": Decimal("0.05"),
+            "first_due_date": date.today() - timedelta(days=1)
+        }
+
+        with pytest.raises(ValidationError) as err:
+            schema.load(data)
+
+        assert "first_due_date" in err.value.messages
+        assert err.value.messages["first_due_date"] == "First due date cannot be in the past."
 
     def test_should_raise_error_when_installment_quantity_is_missing(self):
         schema = AgreementSchema()
