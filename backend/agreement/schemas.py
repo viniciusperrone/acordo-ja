@@ -1,4 +1,5 @@
 from decimal import Decimal, ROUND_HALF_UP
+from datetime import date
 from marshmallow import Schema, fields, validate, validates_schema, ValidationError
 
 from utils.enum import AgreementStatus
@@ -32,6 +33,12 @@ class AgreementSchema(Schema):
         installments_quantity = data.get('installments_quantity')
         entry_value = data.get('entry_value', Decimal('0.00'))
         discount_applied = data.get("discount_applied", Decimal("0.00"))
+        first_due_date = data.get("first_due_date")
+
+        if first_due_date and first_due_date < date.today():
+            raise ValidationError({
+                "first_due_date": "First due date cannot be in the past."
+            })
 
         if (
             total is not None
