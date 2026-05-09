@@ -5,6 +5,12 @@ from users import User
 class UserFilter(BaseFilter):
     model = User
 
+    ordering_fields = [
+        "name",
+        "email",
+        "created_at",
+    ]
+
     fields = {
         'id': ['exact', 'in'],
         'name': ['exact', 'like'],
