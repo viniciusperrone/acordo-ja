@@ -1,14 +1,17 @@
 import pytest
 
 from decimal import Decimal
+from datetime import date
 
 from users.models import User
 from creditor.models import Creditor
 from debtor.models import Debtor
+from debts.models import Debt
 
 from users.filters import UserFilter
 from creditor.filters import CreditorFilter
 from debtor.filters import DebtorFilter
+from debts.filters import DebtFilter
 
 
 @pytest.mark.unit
@@ -475,3 +478,223 @@ class TestDebtorFilter:
         names = [item.name for item in result]
 
         assert names == sorted(names, reverse=True)
+
+@pytest.mark.unit
+class TestDebtFilter:
+
+    def test_should_filter_by_exact_id(self, debt, session):
+        query = session.query(Debt)
+
+        params = {
+            "id": debt.id
+        }
+
+        result = DebtFilter(query, params).apply().all()
+
+        assert len(result) == 1
+        assert result[0].id == debt.id
+
+    def test_should_filter_by_id_in(self, debt, session):
+        query = session.query(Debt)
+
+        params = {
+            "id__in": f"{debt.id}"
+        }
+
+        result = DebtFilter(query, params).apply().all()
+
+        assert len(result) >= 1
+
+    def test_should_filter_by_exact_debtor_id(self, debt, session):
+        query = session.query(Debt)
+
+        params = {
+            "debtor_id": debt.debtor_id
+        }
+
+        result = DebtFilter(query, params).apply().all()
+
+        assert len(result) >= 1
+
+        for item in result:
+            assert item.debtor_id == debt.debtor_id
+
+    def test_should_filter_by_exact_creditor_id(self, debt, session):
+        query = session.query(Debt)
+
+        params = {
+            "creditor_id": debt.creditor_id
+        }
+
+        result = DebtFilter(query, params).apply().all()
+
+        assert len(result) >= 1
+
+        for item in result:
+            assert item.creditor_id == debt.creditor_id
+
+    def test_should_filter_by_original_value_gte(self, debt, session):
+        query = session.query(Debt)
+
+        params = {
+            "original_value__gte": Decimal("1000.00")
+        }
+
+        result = DebtFilter(query, params).apply().all()
+
+        assert len(result) >= 1
+
+        for item in result:
+            assert item.original_value >= Decimal("1000.00")
+
+    def test_should_filter_by_original_value_lte(self, debt, session):
+        query = session.query(Debt)
+
+        params = {
+            "original_value__lte": Decimal("999999.00")
+        }
+
+        result = DebtFilter(query, params).apply().all()
+
+        assert len(result) >= 1
+
+        for item in result:
+            assert item.original_value <= Decimal("999999.00")
+
+    def test_should_filter_by_updated_value_exact(self, debt, session):
+        debt.updated_value = Decimal("3500.00")
+        session.commit()
+
+        query = session.query(Debt)
+
+        params = {
+            "updated_value": Decimal("3500.00")
+        }
+
+        result = DebtFilter(query, params).apply().all()
+
+        assert len(result) >= 1
+
+        for item in result:
+            assert item.updated_value == Decimal("3500.00")
+
+    def test_should_filter_by_due_date_exact(self, debt, session):
+        query = session.query(Debt)
+
+        params = {
+            "due_date": str(debt.due_date)
+        }
+
+        result = DebtFilter(query, params).apply().all()
+
+        assert len(result) >= 1
+
+        for item in result:
+            assert item.due_date == debt.due_date
+
+    def test_should_filter_by_status_exact(self, debt, session):
+        query = session.query(Debt)
+
+        params = {
+            "status": debt.status.value
+        }
+
+        result = DebtFilter(query, params).apply().all()
+
+        assert len(result) >= 1
+
+        for item in result:
+            assert item.status == debt.status
+
+    def test_should_filter_by_status_in(self, debt, session):
+        query = session.query(Debt)
+
+        params = {
+            "status__in": debt.status.value
+        }
+
+        result = DebtFilter(query, params).apply().all()
+
+        assert len(result) >= 1
+
+    def test_should_filter_by_renegotiation_count_gte(self, debt, session):
+        debt.renegotiation_count = 2
+        session.commit()
+
+        query = session.query(Debt)
+
+        params = {
+            "renegotiation_count__gte": 1
+        }
+
+        result = DebtFilter(query, params).apply().all()
+
+        assert len(result) >= 1
+
+        for item in result:
+            assert item.renegotiation_count >= 1
+
+    def test_should_ignore_invalid_field(self, session):
+        query = session.query(Debt)
+
+        params = {
+            "invalid_field": "test"
+        }
+
+        result = DebtFilter(query, params).apply().all()
+
+        assert isinstance(result, list)
+
+    def test_should_ignore_invalid_operator(self, session):
+        query = session.query(Debt)
+
+        params = {
+            "status__invalid": "OPEN"
+        }
+
+        result = DebtFilter(query, params).apply().all()
+
+        assert isinstance(result, list)
+
+    def test_should_order_by_original_value_ascending(self, creditor, debtor, session):
+        debt_1 = Debt(
+            debtor_id=debtor.id,
+            creditor_id=creditor.id,
+            original_value=Decimal("5000.00"),
+            due_date=date(2026, 5, 10),
+        )
+
+        debt_2 = Debt(
+            debtor_id=debtor.id,
+            creditor_id=creditor.id,
+            original_value=Decimal("1000.00"),
+            due_date=date(2026, 5, 10),
+        )
+
+        session.add_all([debt_1, debt_2])
+        session.commit()
+
+        query = session.query(Debt)
+
+        params = {
+            "ordering": "original_value"
+        }
+
+        result = DebtFilter(query, params).apply().all()
+
+        values = [item.original_value for item in result]
+
+        assert values == sorted(values)
+
+    def test_should_order_by_original_value_descending(self, session):
+        query = session.query(Debt)
+
+        params = {
+            "ordering": "-original_value"
+        }
+
+        result = DebtFilter(query, params).apply().all()
+
+        values = [item.original_value for item in result]
+
+        assert values == sorted(values, reverse=True)

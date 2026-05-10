@@ -5,6 +5,14 @@ from debts.models import Debt
 class DebtFilter(BaseFilter):
     model = Debt
 
+    ordering_fields = [
+        "original_value",
+        "updated_value",
+        "due_date",
+        "status",
+        "created_at",
+    ]
+
     fields = {
         "id": ["exact", "in"],
         "debtor_id": ["exact", "in"],

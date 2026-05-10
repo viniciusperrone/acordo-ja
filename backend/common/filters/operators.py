@@ -1,4 +1,6 @@
 from sqlalchemy import or_
+import uuid
+
 
 def op_exact(column, value):
     return column == value
@@ -15,15 +17,18 @@ def op_like(column, value):
 def op_in(column, value):
     values = value.split(",")
 
-    enum_type = getattr(column.type, "python__type", None)
+    python_type = getattr(column.type, "python_type", None)
 
-    if enum_type:
+    if python_type:
         try:
-            values = [enum_type(v) for v in values]
+            if python_type is uuid.UUID:
+                values = [uuid.UUID(v) for v in values]
+            else:
+                values = [python_type(v) for v in values]
         except Exception:
             pass
 
-    return column.in_(value.split(","))
+    return column.in_(values)
 
 OPERATORS = {
     "exact": op_exact,
