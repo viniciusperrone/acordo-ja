@@ -10,6 +10,7 @@ from debts.models import Debt
 from agreement.models import Agreement
 from installments.models import Installments
 from payment.models import Payment
+from notifications.models import Notification
 
 from users.filters import UserFilter
 from creditor.filters import CreditorFilter
@@ -17,8 +18,9 @@ from debtor.filters import DebtorFilter
 from debts.filters import DebtFilter
 from installments.filters import InstallmentFilter
 from payment.filters import PaymentFilter
+from notifications.filters import NotificationFilter
 
-from utils.enum import InstallmentStatus, MethodPayment, AgreementStatus
+from utils.enum import InstallmentStatus, MethodPayment, AgreementStatus, NotificationType
 
 
 @pytest.mark.unit
@@ -1291,5 +1293,217 @@ class TestPaymentFilter:
         }
 
         result = PaymentFilter(query, params).apply().all()
+
+        assert isinstance(result, list)
+
+@pytest.mark.unit
+class TestNotificationFilter:
+
+    def test_should_filter_by_is_read(
+        self,
+        session,
+        manager_user,
+    ):
+        notification = Notification(
+            type=NotificationType.PAYMENT_RECEIVED,
+            title="Payment received",
+            message="A payment has been received",
+            extra={"payment_id": "123"},
+            user_id=manager_user.id,
+            is_read=True,
+        )
+
+        session.add(notification)
+        session.commit()
+
+        query = session.query(Notification)
+
+        params = {
+            "is_read": True
+        }
+
+        result = NotificationFilter(query, params).apply().all()
+
+        assert len(result) >= 1
+
+        for item in result:
+            assert item.is_read is True
+
+    def test_should_filter_by_notification_type_exact(
+        self,
+        session,
+        manager_user,
+    ):
+        notification = Notification(
+            type=NotificationType.PAYMENT_RECEIVED,
+            title="Payment received",
+            message="A payment has been received",
+            extra={"payment_id": "123"},
+            user_id=manager_user.id,
+        )
+
+        session.add(notification)
+        session.commit()
+
+        query = session.query(Notification)
+
+        params = {
+            "notification_type": NotificationType.PAYMENT_RECEIVED.value
+        }
+
+        result = NotificationFilter(query, params).apply().all()
+
+        assert len(result) >= 1
+
+        for item in result:
+            assert item.type == NotificationType.PAYMENT_RECEIVED
+
+    def test_should_filter_by_notification_type_in(
+        self,
+        session,
+        manager_user,
+    ):
+        notification_1 = Notification(
+            type=NotificationType.PAYMENT_RECEIVED,
+            title="Payment received",
+            message="Payment processed",
+            extra={"payment_id": "123"},
+            user_id=manager_user.id,
+        )
+
+        notification_2 = Notification(
+            type=NotificationType.AGREEMENT_CREATED,
+            title="Agreement created",
+            message="Agreement successfully created",
+            extra={"agreement_id": "456"},
+            user_id=manager_user.id,
+        )
+
+        session.add_all([
+            notification_1,
+            notification_2,
+        ])
+        session.commit()
+
+        query = session.query(Notification)
+
+        params = {
+            "notification_type__in": (
+                f"{NotificationType.PAYMENT_RECEIVED.value},"
+                f"{NotificationType.AGREEMENT_CREATED.value}"
+            )
+        }
+
+        result = NotificationFilter(query, params).apply().all()
+
+        assert len(result) >= 2
+
+    def test_should_order_by_created_at_ascending(
+        self,
+        session,
+        manager_user,
+    ):
+        notification_1 = Notification(
+            type=NotificationType.PAYMENT_RECEIVED,
+            title="Older notification",
+            message="Old message",
+            extra={"id": 1},
+            user_id=manager_user.id,
+            created_at=datetime.utcnow() - timedelta(days=1),
+        )
+
+        notification_2 = Notification(
+            type=NotificationType.AGREEMENT_CREATED,
+            title="Newer notification",
+            message="New message",
+            extra={"id": 2},
+            user_id=manager_user.id,
+            created_at=datetime.utcnow(),
+        )
+
+        session.add_all([
+            notification_1,
+            notification_2,
+        ])
+        session.commit()
+
+        query = session.query(Notification)
+
+        params = {
+            "ordering": "created_at"
+        }
+
+        result = NotificationFilter(query, params).apply().all()
+
+        created_dates = [item.created_at for item in result]
+
+        assert created_dates == sorted(created_dates)
+
+    def test_should_order_by_created_at_descending(
+        self,
+        session,
+        manager_user,
+    ):
+        notification_1 = Notification(
+            type=NotificationType.PAYMENT_RECEIVED,
+            title="Older notification",
+            message="Old message",
+            extra={"id": 1},
+            user_id=manager_user.id,
+            created_at=datetime.utcnow() - timedelta(days=1),
+        )
+
+        notification_2 = Notification(
+            type=NotificationType.AGREEMENT_CREATED,
+            title="Newer notification",
+            message="New message",
+            extra={"id": 2},
+            user_id=manager_user.id,
+            created_at=datetime.utcnow(),
+        )
+
+        session.add_all([
+            notification_1,
+            notification_2,
+        ])
+        session.commit()
+
+        query = session.query(Notification)
+
+        params = {
+            "ordering": "-created_at"
+        }
+
+        result = NotificationFilter(query, params).apply().all()
+
+        created_dates = [item.created_at for item in result]
+
+        assert created_dates == sorted(created_dates, reverse=True)
+
+    def test_should_ignore_invalid_field(
+        self,
+        session,
+    ):
+        query = session.query(Notification)
+
+        params = {
+            "invalid_field": "test"
+        }
+
+        result = NotificationFilter(query, params).apply().all()
+
+        assert isinstance(result, list)
+
+    def test_should_ignore_invalid_operator(
+        self,
+        session,
+    ):
+        query = session.query(Notification)
+
+        params = {
+            "notification_type__invalid": "PAYMENT_RECEIVED"
+        }
+
+        result = NotificationFilter(query, params).apply().all()
 
         assert isinstance(result, list)
