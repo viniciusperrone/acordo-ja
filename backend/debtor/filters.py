@@ -5,6 +5,13 @@ from debtor import Debtor
 class DebtorFilter(BaseFilter):
     model = Debtor
 
+    ordering_fields = [
+        "name",
+        "document",
+        "email",
+        "created_at",
+    ]
+
     fields = {
         "id": ["exact", "in"],
         "name": ["exact", "like"],
