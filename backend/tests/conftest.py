@@ -194,7 +194,6 @@ def agreement(session, debt):
 
     return agreement
 
-
 @pytest.fixture
 def lead(session):
     from leads.models import Lead

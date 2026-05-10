@@ -7,11 +7,15 @@ from users.models import User
 from creditor.models import Creditor
 from debtor.models import Debtor
 from debts.models import Debt
+from installments.models import Installments
 
 from users.filters import UserFilter
 from creditor.filters import CreditorFilter
 from debtor.filters import DebtorFilter
 from debts.filters import DebtFilter
+from installments.filters import InstallmentFilter
+
+from utils.enum import InstallmentStatus
 
 
 @pytest.mark.unit
@@ -698,3 +702,272 @@ class TestDebtFilter:
         values = [item.original_value for item in result]
 
         assert values == sorted(values, reverse=True)
+
+@pytest.mark.unit
+class TestInstallmentFilter:
+
+    def test_should_filter_by_exact_agreement_id(
+        self,
+        session,
+        agreement,
+    ):
+        installment = Installments(
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("100.00"),
+            status=InstallmentStatus.PENDING,
+            agreement_id=agreement.id,
+        )
+
+        session.add(installment)
+        session.commit()
+
+        query = session.query(Installments)
+
+        params = {
+            "agreement_id": agreement.id
+        }
+
+        result = InstallmentFilter(query, params).apply().all()
+
+        assert len(result) == 1
+        assert result[0].id == installment.id
+
+    def test_should_filter_by_status_exact(
+        self,
+        session,
+        agreement,
+    ):
+        installment = Installments(
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("100.00"),
+            status=InstallmentStatus.PENDING,
+            agreement_id=agreement.id,
+        )
+
+        session.add(installment)
+        session.commit()
+
+        query = session.query(Installments)
+
+        params = {
+            "status": InstallmentStatus.PENDING.value
+        }
+
+        result = InstallmentFilter(query, params).apply().all()
+
+        assert len(result) >= 1
+
+        for item in result:
+            assert item.status == InstallmentStatus.PENDING
+
+    def test_should_filter_by_status_in(
+        self,
+        session,
+        agreement,
+    ):
+        pending_installment = Installments(
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("100.00"),
+            status=InstallmentStatus.PENDING,
+            agreement_id=agreement.id,
+        )
+
+        paid_installment = Installments(
+            installment_number=2,
+            due_date=date(2026, 6, 6),
+            value=Decimal("200.00"),
+            status=InstallmentStatus.PAID,
+            agreement_id=agreement.id,
+        )
+
+        session.add_all([
+            pending_installment,
+            paid_installment,
+        ])
+        session.commit()
+
+        query = session.query(Installments)
+
+        params = {
+            "status__in": (
+                f"{InstallmentStatus.PENDING.value},"
+                f"{InstallmentStatus.PAID.value}"
+            )
+        }
+
+        result = InstallmentFilter(query, params).apply().all()
+
+        assert len(result) >= 2
+
+    def test_should_filter_by_due_date_gte(
+        self,
+        session,
+        agreement,
+    ):
+        installment_1 = Installments(
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("100.00"),
+            status=InstallmentStatus.PENDING,
+            agreement_id=agreement.id,
+        )
+
+        installment_2 = Installments(
+            installment_number=2,
+            due_date=date(2026, 7, 6),
+            value=Decimal("200.00"),
+            status=InstallmentStatus.PENDING,
+            agreement_id=agreement.id,
+        )
+
+        session.add_all([installment_1, installment_2])
+        session.commit()
+
+        query = session.query(Installments)
+
+        params = {
+            "due_date__gte": "2026-06-01"
+        }
+
+        result = InstallmentFilter(query, params).apply().all()
+
+        assert len(result) == 1
+        assert result[0].id == installment_2.id
+
+    def test_should_filter_by_value_lte(
+        self,
+        session,
+        agreement,
+    ):
+        installment_1 = Installments(
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("100.00"),
+            status=InstallmentStatus.PENDING,
+            agreement_id=agreement.id,
+        )
+
+        installment_2 = Installments(
+            installment_number=2,
+            due_date=date(2026, 6, 6),
+            value=Decimal("500.00"),
+            status=InstallmentStatus.PENDING,
+            agreement_id=agreement.id,
+        )
+
+        session.add_all([installment_1, installment_2])
+        session.commit()
+
+        query = session.query(Installments)
+
+        params = {
+            "value__lte": "200.00"
+        }
+
+        result = InstallmentFilter(query, params).apply().all()
+
+        assert len(result) == 1
+        assert result[0].id == installment_1.id
+
+    def test_should_order_by_due_date_ascending(
+        self,
+        session,
+        agreement,
+    ):
+        installment_1 = Installments(
+            installment_number=1,
+            due_date=date(2026, 7, 6),
+            value=Decimal("300.00"),
+            status=InstallmentStatus.PENDING,
+            agreement_id=agreement.id,
+        )
+
+        installment_2 = Installments(
+            installment_number=2,
+            due_date=date(2026, 5, 6),
+            value=Decimal("100.00"),
+            status=InstallmentStatus.PENDING,
+            agreement_id=agreement.id,
+        )
+
+        session.add_all([installment_1, installment_2])
+        session.commit()
+
+        query = session.query(Installments)
+
+        params = {
+            "ordering": "due_date"
+        }
+
+        result = InstallmentFilter(query, params).apply().all()
+
+        due_dates = [item.due_date for item in result]
+
+        assert due_dates == sorted(due_dates)
+
+    def test_should_order_by_value_descending(
+        self,
+        session,
+        agreement,
+    ):
+        installment_1 = Installments(
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("100.00"),
+            status=InstallmentStatus.PENDING,
+            agreement_id=agreement.id,
+        )
+
+        installment_2 = Installments(
+            installment_number=2,
+            due_date=date(2026, 6, 6),
+            value=Decimal("500.00"),
+            status=InstallmentStatus.PENDING,
+            agreement_id=agreement.id,
+        )
+
+        session.add_all([installment_1, installment_2])
+        session.commit()
+
+        query = session.query(Installments)
+
+        params = {
+            "ordering": "-value"
+        }
+
+        result = InstallmentFilter(query, params).apply().all()
+
+        values = [item.value for item in result]
+
+        assert values == sorted(values, reverse=True)
+
+    def test_should_ignore_invalid_field(
+        self,
+        session,
+    ):
+        query = session.query(Installments)
+
+        params = {
+            "invalid_field": "test"
+        }
+
+        result = InstallmentFilter(query, params).apply().all()
+
+        assert isinstance(result, list)
+
+    def test_should_ignore_invalid_operator(
+        self,
+        session,
+    ):
+        query = session.query(Installments)
+
+        params = {
+            "value__invalid": "100"
+        }
+
+        result = InstallmentFilter(query, params).apply().all()
+
+        assert isinstance(result, list)
