@@ -1,21 +1,24 @@
 import pytest
 
 from decimal import Decimal
-from datetime import date
+from datetime import date, timedelta, datetime
 
 from users.models import User
 from creditor.models import Creditor
 from debtor.models import Debtor
 from debts.models import Debt
+from agreement.models import Agreement
 from installments.models import Installments
+from payment.models import Payment
 
 from users.filters import UserFilter
 from creditor.filters import CreditorFilter
 from debtor.filters import DebtorFilter
 from debts.filters import DebtFilter
 from installments.filters import InstallmentFilter
+from payment.filters import PaymentFilter
 
-from utils.enum import InstallmentStatus
+from utils.enum import InstallmentStatus, MethodPayment, AgreementStatus
 
 
 @pytest.mark.unit
@@ -969,5 +972,324 @@ class TestInstallmentFilter:
         }
 
         result = InstallmentFilter(query, params).apply().all()
+
+        assert isinstance(result, list)
+
+@pytest.mark.unit
+class TestPaymentFilter:
+
+    def test_should_filter_by_exact_method(
+        self,
+        session,
+        debt,
+    ):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=1,
+            installment_value=Decimal("1000.00"),
+            first_due_date=date(2026, 5, 6),
+            status=AgreementStatus.ACTIVE,
+        )
+
+        session.add(agreement)
+        session.flush()
+
+        installment = Installments(
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("1000.00"),
+            status=InstallmentStatus.PAID,
+            agreement_id=agreement.id,
+        )
+
+        session.add(installment)
+        session.flush()
+
+        payment = Payment(
+            installment_id=installment.id,
+            amount=Decimal("1000.00"),
+            method=MethodPayment.PIX,
+            paid_at=datetime.utcnow(),
+        )
+
+        session.add(payment)
+        session.commit()
+
+        query = session.query(Payment)
+
+        params = {
+            "method": MethodPayment.PIX.value
+        }
+
+        result = PaymentFilter(query, params).apply().all()
+
+        assert len(result) >= 1
+
+        for item in result:
+            assert item.method == MethodPayment.PIX
+
+    def test_should_filter_by_method_like(
+        self,
+        session,
+        debt,
+    ):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("500.00"),
+            installments_quantity=1,
+            installment_value=Decimal("500.00"),
+            first_due_date=date(2026, 5, 6),
+            status=AgreementStatus.ACTIVE,
+        )
+
+        session.add(agreement)
+        session.flush()
+
+        installment = Installments(
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("500.00"),
+            status=InstallmentStatus.PAID,
+            agreement_id=agreement.id,
+        )
+
+        session.add(installment)
+        session.flush()
+
+        payment = Payment(
+            installment_id=installment.id,
+            amount=Decimal("500.00"),
+            method=MethodPayment.PIX,
+            paid_at=datetime.utcnow(),
+        )
+
+        session.add(payment)
+        session.commit()
+
+        query = session.query(Payment)
+
+        params = {
+            "method__like": "PI"
+        }
+
+        result = PaymentFilter(query, params).apply().all()
+
+        assert len(result) >= 1
+
+    def test_should_filter_by_amount_gte(
+        self,
+        session,
+        debt,
+    ):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1500.00"),
+            installments_quantity=2,
+            installment_value=Decimal("750.00"),
+            first_due_date=date(2026, 5, 6),
+            status=AgreementStatus.ACTIVE,
+        )
+
+        session.add(agreement)
+        session.flush()
+
+        installment_1 = Installments(
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("300.00"),
+            status=InstallmentStatus.PAID,
+            agreement_id=agreement.id,
+        )
+
+        installment_2 = Installments(
+            installment_number=2,
+            due_date=date(2026, 6, 6),
+            value=Decimal("900.00"),
+            status=InstallmentStatus.PAID,
+            agreement_id=agreement.id,
+        )
+
+        session.add_all([installment_1, installment_2])
+        session.flush()
+
+        payment_1 = Payment(
+            installment_id=installment_1.id,
+            amount=Decimal("300.00"),
+            method=MethodPayment.PIX,
+            paid_at=datetime.utcnow(),
+        )
+
+        payment_2 = Payment(
+            installment_id=installment_2.id,
+            amount=Decimal("900.00"),
+            method=MethodPayment.BOLETO,
+            paid_at=datetime.utcnow(),
+        )
+
+        session.add_all([payment_1, payment_2])
+        session.commit()
+
+        query = session.query(Payment)
+
+        params = {
+            "amount__gte": "500.00"
+        }
+
+        result = PaymentFilter(query, params).apply().all()
+
+        assert len(result) == 1
+        assert result[0].id == payment_2.id
+
+    def test_should_filter_by_installment_id_in(
+        self,
+        session,
+        debt,
+    ):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("2000.00"),
+            installments_quantity=2,
+            installment_value=Decimal("1000.00"),
+            first_due_date=date(2026, 5, 6),
+            status=AgreementStatus.ACTIVE,
+        )
+
+        session.add(agreement)
+        session.flush()
+
+        installment_1 = Installments(
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("1000.00"),
+            status=InstallmentStatus.PAID,
+            agreement_id=agreement.id,
+        )
+
+        installment_2 = Installments(
+            installment_number=2,
+            due_date=date(2026, 6, 6),
+            value=Decimal("1000.00"),
+            status=InstallmentStatus.PAID,
+            agreement_id=agreement.id,
+        )
+
+        session.add_all([installment_1, installment_2])
+        session.flush()
+
+        payment_1 = Payment(
+            installment_id=installment_1.id,
+            amount=Decimal("1000.00"),
+            method=MethodPayment.PIX,
+            paid_at=datetime.utcnow(),
+        )
+
+        payment_2 = Payment(
+            installment_id=installment_2.id,
+            amount=Decimal("1000.00"),
+            method=MethodPayment.CARTAO,
+            paid_at=datetime.utcnow(),
+        )
+
+        session.add_all([payment_1, payment_2])
+        session.commit()
+
+        query = session.query(Payment)
+
+        params = {
+            "installment_id__in": (
+                f"{installment_1.id},{installment_2.id}"
+            )
+        }
+
+        result = PaymentFilter(query, params).apply().all()
+
+        assert len(result) >= 2
+
+    def test_should_filter_by_paid_at_lte(
+        self,
+        session,
+        debt,
+    ):
+        agreement = Agreement(
+            debt_id=debt.id,
+            total_traded=Decimal("1000.00"),
+            installments_quantity=1,
+            installment_value=Decimal("1000.00"),
+            first_due_date=date(2026, 5, 6),
+            status=AgreementStatus.ACTIVE,
+        )
+
+        session.add(agreement)
+        session.flush()
+
+        installment = Installments(
+            installment_number=1,
+            due_date=date(2026, 5, 6),
+            value=Decimal("1000.00"),
+            status=InstallmentStatus.PAID,
+            agreement_id=agreement.id,
+        )
+
+        session.add(installment)
+        session.flush()
+
+        old_payment = Payment(
+            installment_id=installment.id,
+            amount=Decimal("300.00"),
+            method=MethodPayment.PIX,
+            paid_at=datetime.utcnow() - timedelta(days=10),
+        )
+
+        recent_payment = Payment(
+            installment_id=installment.id,
+            amount=Decimal("700.00"),
+            method=MethodPayment.BOLETO,
+            paid_at=datetime.utcnow(),
+        )
+
+        session.add_all([old_payment, recent_payment])
+        session.commit()
+
+        query = session.query(Payment)
+
+        cutoff_date = (
+            datetime.utcnow() - timedelta(days=5)
+        ).isoformat()
+
+        params = {
+            "paid_at__lte": cutoff_date
+        }
+
+        result = PaymentFilter(query, params).apply().all()
+
+        assert len(result) == 1
+        assert result[0].id == old_payment.id
+
+    def test_should_ignore_invalid_field(
+        self,
+        session,
+    ):
+        query = session.query(Payment)
+
+        params = {
+            "invalid_field": "test"
+        }
+
+        result = PaymentFilter(query, params).apply().all()
+
+        assert isinstance(result, list)
+
+    def test_should_ignore_invalid_operator(
+        self,
+        session,
+    ):
+        query = session.query(Payment)
+
+        params = {
+            "amount__invalid": "100"
+        }
+
+        result = PaymentFilter(query, params).apply().all()
 
         assert isinstance(result, list)
