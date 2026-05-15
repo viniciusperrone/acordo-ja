@@ -53,7 +53,7 @@ export default function Header() {
             </Link>
           ))}
           <Link
-            href="/colaborador"
+            href="/login"
             className="hidden rounded-lg bg-green-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-700 md:inline-flex"
           >
             Colaborador
@@ -87,7 +87,7 @@ export default function Header() {
             ))}
 
             <Link
-              href="/colaborador"
+              href="/login"
               className="mt-4 inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-700"
             >
               Colaborador
