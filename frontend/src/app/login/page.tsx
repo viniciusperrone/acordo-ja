@@ -54,7 +54,7 @@ export default function Login() {
             />
           </div>
 
-          <div className="w-100 py-4 px-6 flex flex-col rounded-3xl bg-[#76B74F]">
+          <div className="w-[] py-4 px-6 flex flex-col rounded-3xl bg-[#76B74F]">
               <h3 className="text-2xl font-bold self-center">Entrar no sistema</h3>
 
               <div className="flex flex-col gap-2 pt-5 pb-6">
