@@ -7,15 +7,15 @@ import qrCode from "../assets/images/QR_Code.png";
 import moneyIcon from "../assets/money-icon.png";
 
 const floatingIcons = [
-  { top: "15%", left: "10%", size: 80 },
-  { top: "5%", left: "40%", size: 80 },
-  { top: "40%", left: "10%", size: 80 },
-  { top: "50%", left: "43%", size: 80 },
-  { top: "10%", left: "93.5%", size: 80 },
-  { top: "65%", left: "93.5%", size: 80 },
-  { top: "80%", left: "70%", size: 80 },
-  { top: "80%", left: "35%", size: 80 },
-  { top: "85%", left: "2%", size: 80 },
+  { top: "15%", left: "10%"},
+  { top: "5%", left: "40%"},
+  { top: "40%", left: "10%"},
+  { top: "50%", left: "43%"},
+  { top: "10%", left: "93.5%"},
+  { top: "65%", left: "93.5%"},
+  { top: "80%", left: "70%"},
+  { top: "80%", left: "35%"},
+  { top: "85%", left: "2%"},
 ];
 
 export default function Home() {
@@ -30,8 +30,8 @@ export default function Home() {
             style={{
               top: icon.top,
               left: icon.left,
-              width: icon.size,
-              height: icon.size,
+              width: 80,
+              height: 80,
             }}
           >
             <Image
