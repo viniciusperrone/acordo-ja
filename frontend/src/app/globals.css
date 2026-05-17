@@ -3,6 +3,23 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Design tokens: colors */
+  --color-primary: #16a34a;
+  --color-primary-600: #15803d;
+  --color-on-primary: #ffffff;
+  --color-muted: #6b7280;
+  --color-surface: var(--background);
+  --color-border: #e5e7eb;
+  --color-input-bg: #f8fafc;
+  --color-input-placeholder: #9ca3af;
+
+  /* Radii & spacing */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+
+  /* Focus ring */
+  --focus-ring: 0 0 0 4px rgba(16, 185, 129, 0.12);
 }
 
 @theme inline {
@@ -27,4 +44,72 @@ body {
 
 .font-poppins {
   font-family: var(--font-poppins), var(--font-inter), Arial, Helvetica, sans-serif;
+}
+
+/* Component primitives */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-md);
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color .12s ease, border-color .12s ease, color .12s ease;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.btn-primary:hover {
+  background-color: var(--color-primary-600);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--foreground);
+  border-color: transparent;
+}
+
+.input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-input-bg);
+  color: var(--foreground);
+  outline: none;
+  transition: box-shadow .12s ease, border-color .12s ease;
+}
+.input::placeholder {
+  color: var(--color-input-placeholder);
+}
+.input:focus {
+  box-shadow: var(--focus-ring);
+  border-color: var(--color-primary);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.form-field label {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+/* Small helper for subtle text */
+.muted {
+  color: var(--color-muted);
+  font-size: 0.875rem;
 }
