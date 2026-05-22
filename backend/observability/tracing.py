@@ -12,7 +12,7 @@ from flask import Flask
 
 def setup_tracing(app: Flask, service_name: str):
     resource = Resource.create({
-        "service_name": service_name,
+        "service.name": service_name,
         "service.version": "1.0.0",
         "deployment.environment": "production",
     })
