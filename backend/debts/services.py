@@ -1,3 +1,5 @@
+import hashlib
+
 from creditor import Creditor
 from debts import Debt
 from debtor import Debtor
@@ -7,7 +9,10 @@ from debtor.exceptions import DebtorNotFound
 from debts.exceptions import DebtNotFound
 
 from debts.history_service import DebtHistoryService
+from observability.structured_logger import log_event, get_logger
 
+
+logger = get_logger("debt.service")
 
 class DebtService:
 
@@ -47,6 +52,12 @@ class DebtService:
 
             total_amount += debt.original_value
             debts.append(item)
+
+        log_event(logger, "info", "debt.search.performed",
+            document_hash=hashlib.sha256(document.encode()).hexdigest(),
+            has_debts=has_debts,
+            total_debts=count
+        )
 
         return dict(
             document=document,
