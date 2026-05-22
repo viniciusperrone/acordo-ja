@@ -50,8 +50,13 @@ class Observability:
 
         @app.teardown_request
         def teardown_request(exception):
+            from .structured_logger import _ctx
+
             if exception:
                 log_event(
                     logger, "error", "http.request.failed",
                     error=str(exception),
+                    error_type=type(exception).__name__,
                 )
+
+            _ctx.set({})
