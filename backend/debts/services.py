@@ -9,10 +9,11 @@ from debtor.exceptions import DebtorNotFound
 from debts.exceptions import DebtNotFound
 
 from debts.history_service import DebtHistoryService
-from observability.structured_logger import log_event, get_logger
+from observability.structured_logger import log_event
+from observability.events.debt_events import logger, DebtEventLogger
 
 
-logger = get_logger("debt.service")
+_debt_log = DebtEventLogger()
 
 class DebtService:
 
@@ -46,7 +47,7 @@ class DebtService:
                 'id': debt.id,
                 'amount': debt.original_value,
                 'due_date': debt.due_date,
-                'status': debt.status,
+                'status': debt.status.value,
                 'creditor': debt.creditor.bank_name,
             }
 
@@ -98,6 +99,13 @@ class DebtService:
         session.flush()
 
         DebtHistoryService.record_debt_created(debt, user, session)
+
+        _debt_log.debt_created(debt_id=str(debt.id), user_id=str(user.id), data={
+            'creditor_id': str(creditor_id),
+            'debtor_id': str(debtor_id),
+            'original_value': str(debt.original_value),
+            'due_date': debt.due_date.isoformat(),
+        })
 
         return debt
 

@@ -76,8 +76,8 @@ def retrieve_debt(debt_id, db):
 @jwt_required()
 @limiter.limit("10 per minute")
 @transactional
-@permission_roles(UserRole.MANAGER, UserRole.ADMIN)
 @current_user
+@permission_roles(UserRole.MANAGER, UserRole.ADMIN)
 def create_debt(db):
     user = g.current_user
 
