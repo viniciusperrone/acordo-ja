@@ -193,6 +193,19 @@ class AgreementService:
 
         session.flush()
 
+        from observability.events.debt_events import DebtEventLogger
+
+        _debt_log = DebtEventLogger()
+
+        _debt_log.agreement_activated(debt_id=str(debt.id), user_id=str(user.id), data={
+            "agreement_id": str(agreement.id),
+            "old_status": old_status,
+            "status": agreement.status,
+            "updated_value": agreement.updated_value,
+            "last_agreement_date": debt.last_agreement_date.isoformat(),
+            "agreement_status": agreement.status,
+        })
+
         return agreement
 
     @staticmethod
