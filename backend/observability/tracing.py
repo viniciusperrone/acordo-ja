@@ -33,11 +33,9 @@ def traced(span_name: str):
     """Decorator to add span to any method"""
     def decorator(func):
         @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs):
             with tracer.start_as_current_span(span_name) as span:
-                span.set_attribute("user_id", kwargs.get("user_id", "-"))
-
-                return await func(*args, **kwargs)
+                return func(*args, **kwargs)
         return wrapper
     return decorator
 

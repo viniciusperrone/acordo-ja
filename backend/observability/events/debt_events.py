@@ -36,3 +36,9 @@ class DebtEventLogger:
             last_agreement_date=data["last_agreement_date"],
             agreement_status=data["agreement_status"],
         )
+
+    def debt_cancelled(self, debt_id: str, user_id: str, data: dict) -> None:
+        bind_context(debt_id=debt_id, user_id=user_id)
+
+
+
