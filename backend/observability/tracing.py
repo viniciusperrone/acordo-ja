@@ -28,7 +28,7 @@ def setup_tracing(app: Flask, service_name: str):
 
     try:
         provider.add_span_processor(
-            BatchSpanProcessor(OTLPSpanExporter(endpoint=otlp_endpoint))
+            BatchSpanProcessor(OTLPSpanExporter(endpoint=otlp_endpoint, timeout=10))
         )
 
     except Exception as e:
