@@ -1,44 +1,81 @@
+import os
+import functools
+from flask import Flask
+
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter \
     import OTLPSpanExporter
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.sdk.resources import Resource
-import functools
-
-from flask import Flask
 
 
 def setup_tracing(app: Flask, service_name: str):
+    """
+    Configura distributed tracing com OpenTelemetry
+    """
+
     resource = Resource.create({
         "service.name": service_name,
-        "service.version": "1.0.0",
-        "deployment.environment": "production",
+        "service.version": os.getenv("APP_VERSION", "1.0.0"),
+        "deployment.environment": os.getenv("ENVIRONMENT", "production"),
     })
 
     provider = TracerProvider(resource=resource)
-    provider.add_span_processor(
-        BatchSpanProcessor(OTLPSpanExporter(
-            endpoint="http://otel-collector:4317"
-        ))
-    )
+
+    otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
+
+    try:
+        provider.add_span_processor(
+            BatchSpanProcessor(OTLPSpanExporter(endpoint=otlp_endpoint))
+        )
+
+    except Exception as e:
+        print(f"[WARN] OTLP Exporter failed: {e}. Using ConsoleSpanExporter.")
+        provider.add_span_processor(
+            BatchSpanProcessor(ConsoleSpanExporter())
+        )
 
     trace.set_tracer_provider(provider)
     FlaskInstrumentor.instrument_app(app)
 
-tracer = trace.get_tracer("")
+
+tracer = trace.get_tracer(__name__)
+
 
 def traced(span_name: str):
-    """Decorator to add span to any method"""
+    """
+    Decorator to add span to any method
+
+    Usage:
+        @traced("debt.create")
+        def create_debt(data, session)
+            ...
+    """
     def decorator(func):
+        name = span_name or f"{func.__module__}.{func.__name__}"
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            with tracer.start_as_current_span(span_name) as span:
-                return func(*args, **kwargs)
+            with tracer.start_as_current_span(name) as span:
+                span.set_attribute("function.name", func.__name__)
+                span.set_attribute("function.module", func.__module__)
+
+                if "user_id" in kwargs:
+                    span.set_attribute("user.id", str(kwargs["user_id"]))
+
+                try:
+                    result = func(*args, **kwargs)
+                    span.set_attribute("status", "success")
+
+                    return result
+                except Exception as e:
+                    span.set_attribute("status", "error")
+                    span.set_attribute("error.type", type(e).__name__)
+                    span.set_attribute("error.message", str(e))
+                    span.record_exception(e)
+
+                    raise
         return wrapper
     return decorator
-
-# Use in services
-# @traced("debt.generate_proposals")
-# async def generate_proposals(debt_id, user_id, amount): ...
