@@ -1,24 +1,26 @@
+from datetime import date
+from decimal import ROUND_HALF_UP, Decimal
+
+from dateutil.relativedelta import relativedelta
 from sqlalchemy import exists
 
-from datetime import date
-from decimal import Decimal, ROUND_HALF_UP
-from dateutil.relativedelta import relativedelta
-
-from agreement import Agreement
-from users.models import User
-from debts import Debt
+from agreement.models import Agreement
+from debts.models import Debt
+from debts.exceptions import DebtNotFound
 from debts.history_service import DebtHistoryService
 from installments import Installments
 from notifications.events import NotificationEvents
-from utils.enum import AgreementStatus, InstallmentStatus, DebtStatus
+from observability.events.agreement_events import agreement_events
+from observability.events.debt_events import debt_events
+from observability.tracing import traced
+from users.models import User
+from utils.enum import AgreementStatus, DebtStatus, InstallmentStatus
 
-from debts.exceptions import DebtNotFound
 from .exceptions import (
     AgreementNotFound,
     AgreementStatusError,
     PendingInstallmentsError,
 )
-
 
 class AgreementService:
 
@@ -32,7 +34,8 @@ class AgreementService:
         return agreement
 
     @staticmethod
-    def create(data, session):
+    @traced("agreement.create")
+    def create(data, user, session):
         debt_id = data["debt_id"]
         debt = session.get(Debt, debt_id)
 
@@ -155,9 +158,21 @@ class AgreementService:
 
         NotificationEvents.on_agreement_created(agreement, session)
 
+        agreement_events.agreement_created(
+            agreement_id=str(agreement.id),
+            user_id=str(user.id),
+            data={
+                'debt_id': debt.id,
+                'total_traded': agreement.total_traded,
+                'installments_quantity': agreement.installments_quantity,
+                'discount_applied': agreement.discount_applied,
+            }
+        )
+
         return agreement
 
     @staticmethod
+    @traced("agreement.activated")
     def activate(agreement: Agreement, user: User, session):
         if not agreement.status == AgreementStatus.DRAFT:
             raise AgreementStatusError("Agreement cannot opened")
@@ -193,23 +208,25 @@ class AgreementService:
 
         session.flush()
 
-        from observability.events.debt_events import DebtEventLogger
+        agreement_events.agreement_activated(agreement_id=str(agreement.id), user_id=str(user.id))
 
-        _debt_log = DebtEventLogger()
-
-        _debt_log.agreement_activated(debt_id=str(debt.id), user_id=str(user.id), data={
-            "agreement_id": str(agreement.id),
-            "old_status": old_status,
-            "status": agreement.status,
-            "updated_value": agreement.updated_value,
-            "last_agreement_date": debt.last_agreement_date.isoformat(),
-            "agreement_status": agreement.status,
-        })
+        debt_events.debt_entered_agreement(
+            debt_id=str(debt.id),
+            user_id=str(user.id),
+            data={
+                'agreement_id': agreement.id,
+                'old_status': old_status.value,
+                'status': debt.status.value,
+                'updated_value': debt.updated_value,
+                'agreement_status': agreement.status.value,
+            }
+        )
 
         return agreement
 
     @staticmethod
-    def cancel(agreement: Agreement, session):
+    @traced("agreement.cancelled")
+    def cancel(agreement: Agreement, user: User, session):
         if agreement.status == AgreementStatus.COMPLETED:
             raise AgreementStatusError("Cannot cancel a completed agreement")
         if agreement.status == AgreementStatus.CANCELLED:
@@ -226,6 +243,8 @@ class AgreementService:
         agreement.debt.updated_value = None
         agreement.debt.status = DebtStatus.OPEN
 
+        agreement_events.agreement_cancelled(agreement_id=str(agreement.id), user_id=str(user.id))
+
         DebtHistoryService.record_agreement_cancelled(
             debt=agreement.debt,
             agreement_id=str(agreement.id),
@@ -238,6 +257,7 @@ class AgreementService:
         session.commit()
 
     @staticmethod
+    @traced("agreement.completed")
     def complete(agreement: Agreement, session):
         if agreement.status == AgreementStatus.COMPLETED:
             raise AgreementStatusError("Agreement already completed")

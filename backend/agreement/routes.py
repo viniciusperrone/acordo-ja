@@ -40,11 +40,13 @@ def list_agreements():
 @jwt_required()
 @limiter.limit("3 per minute")
 @transactional
+@current_user
 def create_agreement(db):
+    user = g.current_user
     agreement_schema = AgreementSchema()
     data = agreement_schema.load(request.json)
 
-    agreement = AgreementService.create(data, db.session)
+    agreement = AgreementService.create(data, user, db.session)
     result = agreement_schema.dump(agreement)
 
     return jsonify(result), 201
@@ -81,10 +83,13 @@ def activate_agreement(agreement_id, db):
 @limiter.limit("3 per minute")
 @permission_roles(UserRole.ADMIN, UserRole.MANAGER)
 @transactional
+@current_user
 def cancel_agreement(agreement_id, db):
+    user = getattr(g, "current_user", None)
+
     agreement = AgreementService.get(agreement_id, db.session)
 
-    AgreementService.cancel(agreement, db.session)
+    AgreementService.cancel(agreement, user, db.session)
 
     return jsonify(), 204
 
