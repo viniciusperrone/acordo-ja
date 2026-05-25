@@ -5,6 +5,8 @@ from flask_migrate import Migrate
 
 from common.handlers.error_handlers import register_error_handlers
 from observability.middleware import Observability
+from observability.tracing import setup_tracing
+
 from config import (
     Config,
     db,
@@ -71,12 +73,11 @@ def initialize_app():
     Observability(app)
 
     if not app.config.get("TESTING"):
+        setup_tracing(app)
         from tasks.scheduler import init_scheduler
-
         init_scheduler(app)
 
     return app
-
 
 if __name__ == '__main__':
     app = initialize_app()
