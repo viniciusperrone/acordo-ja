@@ -2,6 +2,10 @@ from datetime import datetime, date
 
 from installments.exceptions import InstallmentWithoutAgreement
 from notifications.events import NotificationEvents
+from observability.events import payment_events
+from observability.events.agreement_events import agreement_events
+from observability.events.debt_events import debt_events
+from observability.tracing import traced
 from payment.models import Payment
 from payment.exception import PaymentError
 from debts.history_service import DebtHistoryService
@@ -17,7 +21,8 @@ from utils.enum import (
 class PaymentService:
 
     @staticmethod
-    def process_installment_payment(installment, amount, method, session):
+    @traced("payment.register")
+    def process_installment_payment(installment, user, amount, method, session):
 
         if not installment.agreement:
             raise InstallmentWithoutAgreement(
@@ -53,12 +58,36 @@ class PaymentService:
 
         agreement = installment.agreement
 
+        payment_events.payment_received(
+            payment_id=str(payment.id),
+            data={
+                'installment_id': installment.id,
+                'amount': payment.amount,
+                'method': payment.method.value,
+                'agreement_id': agreement.id,
+            }
+        )
+
         if all(i.status == InstallmentStatus.PAID for i in agreement.installments):
             agreement.status = AgreementStatus.COMPLETED
 
             NotificationEvents.on_agreement_completed(agreement, session)
 
+            agreement_events.agreement_completed(
+                agreement_id=str(agreement.id),
+                user_id=str(user.id),
+            )
+
             agreement.debt.status = DebtStatus.PAID
+
+            debt_events.debt_paid(
+                debt_id=str(agreement.debt.id),
+                user_id=str(user.id),
+                data={
+                    'updated_value': agreement.debt.updated_value,
+                    'agreement_id': agreement.id,
+                }
+            )
 
             NotificationEvents.on_debt_paid(agreement.debt, session)
 
