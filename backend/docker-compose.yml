@@ -57,6 +57,18 @@ services:
     depends_on:
       - loki
 
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: acordoja-jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC receiver
+      - "4318:4318"    # OTLP HTTP receiver
+    networks:
+      - default
+
   grafana:
     image: grafana/grafana:11.0.0
     container_name: acordoja-grafana
@@ -65,8 +77,25 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana-data:/var/lib/grafana
     depends_on:
       - loki
+      - jaeger
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: acordoja-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
 
 volumes:
   pgdata:
+  grafana-data:
+  prometheus-data:
