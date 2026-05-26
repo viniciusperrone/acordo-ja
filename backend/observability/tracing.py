@@ -11,10 +11,12 @@ from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.sdk.resources import Resource
 
 
-def setup_tracing(app: Flask, service_name: str):
+def setup_tracing(app: Flask, service_name: str = "acordoja-api"):
     """
     Configura distributed tracing com OpenTelemetry
     """
+
+    otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
 
     resource = Resource.create({
         "service.name": service_name,
@@ -24,21 +26,17 @@ def setup_tracing(app: Flask, service_name: str):
 
     provider = TracerProvider(resource=resource)
 
-    otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
-
     try:
         provider.add_span_processor(
-            BatchSpanProcessor(OTLPSpanExporter(endpoint=otlp_endpoint, timeout=10))
+            BatchSpanProcessor(OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True))
         )
-
+        print(f"[INFO] Tracing configured: {otlp_endpoint}")
     except Exception as e:
-        print(f"[WARN] OTLP Exporter failed: {e}. Using ConsoleSpanExporter.")
-        provider.add_span_processor(
-            BatchSpanProcessor(ConsoleSpanExporter())
-        )
+        print(f"[WARN] Tracing disabled: {e}")
+        return
 
     trace.set_tracer_provider(provider)
-    FlaskInstrumentor.instrument_app(app)
+    FlaskInstrumentor().instrument_app(app)
 
 
 tracer = trace.get_tracer(__name__)
@@ -60,7 +58,6 @@ def traced(span_name: str):
         def wrapper(*args, **kwargs):
             with tracer.start_as_current_span(name) as span:
                 span.set_attribute("function.name", func.__name__)
-                span.set_attribute("function.module", func.__module__)
 
                 if "user_id" in kwargs:
                     span.set_attribute("user.id", str(kwargs["user_id"]))
@@ -73,7 +70,6 @@ def traced(span_name: str):
                 except Exception as e:
                     span.set_attribute("status", "error")
                     span.set_attribute("error.type", type(e).__name__)
-                    span.set_attribute("error.message", str(e))
                     span.record_exception(e)
 
                     raise
