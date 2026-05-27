@@ -30,9 +30,9 @@ def setup_tracing(app: Flask, service_name: str = "acordoja-api"):
         provider.add_span_processor(
             BatchSpanProcessor(OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True))
         )
-        print(f"[INFO] Tracing configured: {otlp_endpoint}")
+        print(f"INFO Tracing configured: {otlp_endpoint}")
     except Exception as e:
-        print(f"[WARN] Tracing disabled: {e}")
+        print(f"WARN Tracing disabled: {e}")
         return
 
     trace.set_tracer_provider(provider)
