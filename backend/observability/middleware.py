@@ -9,6 +9,7 @@ from observability.metrics import (
     http_request_duration
 )
 
+
 class Observability:
 
     def __init__(self, app: Flask):
