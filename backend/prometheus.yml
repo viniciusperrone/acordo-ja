@@ -11,4 +11,4 @@ scrape_configs:
   # Flask app metrics (via OpenTelemetry)
   - job_name: 'acordo-ja-api'
     static_configs:
-      - targets: ['api:8888']  # Porta de métricas OTLP
+      - targets: ['api:5000']  # Porta de métricas OTLP
