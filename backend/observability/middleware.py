@@ -4,7 +4,10 @@ import uuid
 from flask import request, g, Flask
 
 from observability.structured_logger import get_logger, bind_context, log_event
-
+from observability.metrics import (
+    http_requests_total,
+    http_request_duration
+)
 
 class Observability:
 
@@ -34,14 +37,42 @@ class Observability:
 
         @app.after_request
         def after_request(response):
+            elapsed_seconds = (
+                time.perf_counter() - g.start_time
+            )
+
             elapsed_ms = round((time.perf_counter() - g.start_time) * 1000, 2)
 
             level = "warning" if response.status_code >= 400 else "info"
+
+            route = (
+                request.url_rule.rule
+                if request.url_rule
+                else request.path
+            )
 
             log_event(
                 logger, level, "http.response.completed",
                 status_code=response.status_code,
                 duration_ms=elapsed_ms
+            )
+
+            http_requests_total.add(
+                1,
+                {
+                    "method": request.method,
+                    "route": route,
+                    "status_code": str(response.status_code),
+                },
+            )
+
+            http_request_duration.record(
+                elapsed_seconds,
+                {
+                    "method": request.method,
+                    "route": route,
+                    "status_code": str(response.status_code),
+                },
             )
 
             response.headers["x-trace-id"] = g.trace_id
