@@ -9,7 +9,8 @@ class NotificationEvents:
         NotificationService.create_notification_for_roles(
             notification_type=NotificationType.NEW_LEAD,
             title="Novo Lead Criado! 🎯",
-            message=f"Um novo lead foi registrado: {lead.name} (CPF/CNPJ): {lead.document}",
+            message=f"Um novo lead foi registrado: {lead.name} "
+                    f"(CPF/CNPJ): {lead.document}",
             extra={
                 "lead_id": str(lead.id),
                 "lead_name": lead.name,
@@ -21,13 +22,13 @@ class NotificationEvents:
             session=session
         )
 
-
     @staticmethod
     def on_payment_received(payment, installment, session):
         NotificationService.create_notification_for_roles(
             notification_type=NotificationType.PAYMENT_RECEIVED,
             title="Pagamento Recebido 💰",
-            message=f"Pagamento R$ {payment.amount} recebido para parcela #{installment.installment_number}",
+            message=f"Pagamento R$ {payment.amount} "
+                    f"recebido para parcela #{installment.installment_number}",
             extra={
                 "payment_id": str(payment.id),
                 "installment_id": installment.id,
@@ -43,7 +44,8 @@ class NotificationEvents:
         NotificationService.create_notification_for_roles(
             notification_type=NotificationType.INSTALLMENT_OVERDUE,
             title="Parcela Vencida ⚠️",
-            message=f"A parcela #{installment.installment_number} está vencida desde {installment.due_date}",
+            message=f"A parcela #{installment.installment_number} "
+                    f"está vencida desde {installment.due_date}",
             extra={
                 "installment_id": installment.id,
                 "installment_number": installment.installment_number,
@@ -60,7 +62,9 @@ class NotificationEvents:
         NotificationService.create_notification_for_roles(
             notification_type=NotificationType.AGREEMENT_CREATED,
             title="Novo Acordo Criado ✅",
-            message=f"Um novo acordo foi criado no valor de R$ {agreement.total_traded} em {agreement.installments_quantity}x",
+            message=f"Um novo acordo foi criado no valor de "
+                    f"R$ {agreement.total_traded} "
+                    f"em {agreement.installments_quantity}x",
             extra={
                 "agreement_id": str(agreement.id),
                 "total_traded": str(agreement.total_traded),
@@ -76,7 +80,8 @@ class NotificationEvents:
         NotificationService.create_notification_for_roles(
             notification_type=NotificationType.AGREEMENT_COMPLETED,
             title="Acordo Finalizado 🎉",
-            message=f"O acordo de R$ {agreement.total_traded} foi completamente quitado!",
+            message=f"O acordo de R$ {agreement.total_traded} "
+                    f"foi completamente quitado!",
             extra={
                 "agreement_id": str(agreement.id),
                 "total_traded": str(agreement.total_traded),

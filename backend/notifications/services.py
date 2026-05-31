@@ -44,7 +44,7 @@ class NotificationService:
             roles = [UserRole.ADMIN, UserRole.MANAGER, UserRole.AGENT]
 
         users = User.query.filter(
-            User.is_active == True,
+            User.is_active == True, # noqa: E712 E261
             User.role.in_(roles),
         ).all()
 
@@ -90,7 +90,7 @@ class NotificationService:
 
         notifications = Notification.query.filter(
             Notification.id.in_(notification_ids),
-            Notification.is_read == False,
+            Notification.is_read == False, # noqa: E712 E261
         ).all()
 
         count = 0
@@ -102,10 +102,10 @@ class NotificationService:
         return count
 
     @staticmethod
-    def mark_all_read_for_user(user_id: str, session = None) -> int:
+    def mark_all_read_for_user(user_id: str, session=None) -> int:
         notifications = Notification.query.filter(
             Notification.user_id == user_id,
-            Notification.is_read == False,
+            Notification.is_read == False, # noqa: E712 E261
         ).all()
 
         count = 0
@@ -120,7 +120,7 @@ class NotificationService:
     def get_unread_count(user_id: str) -> int:
         return Notification.query.filter(
             Notification.user_id == user_id,
-            Notification.is_read == False,
+            Notification.is_read == False, # noqa: E712 E261
         ).count()
 
     @staticmethod
@@ -130,7 +130,7 @@ class NotificationService:
         cutoff_date = datetime.utcnow() - timedelta(days=days)
 
         old_notifications = Notification.query.filter(
-            Notification.is_read == True,
+            Notification.is_read == True, # noqa: E712 E261
             Notification.read_at < cutoff_date,
         ).all()
 
