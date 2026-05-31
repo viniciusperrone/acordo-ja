@@ -13,7 +13,6 @@ class CreditorService:
 
         return creditor
 
-
     @staticmethod
     def create_creditor(data, session):
         existing_creditor = (

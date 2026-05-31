@@ -18,9 +18,9 @@ class Creditor(db.Model):
         unique=True
     )
 
-    interest_rate = db.Column(NUMERIC(5,2))
-    fine_rate = db.Column(NUMERIC(5,2))
-    discount_limit = db.Column(NUMERIC(5,2))
+    interest_rate = db.Column(NUMERIC(5, 2))
+    fine_rate = db.Column(NUMERIC(5, 2))
+    discount_limit = db.Column(NUMERIC(5, 2))
 
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 

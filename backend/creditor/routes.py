@@ -12,6 +12,7 @@ from utils.enum import UserRole
 
 creditor_bp = Blueprint('creditor', __name__, url_prefix='/creditors')
 
+
 @jwt_required()
 @creditor_bp.route('/list', methods=['GET'])
 @limiter.limit("30 per minute")
@@ -39,6 +40,7 @@ def list_creditors():
         "pages": pagination.pages,
         "current_page": page
     }), 200
+
 
 @creditor_bp.route('/<uuid:creditor_id>/detail', methods=['GET'])
 @jwt_required()

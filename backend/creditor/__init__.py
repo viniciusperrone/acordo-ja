@@ -1,5 +1,5 @@
+import events # noqa: F401 E261
 from .models import Creditor
-from . import events
 
 
 __all__ = ["Creditor"]
