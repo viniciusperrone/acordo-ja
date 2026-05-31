@@ -45,6 +45,10 @@ services:
     container_name: acordoja-loki
     ports:
       - "3100:3100"
+    volumes:
+      - ./loki-config.yml:/etc/loki/config.yml
+      - loki-data:/loki
+    command: -config.file=/etc/loki/config.yml
 
   promtail:
     image: grafana/promtail:3.0.0
@@ -99,5 +103,6 @@ services:
 volumes:
   pgdata:
   promtail-data:
+  loki-data:
   grafana-data:
   prometheus-data:
