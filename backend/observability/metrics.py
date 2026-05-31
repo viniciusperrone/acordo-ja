@@ -34,9 +34,9 @@ http_requests_total = meter.create_counter(
 )
 
 http_request_duration = meter.create_histogram(
-    name="http_request_duration_ms",
-    description="HTTP request duration in milliseconds",
-    unit="ms"
+    name="http_request_duration_seconds",
+    description="HTTP request duration in seconds",
+    unit="s"
 )
 
 external_request_duration = meter.create_histogram(
