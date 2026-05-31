@@ -23,7 +23,11 @@ class User(db.Model):
         nullable=False
     )
 
-    created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
+    created_at = db.Column(
+        db.DateTime,
+        server_default=db.func.now(),
+        nullable=False
+    )
     updated_at = db.Column(
         db.DateTime,
         server_default=db.func.now(),

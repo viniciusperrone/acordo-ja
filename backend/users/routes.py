@@ -13,6 +13,7 @@ from utils.enum import UserRole
 
 user_bp = Blueprint('user', __name__, url_prefix='/user')
 
+
 @user_bp.route('/list', methods=['GET'])
 @limiter.limit("30 per minute")
 @jwt_required()
@@ -39,6 +40,7 @@ def list_users():
         "current_page": pagination.page,
     })
 
+
 @user_bp.route('/<uuid:user_id>/detail', methods=['GET'])
 @jwt_required()
 @limiter.limit("60 per minute")
@@ -50,6 +52,7 @@ def retrieve_user(user_id, db):
     result = user_schema.dump(user)
 
     return jsonify(result), 200
+
 
 @user_bp.route('/add', methods=['POST'])
 @jwt_required()
@@ -65,6 +68,7 @@ def create_user(db):
     user = UserService.create_user(data=data, session=db.session)
 
     return jsonify(user_schema.dump(user)), 201
+
 
 @user_bp.route('/<uuid:user_id>/update', methods=['PUT'])
 @jwt_required()
@@ -85,6 +89,7 @@ def update_user(user_id, db):
     )
 
     return jsonify(response_schema.dump(user)), 200
+
 
 @user_bp.route('/<uuid:user_id>/delete', methods=['DELETE'])
 @jwt_required()

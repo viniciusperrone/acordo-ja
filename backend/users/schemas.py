@@ -9,6 +9,7 @@ PASSWORD_REGEX = re.compile(
     r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_\-])[A-Za-z\d@$!%*?&.#_\-]{8,}$"
 )
 
+
 class UserSchema(Schema):
     id = fields.UUID(dump_only=True)
     name = fields.String(required=True)
@@ -20,7 +21,10 @@ class UserSchema(Schema):
         required=True,
         load_only=True,
         validate=[
-            validate.Length(min=8, error="Password must be at least 8 characters long."),
+            validate.Length(
+                min=8,
+                error="Password must be at least 8 characters long."
+            ),
             validate.Regexp(
                 PASSWORD_REGEX,
                 error=(
@@ -34,6 +38,7 @@ class UserSchema(Schema):
     class Meta:
         unknown = "raise"
 
+
 class UserUpdateSchema(Schema):
     name = fields.String(required=False)
     email = fields.Email(required=False)
@@ -41,6 +46,7 @@ class UserUpdateSchema(Schema):
 
     class Meta:
         unknown = "raise"
+
 
 class UserResponseSchema(Schema):
     id = fields.UUID()
