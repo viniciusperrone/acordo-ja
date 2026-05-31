@@ -6,7 +6,11 @@ from marshmallow import ValidationError
 from users.exceptions import UserNotFoundError
 from users.models import User
 from authentication.models import PasswordResetToken, TokenBlocklist
-from authentication.exceptions import InvalidCredentials, InvalidPasswordResetToken, MissingTokenIdentifier
+from authentication.exceptions import (
+    InvalidCredentials,
+    InvalidPasswordResetToken,
+    MissingTokenIdentifier
+)
 
 
 class AuthenticationService:
@@ -88,7 +92,8 @@ class AuthenticationService:
 
     @staticmethod
     def reset_password(url_safe, data, session):
-        token = session.query(PasswordResetToken).filter(PasswordResetToken.token == url_safe).first()
+        token = (session.query(PasswordResetToken).
+                 filter(PasswordResetToken.token == url_safe).first())
 
         if not token:
             raise InvalidPasswordResetToken

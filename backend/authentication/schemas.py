@@ -1,6 +1,6 @@
 import re
 
-from marshmallow import Schema, fields, validate, validates, validates_schema, ValidationError
+from marshmallow import Schema, fields, validate, validates_schema, ValidationError
 
 PASSWORD_REGEX = re.compile(
     r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_\-])[A-Za-z\d@$!%*?&.#_\-]{8,}$"
@@ -25,6 +25,7 @@ class AuthenticationSchema(Schema):
     class Meta:
         unknown = "raise"
 
+
 class UpdatePasswordSchema(Schema):
     old_password = fields.String(required=True, load_only=True)
     new_password = fields.String(
@@ -45,8 +46,10 @@ class UpdatePasswordSchema(Schema):
                 {"confirm_password": ["Passwords do not match."]}
             )
 
+
 class ForgotPasswordSchema(Schema):
     email = fields.Email(required=True)
+
 
 class ResetPasswordSchema(Schema):
     new_password = fields.String(

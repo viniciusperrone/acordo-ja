@@ -1,13 +1,20 @@
 from flask import Blueprint, request, jsonify, g
 from flask_jwt_extended import jwt_required, get_jwt
 
-from authentication.schemas import AuthenticationSchema, UpdatePasswordSchema, ForgotPasswordSchema,  ResetPasswordSchema
 from authentication.services import AuthenticationService
+from authentication.schemas import (
+    AuthenticationSchema,
+    UpdatePasswordSchema,
+    ForgotPasswordSchema,
+    ResetPasswordSchema
+)
+
 from common.decorators import current_user, transactional
 from config import limiter
 
 
 authentication_bp = Blueprint("authentication", __name__, url_prefix="/auth")
+
 
 @authentication_bp.route("/login", methods=["POST"])
 @limiter.limit("5 per minute")
@@ -17,9 +24,14 @@ def login(db):
 
     data = authentication_schema.load(request.get_json())
 
-    tokens = AuthenticationService.login(email=data["email"], password=data["password"], session=db.session)
+    tokens = AuthenticationService.login(
+        email=data["email"],
+        password=data["password"],
+        session=db.session
+    )
 
     return jsonify(tokens), 200
+
 
 @authentication_bp.route("/me/update-password", methods=["PATCH"])
 @jwt_required()
@@ -39,6 +51,7 @@ def update_password(db):
 
     return jsonify({"message": "Password changed successfully"}), 200
 
+
 @authentication_bp.route("/forgot-password", methods=["POST"])
 @limiter.limit("1 per minute")
 @transactional
@@ -48,7 +61,10 @@ def forgot_password(db):
 
     AuthenticationService.forgot_password(data=data, session=db.session)
 
-    return jsonify({"message": "The link to reset your password has been sent to your email"})
+    return jsonify(
+        {"message": "The link to reset your password has been sent to your email"}
+    )
+
 
 @authentication_bp.route("/logout", methods=["POST"])
 @jwt_required()
@@ -60,6 +76,7 @@ def logout(db):
     AuthenticationService.logout(jti=jti, session=db.session)
 
     return jsonify({"message": "Successfully logged out"}), 200
+
 
 @authentication_bp.route("/<string:url_safe>/reset-password", methods=["PUT"])
 @limiter.limit("1 per minute")
