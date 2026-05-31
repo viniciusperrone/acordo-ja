@@ -9,6 +9,7 @@ from leads.services import LeadService
 
 leads_bp = Blueprint('leads', __name__, url_prefix='/leads')
 
+
 @leads_bp.route('/add', methods=['POST'])
 @limiter.limit('5 per minute')
 @transactional

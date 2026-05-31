@@ -12,5 +12,5 @@ class LeadService:
         session.flush()
 
         NotificationEvents.on_lead_created(lead, session)
-        
+
         return lead
