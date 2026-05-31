@@ -12,6 +12,7 @@ from utils.enum import UserRole
 
 debtor_bp = Blueprint('debtor', __name__, url_prefix='/debtor')
 
+
 @debtor_bp.route('/list', methods=['GET'])
 @limiter.limit("30 per minute")
 @jwt_required()
@@ -40,6 +41,7 @@ def list_debtors():
         "current_page": page
     }), 200
 
+
 @debtor_bp.route('/<int:debtor_id>/detail', methods=['GET'])
 @jwt_required()
 @limiter.limit("60 per minute")
@@ -51,6 +53,7 @@ def retrieve_debtor(debtor_id, db):
     result = debtor_schema.dump(debtor)
 
     return jsonify(result), 200
+
 
 @debtor_bp.route('/add', methods=['POST'])
 @jwt_required()
