@@ -22,6 +22,7 @@ from .exceptions import (
     PendingInstallmentsError,
 )
 
+
 class AgreementService:
 
     @staticmethod
@@ -52,8 +53,10 @@ class AgreementService:
                             ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         # Validação e aplicação do desconto
-        discount = Decimal(data.get("discount_applied", "0.00")).quantize(Decimal("0.01"))
-        discount_limit = Decimal(debt.creditor.discount_limit).quantize(Decimal("0.0001"))
+        discount = (Decimal(data.get("discount_applied", "0.00")).
+                    quantize(Decimal("0.01")))
+        discount_limit = (Decimal(debt.creditor.discount_limit).
+                          quantize(Decimal("0.0001")))
         max_discount = (total_to_pay * discount_limit / Decimal("100")
                         ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
@@ -61,16 +64,23 @@ class AgreementService:
             raise ValueError("Discount cannot exceed total debt")
 
         if discount > max_discount:
-            raise ValueError(f"Discount cannot exceed {discount_limit}% of total (max: {max_discount})")
+            raise ValueError(
+                (
+                    f"Discount cannot exceed {discount_limit}% of total "
+                    f"(max: {max_discount})"
+                )
+            )
 
-        total_to_pay = (total_to_pay - discount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        total_to_pay = ((total_to_pay - discount).
+                        quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
         # Validação e aplicação da entrada
         entry = Decimal(data.get("entry_value", "0.00")).quantize(Decimal("0.01"))
         if entry > total_to_pay:
             raise ValueError("Entry cannot exceed total after discount")
 
-        remaining_value = (total_to_pay - entry).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        remaining_value = ((total_to_pay - entry).
+                           quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
         # Validação de parcelas
         installments_quantity = data["installments_quantity"]
@@ -84,7 +94,9 @@ class AgreementService:
         if monthly_rate > 0 and remaining_value > 0:
             rate_factor = (Decimal("1") + monthly_rate) ** installments_quantity
             installment_value = (
-                    remaining_value * (monthly_rate * rate_factor) / (rate_factor - Decimal("1"))
+                remaining_value
+                * (monthly_rate * rate_factor)
+                / (rate_factor - Decimal("1"))
             ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         else:
             installment_value = (
@@ -99,7 +111,8 @@ class AgreementService:
         ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         total_with_interest = (
-                (installment_value * (installments_quantity - 1)) + last_installment_value
+                (installment_value * (installments_quantity - 1))
+                + last_installment_value
         ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         agreement = Agreement(
@@ -208,7 +221,10 @@ class AgreementService:
 
         session.flush()
 
-        agreement_events.agreement_activated(agreement_id=str(agreement.id), user_id=str(user.id))
+        agreement_events.agreement_activated(
+            agreement_id=str(agreement.id),
+            user_id=str(user.id)
+        )
 
         debt_events.debt_entered_agreement(
             debt_id=str(debt.id),
@@ -243,7 +259,10 @@ class AgreementService:
         agreement.debt.updated_value = None
         agreement.debt.status = DebtStatus.OPEN
 
-        agreement_events.agreement_cancelled(agreement_id=str(agreement.id), user_id=str(user.id))
+        agreement_events.agreement_cancelled(
+            agreement_id=str(agreement.id),
+            user_id=str(user.id)
+        )
 
         DebtHistoryService.record_agreement_cancelled(
             debt=agreement.debt,

@@ -12,6 +12,7 @@ from utils.enum import UserRole
 
 agreement_bp = Blueprint('agreement', __name__, url_prefix='/agreement')
 
+
 @agreement_bp.route('/list', methods=['GET'])
 @limiter.limit("30 per minute")
 @jwt_required()
@@ -36,6 +37,7 @@ def list_agreements():
         "current_page": page
     })
 
+
 @agreement_bp.route('/add', methods=['POST'])
 @jwt_required()
 @limiter.limit("3 per minute")
@@ -51,6 +53,7 @@ def create_agreement(db):
 
     return jsonify(result), 201
 
+
 @agreement_bp.route('/<uuid:agreement_id>/detail', methods=['GET'])
 @jwt_required()
 @limiter.limit("60 per minute")
@@ -62,6 +65,7 @@ def retrieve_agreement(agreement_id, db):
     result = agreement_schema.dump(agreement)
 
     return jsonify(result), 200
+
 
 @agreement_bp.route('/<uuid:agreement_id>/activate', methods=['PATCH'])
 @jwt_required()
@@ -78,6 +82,7 @@ def activate_agreement(agreement_id, db):
 
     return jsonify(), 204
 
+
 @agreement_bp.route('/<uuid:agreement_id>/cancel', methods=['POST'])
 @jwt_required()
 @limiter.limit("3 per minute")
@@ -92,6 +97,7 @@ def cancel_agreement(agreement_id, db):
     AgreementService.cancel(agreement, user, db.session)
 
     return jsonify(), 204
+
 
 @agreement_bp.route('/<uuid:agreement_id>/complete', methods=['POST'])
 @limiter.limit("3 per minute")

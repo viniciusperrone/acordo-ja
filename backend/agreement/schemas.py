@@ -18,8 +18,16 @@ class AgreementSchema(Schema):
     installment_value = fields.Decimal(dump_only=True)
     installments_quantity = fields.Int(required=True, validate=validate.Range(min=1))
 
-    entry_value = fields.Decimal(load_default=Decimal("0.00"), as_string=True, validate=validate.Range(min=Decimal("0.00")))
-    discount_applied = fields.Decimal(load_default=Decimal("0.00"), as_string=True, validate=validate.Range(min=Decimal("0.00")))
+    entry_value = fields.Decimal(
+        load_default=Decimal("0.00"),
+        as_string=True,
+        validate=validate.Range(min=Decimal("0.00"))
+    )
+    discount_applied = fields.Decimal(
+        load_default=Decimal("0.00"),
+        as_string=True,
+        validate=validate.Range(min=Decimal("0.00"))
+    )
 
     first_due_date = fields.Date(required=True)
 
@@ -58,7 +66,10 @@ class AgreementSchema(Schema):
             calculated_total = gross_total - discount_applied
 
             total = total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-            calculated_total = calculated_total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            calculated_total = calculated_total.quantize(
+                Decimal("0.01"),
+                rounding=ROUND_HALF_UP
+            )
 
             if calculated_total <= Decimal("0.00"):
                 raise ValidationError(
