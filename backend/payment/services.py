@@ -22,7 +22,13 @@ class PaymentService:
 
     @staticmethod
     @traced("payment.register")
-    def process_installment_payment(installment, user, amount, method, session):
+    def process_installment_payment(
+        installment,
+        user,
+        amount,
+        method,
+        session
+    ):
 
         if not installment.agreement:
             raise InstallmentWithoutAgreement(
@@ -37,7 +43,8 @@ class PaymentService:
 
         if installment.agreement.status != AgreementStatus.ACTIVE:
             raise PaymentError(
-                f"Cannot pay installment {installment.id} because agreement is not active"
+                f"Cannot pay installment {installment.id} "
+                f"because agreement is not active"
             )
 
         if amount != installment.value:

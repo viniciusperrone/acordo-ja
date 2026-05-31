@@ -10,6 +10,7 @@ from payment.filters import PaymentFilter
 
 payment_bp = Blueprint("payment", __name__, url_prefix="/payment")
 
+
 @payment_bp.route("/list", methods=["GET"])
 @limiter.limit("30 per minute")
 @jwt_required()
