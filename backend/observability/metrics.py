@@ -1,17 +1,19 @@
-from flask import Response, Flask
 import os
+
+from flask import Response, Flask
 
 from opentelemetry import metrics
 from opentelemetry.exporter.prometheus import PrometheusMetricReader
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.resources import Resource
 
-from prometheus_client import generate_latest
-from prometheus_client import CONTENT_TYPE_LATEST
+from prometheus_client import (
+    generate_latest,
+    CONTENT_TYPE_LATEST
+)
 
 
 metric_reader = PrometheusMetricReader()
-
 
 provider = MeterProvider(
     metric_readers=[metric_reader],
@@ -28,16 +30,19 @@ metrics.set_meter_provider(provider)
 
 meter = metrics.get_meter("acordoja.metrics")
 
+
 http_requests_total = meter.create_counter(
     name="http_requests_total",
     description="Total HTTP requests",
 )
+
 
 http_request_duration = meter.create_histogram(
     name="http_request_duration_seconds",
     description="HTTP request duration in seconds",
     unit="s"
 )
+
 
 external_request_duration = meter.create_histogram(
     name="external_request_duration_seconds",
