@@ -40,5 +40,14 @@ class Installments(db.Model):
         cascade="all, delete-orphan"
     )
 
-    created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now(), nullable=False)
+    created_at = db.Column(
+        db.DateTime,
+        server_default=db.func.now(),
+        nullable=False
+    )
+    updated_at = db.Column(
+        db.DateTime,
+        default=db.func.now(),
+        onupdate=db.func.now(),
+        nullable=False
+    )

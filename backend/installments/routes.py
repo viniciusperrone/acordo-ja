@@ -15,6 +15,7 @@ from payment.services import PaymentService
 
 installment_bp = Blueprint("installments", __name__, url_prefix="/installments")
 
+
 @installment_bp.route("/list", methods=["GET"])
 @limiter.limit("30 per minute")
 @jwt_required()
@@ -42,6 +43,7 @@ def list_installments():
         "pages": pagination.pages,
         "current_page": page
     }), 200
+
 
 @installment_bp.route("/<int:installment_id>/pay", methods=["POST"])
 @jwt_required()

@@ -1,4 +1,4 @@
-from marshmallow import Schema, fields, validate, validates, ValidationError
+from marshmallow import Schema, fields, validates, ValidationError
 
 from utils.enum import InstallmentStatus
 
@@ -12,7 +12,6 @@ class InstallmentSchema(Schema):
     value = fields.Float(required=True)
     status = fields.Enum(InstallmentStatus, dump_only=True)
     agreement_id = fields.UUID(required=True)
-
 
     class Meta:
         unknown = "raise"
