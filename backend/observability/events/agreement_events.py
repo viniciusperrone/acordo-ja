@@ -32,7 +32,11 @@ class AgreementEventLogger:
         log_event(logger, "info", "agreement.completed")
 
     @staticmethod
-    def agreement_cancelled(agreement_id: str, user_id: str, reason: str = None) -> None:
+    def agreement_cancelled(
+        agreement_id: str,
+        user_id: str,
+        reason: str = None
+    ) -> None:
         bind_context(agreement_id=agreement_id, user_id=user_id)
 
         log_event(

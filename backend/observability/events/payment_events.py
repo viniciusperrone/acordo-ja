@@ -28,4 +28,5 @@ class PaymentEventLogger:
             reason=reason,
         )
 
+
 payments_events = PaymentEventLogger()

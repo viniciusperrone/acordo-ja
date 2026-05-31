@@ -3,6 +3,7 @@ from observability.structured_logger import get_logger, bind_context, log_event
 
 logger = get_logger("debt.events")
 
+
 class DebtEventLogger:
     """
     Structured event logger for debt lifecycle events.
@@ -62,17 +63,13 @@ class DebtEventLogger:
         )
 
     @staticmethod
-    def debt_paid(debt_id: str, user_id: str, data: dict) -> None:
-        bind_context(debt_id=debt_id, user_id=user_id)
-
-        log_event(
-            logger, "info", "debt.paid",
-            final_value=str(data["updated_value"]),
-            agreement_id=str(data["agreement_id"]),
-        )
-
-    @staticmethod
-    def debt_value_updated(debt_id: str, user_id: str, old_value: str, new_value: str, reason: str) -> None:
+    def debt_value_updated(
+        debt_id: str,
+        user_id: str,
+        old_value: str,
+        new_value: str,
+        reason: str
+    ) -> None:
         bind_context(debt_id=debt_id, user_id=user_id)
 
         log_event(

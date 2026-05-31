@@ -10,6 +10,7 @@ from contextvars import ContextVar
 
 _ctx: ContextVar[dict] = ContextVar("log_context", default={})
 
+
 def get_otel_context():
     span = trace.get_current_span()
     ctx = span.get_span_context()
@@ -62,14 +63,17 @@ def get_logger(name: str) -> logging.Logger:
 
     return logger
 
+
 def bind_context(**kwargs) -> None:
     current = _ctx.get().copy()
     current.update(kwargs)
 
     _ctx.set(current)
 
+
 def clear_context() -> None:
     _ctx.set({})
+
 
 def log_event(logger, level: str, event: str, **fields) -> None:
     extra = {"extra_fields": {"event": event, **fields}}
