@@ -19,7 +19,7 @@ class DebtHistoryService:
         new_value: Optional[Decimal] = None,
         reason: str = "",
         extra: Optional[Dict[str, Any]] = None,
-        session = None
+        session=None
     ) -> DebtHistory:
 
         history = DebtHistory(
@@ -63,13 +63,13 @@ class DebtHistoryService:
 
     @staticmethod
     def record_agreement_activated(
-            debt: Debt,
-            agreement_id: str,
-            old_status: DebtStatus,
-            total_traded: Decimal,
-            installments_quantity: int,
-            user: User,
-            session
+        debt: Debt,
+        agreement_id: str,
+        old_status: DebtStatus,
+        total_traded: Decimal,
+        installments_quantity: int,
+        user: User,
+        session
     ) -> DebtHistory:
         return DebtHistoryService.record_event(
             debt=debt,
@@ -94,12 +94,12 @@ class DebtHistoryService:
 
     @staticmethod
     def record_agreement_cancelled(
-            debt: Debt,
-            agreement_id: str,
-            debt_old_status: DebtStatus,
-            agreement_new_status: AgreementStatus,
-            agreement_old_status: AgreementStatus,
-            session
+        debt: Debt,
+        agreement_id: str,
+        debt_old_status: DebtStatus,
+        agreement_new_status: AgreementStatus,
+        agreement_old_status: AgreementStatus,
+        session
     ) -> DebtHistory:
         old_value = debt.updated_value
 
@@ -121,11 +121,11 @@ class DebtHistoryService:
 
     @staticmethod
     def record_debt_paid(
-            debt: Debt,
-            agreement_id: str,
-            payment_id: str,
-            paid_at: datetime,
-            session
+        debt: Debt,
+        agreement_id: str,
+        payment_id: str,
+        paid_at: datetime,
+        session
     ) -> DebtHistory:
 
         return DebtHistoryService.record_event(
@@ -156,7 +156,7 @@ class DebtHistoryService:
             event_type=DebtHistoryType.DEBT_CANCELLED,
             old_status=DebtStatus.OPEN,
             new_status=DebtStatus.CANCELLED,
-            reason=f"Dívida cancelada",
+            reason="Dívida cancelada",
             extra={
                 "cancellation_reason": cancellation_reason,
             },
@@ -176,7 +176,7 @@ class DebtHistoryService:
             event_type=DebtHistoryType.DEBT_DEFAULTED,
             old_status=old_status,
             new_status=DebtStatus.DEFAULTED,
-            reason=f"Dívida entrou em Inadimplência",
+            reason="Dívida entrou em Inadimplência",
             extra={
                 "due_date": due_date.isoformat(),
             },
@@ -184,7 +184,10 @@ class DebtHistoryService:
         )
 
     @staticmethod
-    def get_debt_timeline(debt_id: str, event_type: Optional[DebtHistoryType] = None) -> list:
+    def get_debt_timeline(
+        debt_id: str,
+        event_type: Optional[DebtHistoryType] = None
+    ) -> list:
         query = DebtHistory.query.filter_by(debt_id=debt_id)
 
         if event_type:

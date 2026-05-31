@@ -36,7 +36,12 @@ class Debt(db.Model):
         nullable=False
     )
 
-    agreements = db.relationship("Agreement", back_populates="debt", cascade="all, delete-orphan", passive_deletes=True)
+    agreements = db.relationship(
+        "Agreement",
+        back_populates="debt",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
     debtor = db.relationship("Debtor", back_populates="debts")
     creditor = db.relationship("Creditor", back_populates="debts")
 
@@ -49,6 +54,7 @@ class Debt(db.Model):
         server_default=db.func.now(),
         onupdate=db.func.now()
     )
+
 
 class DebtHistory(db.Model):
     __tablename__ = 'debt_history'

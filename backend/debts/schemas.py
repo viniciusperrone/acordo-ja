@@ -32,6 +32,7 @@ class DebtSchema(Schema):
     class Meta:
         unknown = "raise"
 
+
 class DebtSearchByDocumentSchema(Schema):
     document = fields.String(required=True)
 
@@ -51,6 +52,7 @@ class DebtSearchByDocumentSchema(Schema):
     class Meta:
         unknown = "raise"
 
+
 class DebtHistorySchema(Schema):
     id = fields.UUID()
     event_type = fields.Enum(DebtHistoryType, by_value=True, dump_only=True)
@@ -67,6 +69,7 @@ class DebtHistorySchema(Schema):
 
     class Meta:
         unknown = "raise"
+
 
 class DebtItemSchema(Schema):
     id = fields.Str(required=True)

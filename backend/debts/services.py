@@ -53,7 +53,10 @@ class DebtService:
             total_amount += debt.original_value
             debts.append(item)
 
-        log_event(logger, "info", "debt.search.performed",
+        log_event(
+            logger,
+            "info",
+            "debt.search.performed",
             document_hash=hashlib.sha256(document.encode()).hexdigest(),
             has_debts=has_debts,
             total_debts=count
@@ -104,11 +107,11 @@ class DebtService:
             debt_id=str(debt.id),
             user_id=user.id,
             data={
-            'creditor_id': str(creditor_id),
-            'debtor_id': str(debtor_id),
-            'original_value': str(debt.original_value),
-            'due_date': debt.due_date.isoformat(),
-        })
+                'creditor_id': str(creditor_id),
+                'debtor_id': str(debtor_id),
+                'original_value': str(debt.original_value),
+                'due_date': debt.due_date.isoformat(),
+            })
 
         return debt
 

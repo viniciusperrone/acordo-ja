@@ -19,6 +19,7 @@ from debts.schemas import (
 
 debts_bp = Blueprint('debts', __name__, url_prefix='/debts')
 
+
 @debts_bp.route('/search', methods=['GET'])
 @limiter.limit("30 per minute")
 @transactional
@@ -31,6 +32,7 @@ def search_debt(db):
     result_schema = DebtSearchResponseSchema()
 
     return jsonify(result_schema.dump(result)), 200
+
 
 @debts_bp.route('/list', methods=['GET'])
 @jwt_required()
@@ -60,6 +62,7 @@ def list_debts():
         "current_page": page,
     }), 200
 
+
 @debts_bp.route('/<uuid:debt_id>/detail', methods=['GET'])
 @jwt_required()
 @limiter.limit("60 per minute")
@@ -71,6 +74,7 @@ def retrieve_debt(debt_id, db):
     result = debt_schema.dump(debt)
 
     return jsonify(result), 200
+
 
 @debts_bp.route('/add', methods=['POST'])
 @jwt_required()
@@ -91,6 +95,7 @@ def create_debt(db):
     )
 
     return jsonify(debt_schema.dump(debt)), 201
+
 
 @debts_bp.route("/<uuid:debt_id>/timeline")
 @jwt_required()
