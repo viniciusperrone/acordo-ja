@@ -1,18 +1,21 @@
-from sqlalchemy import or_
 import uuid
 
 
 def op_exact(column, value):
     return column == value
 
+
 def op_gte(column, value):
     return column >= value
+
 
 def op_lte(column, value):
     return column <= value
 
+
 def op_like(column, value):
     return column.ilike(f"%{value}%")
+
 
 def op_in(column, value):
     values = value.split(",")
@@ -29,6 +32,7 @@ def op_in(column, value):
             pass
 
     return column.in_(values)
+
 
 OPERATORS = {
     "exact": op_exact,

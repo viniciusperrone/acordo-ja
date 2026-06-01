@@ -1,9 +1,8 @@
-from sqlalchemy import asc, desc, Enum, false
+from sqlalchemy import asc, desc
 from .operators import OPERATORS
 
 
 class BaseFilter:
-
     model = None
     fields = {}
     ordering_fields = []
