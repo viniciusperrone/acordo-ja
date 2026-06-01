@@ -19,5 +19,5 @@ AGREEMENT_STATUS_CHOICES = (
     ('DRAFT', 'Rascunho'),
     ('ACTIVE', 'Ativo'),
     ('CANCELLED', 'Cancelado'),
-    ('COMPLETED',  'Concluído')
+    ('COMPLETED', 'Concluído')
 )
