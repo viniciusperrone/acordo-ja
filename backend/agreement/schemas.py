@@ -48,15 +48,8 @@ class AgreementSchema(Schema):
                 "first_due_date": "First due date cannot be in the past."
             })
 
-        if (
-            total is not None
-            and installment_value is not None
-            and installments_quantity is not None
-        ):
-
-            gross_total = (
-                  installment_value * installments_quantity
-            ) + entry_value
+        if None not in (total, installment_value, installments_quantity):
+            gross_total = (installment_value * installments_quantity) + entry_value
 
             if discount_applied > gross_total:
                 raise ValidationError({

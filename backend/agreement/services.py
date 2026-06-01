@@ -94,25 +94,25 @@ class AgreementService:
         if monthly_rate > 0 and remaining_value > 0:
             rate_factor = (Decimal("1") + monthly_rate) ** installments_quantity
             installment_value = (
-                remaining_value
-                * (monthly_rate * rate_factor)
-                / (rate_factor - Decimal("1"))
+                remaining_value *
+                (monthly_rate * rate_factor) /
+                (rate_factor - Decimal("1"))
             ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         else:
             installment_value = (
-                    remaining_value / installments_quantity
+                remaining_value / installments_quantity
             ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         total_price = (installment_value * installments_quantity).quantize(
             Decimal("0.01"), rounding=ROUND_HALF_UP
         )
         last_installment_value = (
-                total_price - (installment_value * (installments_quantity - 1))
+            total_price - (installment_value * (installments_quantity - 1))
         ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         total_with_interest = (
-                (installment_value * (installments_quantity - 1))
-                + last_installment_value
+            (installment_value * (installments_quantity - 1))
+            + last_installment_value
         ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         agreement = Agreement(
