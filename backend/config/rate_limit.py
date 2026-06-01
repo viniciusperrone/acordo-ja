@@ -9,6 +9,7 @@ limiter = Limiter(
     default_limits=["100 per hour"]
 )
 
+
 def rate_limit_handler(e):
     return jsonify({
         "message": "Too many requests",

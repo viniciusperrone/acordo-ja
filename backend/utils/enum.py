@@ -22,6 +22,7 @@ class DebtStatus(Enum):
     DEFAULTED = "DEFAULTED"
     CANCELLED = "CANCELLED"
 
+
 class MethodPayment(Enum):
     PIX = "PIX"
     BOLETO = "BOLETO"
@@ -29,10 +30,12 @@ class MethodPayment(Enum):
     CARTAO = "CARTAO"
     DINHEIRO = "DINHEIRO"
 
+
 class UserRole(Enum):
     ADMIN = "ADMIN"
     MANAGER = "MANAGER"
     AGENT = "AGENT"
+
 
 class NotificationType(Enum):
     NEW_LEAD = "NEW_LEAD"
