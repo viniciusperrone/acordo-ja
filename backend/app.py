@@ -16,16 +16,16 @@ from config import (
     init_jwt,
 )
 
-import creditor
-import debts
-import debtor
-import agreement
-import installments
-import payment
-import users
-import notifications
-import leads
-import authentication
+import creditor # noqa: F401
+import debts # noqa: F401
+import debtor # noqa: F401
+import agreement # noqa: F401
+import installments # noqa: F401
+import payment # noqa: F401
+import users # noqa: F401
+import notifications # noqa: F401
+import leads # noqa: F401
+import authentication # noqa: F401
 
 from creditor.routes import creditor_bp
 from debts.routes import debts_bp

@@ -5,3 +5,4 @@ exclude =
     __pycache__,
     venv,
     migrations
+ignore = F401
