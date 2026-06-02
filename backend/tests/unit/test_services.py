@@ -403,7 +403,7 @@ class TestDebtService:
             "id": debt.id,
             "amount": debt.original_value,
             "due_date": debt.due_date,
-            "status": debt.status,
+            "status": debt.status.value,
             "creditor": debt.creditor.bank_name,
         }
 
@@ -586,7 +586,7 @@ class TestAgreementService:
         assert err.value.message == "Agreement not found"
 
     @patch("agreement.services.NotificationEvents.on_agreement_created")
-    def test_should_create_agreement_successfully(self, mock_notification, debt, session): # noqa: E501, E261
+    def test_should_create_agreement_successfully(self, mock_notification, debt, agent_user, session): # noqa: E501, E261
         data = {
             "debt_id": debt.id,
             "installments_quantity": 10,
@@ -595,6 +595,7 @@ class TestAgreementService:
 
         agreement = AgreementService.create(
             data,
+            agent_user,
             session,
         )
 
@@ -617,7 +618,7 @@ class TestAgreementService:
             session,
         )
 
-    def test_should_raise_debt_not_found_when_creating_agreement_with_invalid_debt(self, session): # noqa: E501, E261
+    def test_should_raise_debt_not_found_when_creating_agreement_with_invalid_debt(self, agent_user, session): # noqa: E501, E261
         data = {
             "debt_id": uuid.uuid4(),
             "installments_quantity": 10,
@@ -625,11 +626,11 @@ class TestAgreementService:
         }
 
         with pytest.raises(DebtNotFound) as err:
-            AgreementService.create(data, session)
+            AgreementService.create(data, agent_user, session)
 
         assert err.value.message == "Debt not found"
 
-    def test_should_raise_error_when_discount_exceeds_total_debt(self, debt, session):
+    def test_should_raise_error_when_discount_exceeds_total_debt(self, debt, agent_user, session):
         data = {
             "debt_id": debt.id,
             "installments_quantity": 5,
@@ -638,11 +639,11 @@ class TestAgreementService:
         }
 
         with pytest.raises(ValueError) as err:
-            AgreementService.create(data, session)
+            AgreementService.create(data, agent_user, session)
 
         assert str(err.value) == "Discount cannot exceed total debt"
 
-    def test_should_raise_error_when_discount_exceeds_limit(self, debt, session):
+    def test_should_raise_error_when_discount_exceeds_limit(self, debt, agent_user, session):
         data = {
             "debt_id": debt.id,
             "installments_quantity": 5,
@@ -651,11 +652,11 @@ class TestAgreementService:
         }
 
         with pytest.raises(ValueError) as err:
-            AgreementService.create(data, session)
+            AgreementService.create(data, agent_user, session)
 
         assert "Discount cannot exceed" in str(err.value)
 
-    def test_should_raise_error_when_entry_exceeds_total_after_discount(self, debt, session): # noqa: E501, E261
+    def test_should_raise_error_when_entry_exceeds_total_after_discount(self, debt, agent_user, session): # noqa: E501, E261
         data = {
             "debt_id": debt.id,
             "installments_quantity": 5,
@@ -664,11 +665,11 @@ class TestAgreementService:
         }
 
         with pytest.raises(ValueError) as err:
-            AgreementService.create(data, session)
+            AgreementService.create(data, agent_user, session)
 
         assert str(err.value) == "Entry cannot exceed total after discount"
 
-    def test_should_raise_error_when_installments_quantity_is_zero(self, debt, session):
+    def test_should_raise_error_when_installments_quantity_is_zero(self, debt, agent_user, session):
         data = {
             "debt_id": debt.id,
             "installments_quantity": 0,
@@ -676,12 +677,13 @@ class TestAgreementService:
         }
 
         with pytest.raises(ValueError) as err:
-            AgreementService.create(data, session)
+            AgreementService.create(data, agent_user, session)
 
         assert str(err.value) == "Installments quantity must be greater than zero"
 
+    @patch("agreement.services.debt_events.debt_entered_agreement")
     @patch("agreement.services.DebtHistoryService.record_agreement_activated")
-    def test_should_activate_agreement_successfully(self, mock_history, agreement, manager_user, session): # noqa: E501, E261
+    def test_should_activate_agreement_successfully(self, mock_history, mock_debt_entered_agreement, agreement, manager_user, session): # noqa: E501, E261
         activated_agreement = AgreementService.activate(
             agreement,
             manager_user,
@@ -693,6 +695,19 @@ class TestAgreementService:
         assert activated_agreement.debt.status == DebtStatus.IN_AGREEMENT # noqa: E501, E261
 
         mock_history.assert_called_once()
+
+        mock_debt_entered_agreement.assert_called_once_with(
+            debt_id=str(agreement.debt.id),
+            user_id=str(manager_user.id),
+            data={
+                "agreement_id": agreement.id,
+                "old_status": DebtStatus.OPEN.value,
+                "status": DebtStatus.IN_AGREEMENT.value,
+                "updated_value": agreement.total_traded,
+                "agreement_status": AgreementStatus.ACTIVE.value,
+                "last_agreement_date": agreement.first_due_date,
+            },
+        )
 
     def test_should_raise_error_when_activating_non_draft_agreement(self, agreement, manager_user, session): # noqa: E501, E261
         agreement.status = AgreementStatus.ACTIVE
@@ -709,25 +724,25 @@ class TestAgreementService:
         assert err.value.message == "Agreement cannot opened"
 
     @patch("agreement.services.DebtHistoryService.record_agreement_cancelled")
-    def test_should_cancel_agreement_successfully(self, mock_history, agreement, session): # noqa: E501, E261
+    def test_should_cancel_agreement_successfully(self, mock_history, agreement, manager_user, session): # noqa: E501, E261
         agreement.status = AgreementStatus.ACTIVE
 
         session.flush()
 
-        AgreementService.cancel(agreement, session)
+        AgreementService.cancel(agreement, manager_user, session)
 
         assert agreement.status == AgreementStatus.CANCELLED
         assert agreement.debt.status == DebtStatus.OPEN
 
         mock_history.assert_called_once()
 
-    def test_should_raise_error_when_cancelling_completed_agreement(self, agreement, session): # noqa: E501, E261
+    def test_should_raise_error_when_cancelling_completed_agreement(self, agreement, manager_user, session): # noqa: E501, E261
         agreement.status = AgreementStatus.COMPLETED
 
         session.flush()
 
         with pytest.raises(AgreementStatusError) as err:
-            AgreementService.cancel(agreement, session)
+            AgreementService.cancel(agreement, manager_user, session)
 
         assert err.value.message == "Cannot cancel a completed agreement"
 

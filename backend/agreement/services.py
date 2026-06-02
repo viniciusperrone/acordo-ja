@@ -235,6 +235,7 @@ class AgreementService:
                 'status': debt.status.value,
                 'updated_value': debt.updated_value,
                 'agreement_status': agreement.status.value,
+                'last_agreement_date': agreement.first_due_date
             }
         )
 
