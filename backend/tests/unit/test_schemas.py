@@ -7,15 +7,24 @@ from marshmallow import ValidationError
 
 from users.schemas import UserSchema, UserUpdateSchema, UserResponseSchema
 from leads.schemas import LeadSchema
-from authentication.schemas import AuthenticationSchema, ResetPasswordSchema, UpdatePasswordSchema, ForgotPasswordSchema
+from authentication.schemas import (
+    AuthenticationSchema, ResetPasswordSchema,
+    UpdatePasswordSchema, ForgotPasswordSchema
+)
 from creditor.schemas import CreditorSchema
 from debtor.schemas import DebtorSchema
-from debts.schemas import DebtSchema, DebtSearchResponseSchema, DebtHistorySchema, DebtSearchByDocumentSchema
+from debts.schemas import (
+    DebtSchema, DebtSearchResponseSchema,
+    DebtHistorySchema, DebtSearchByDocumentSchema
+)
 from agreement.schemas import AgreementSchema
 from installments.schemas import InstallmentSchema
 from payment.schemas import PaymentSchema
 
-from utils.enum import UserRole, MethodPayment, InstallmentStatus, DebtStatus, DebtHistoryType
+from utils.enum import (
+    UserRole, MethodPayment, InstallmentStatus,
+    DebtStatus, DebtHistoryType
+)
 
 
 @pytest.mark.unit
@@ -87,7 +96,10 @@ class TestUserSchema:
             "NoSpecial123",
         ]
     )
-    def test_should_raise_validation_error_when_password_does_not_match_regex(self, password):
+    def test_should_raise_validation_error_when_password_does_not_match_regex(
+        self,
+        password
+    ):
         schema = UserSchema()
 
         data = {
@@ -154,6 +166,7 @@ class TestUserSchema:
 
         assert "password" not in result
 
+
 @pytest.mark.unit
 class TestUserUpdateSchema:
 
@@ -192,6 +205,7 @@ class TestUserUpdateSchema:
 
         assert "role" in err.value.messages
 
+
 @pytest.mark.unit
 class TestUserResponseSchema:
 
@@ -211,6 +225,7 @@ class TestUserResponseSchema:
         assert result["email"] == "joao@email.com"
         assert result["role"] == UserRole.ADMIN.value
         assert "password" not in result
+
 
 @pytest.mark.unit
 class TestLeadSchema:
@@ -379,6 +394,7 @@ class TestLeadSchema:
         assert "id" not in result
         assert "created_at" not in result
 
+
 @pytest.mark.unit
 class TestAuthenticationSchema:
 
@@ -471,6 +487,7 @@ class TestAuthenticationSchema:
             schema.load(data)
 
         assert "password" in err.value.messages
+
 
 @pytest.mark.unit
 class TestUpdatePasswordSchema:
@@ -641,6 +658,7 @@ class TestUpdatePasswordSchema:
         assert result["new_password"] == "AcordoJA@2026"
         assert result["confirm_password"] == "AcordoJA@2026"
 
+
 @pytest.mark.unit
 class TestForgotPasswordSchema:
 
@@ -784,6 +802,7 @@ class TestResetPasswordSchema:
         assert result["new_password"] == "AcordoJA@2026"
         assert result["confirm_password"] == "AcordoJA@2026"
 
+
 @pytest.mark.unit
 class TestCreditorSchema:
 
@@ -857,7 +876,7 @@ class TestCreditorSchema:
             schema.load(data)
 
         assert "interest_rate" in err.value.messages
-        assert "Must be greater than or equal to 0 and less than or equal to 100" in str(err.value)
+        assert "Must be greater than or equal to 0 and less than or equal to 100" in str(err.value) # noqa: E501, E261
 
     def test_should_raise_error_when_fine_rate_is_out_of_range(self):
         schema = CreditorSchema()
@@ -873,7 +892,7 @@ class TestCreditorSchema:
             schema.load(data)
 
         assert "fine_rate" in err.value.messages
-        assert "Must be greater than or equal to 0 and less than or equal to 100." in str(err.value)
+        assert "Must be greater than or equal to 0 and less than or equal to 100." in str(err.value) # noqa: E501, E261
 
     def test_should_raise_error_when_discount_limit_is_out_of_range(self):
         schema = CreditorSchema()
@@ -889,7 +908,7 @@ class TestCreditorSchema:
             schema.load(data)
 
         assert "discount_limit" in err.value.messages
-        assert "Must be greater than or equal to 0 and less than or equal to 100." in str(err.value)
+        assert "Must be greater than or equal to 0 and less than or equal to 100." in str(err.value) # noqa: E501, E261
 
     def test_should_raise_error_when_bank_code_is_invalid(self):
         schema = CreditorSchema()
@@ -936,13 +955,18 @@ class TestCreditorSchema:
         ],
     )
     def test_should_raise_validation_error_when_decimal_field_has_invalid_type(
-            self,
-            field,
+        self,
+        field,
     ):
         schema = CreditorSchema()
 
-        data = {"bank_code": "001", "interest_rate": Decimal("10.00"), "fine_rate": Decimal("5.00"),
-                "discount_limit": Decimal("15.00"), field: "invalid"}
+        data = {
+            "bank_code": "001",
+            "interest_rate": Decimal("10.00"),
+            "fine_rate": Decimal("5.00"),
+            "discount_limit": Decimal("15.00"),
+            field: "invalid"
+        }
 
         with pytest.raises(ValidationError) as err:
             schema.load(data)
@@ -1027,6 +1051,7 @@ class TestCreditorSchema:
         assert result["fine_rate"] == str(data["fine_rate"])
         assert result["discount_limit"] == str(data["discount_limit"])
         assert result["created_at"] == data["created_at"].isoformat()
+
 
 @pytest.mark.unit
 class TestDebtorSchema:
@@ -1273,6 +1298,7 @@ class TestDebtorSchema:
         assert "created_at" in err.value.messages
         assert "updated_at" in err.value.messages
 
+
 @pytest.mark.unit
 class TestDebtSchema:
 
@@ -1510,6 +1536,7 @@ class TestDebtSchema:
         assert result["created_at"] == data["created_at"].isoformat()
         assert result["updated_at"] == data["updated_at"].isoformat()
 
+
 @pytest.mark.unit
 class TestDebtSearchByDocumentSchema:
 
@@ -1580,6 +1607,7 @@ class TestDebtSearchByDocumentSchema:
             schema.load(data)
 
         assert "unexpected" in err.value.messages
+
 
 @pytest.mark.unit
 class TestDebtSearchResponseSchema:
@@ -1769,6 +1797,7 @@ class TestDebtSearchResponseSchema:
         assert result["total_amount"] == "123.45"
         assert result["redirect_url"] == data["redirect_url"]
 
+
 @pytest.mark.unit
 class TestDebtHistorySchema:
 
@@ -1854,6 +1883,7 @@ class TestDebtHistorySchema:
         assert result["reason"] == data["reason"]
         assert result["extra"] == data["extra"]
 
+
 @pytest.mark.unit
 class TestAgreementSchema:
 
@@ -1902,7 +1932,7 @@ class TestAgreementSchema:
             schema.load(data)
 
         assert "first_due_date" in err.value.messages
-        assert err.value.messages["first_due_date"] == "First due date cannot be in the past."
+        assert err.value.messages["first_due_date"] == "First due date cannot be in the past." # noqa: E501, E261
 
     def test_should_raise_error_when_installment_quantity_is_missing(self):
         schema = AgreementSchema()
@@ -2033,6 +2063,7 @@ class TestAgreementSchema:
         assert result["first_due_date"] == data["first_due_date"].isoformat()
         assert result["total_traded"] == data["total_traded"]
         assert result["installment_value"] == data["installment_value"]
+
 
 @pytest.mark.unit
 class TestInstallmentSchema:
@@ -2177,6 +2208,7 @@ class TestInstallmentSchema:
         assert result["status"] == data["status"].value
         assert result["agreement_id"] == str(data["agreement_id"])
 
+
 @pytest.mark.unit
 class TestPaymentSchema:
 
@@ -2193,7 +2225,6 @@ class TestPaymentSchema:
             schema.load(data)
 
         assert "method" in err.value.messages
-
 
     def test_invalid_data_type_raises_error(self):
         schema = PaymentSchema()

@@ -15,7 +15,10 @@ from agreement.models import Agreement
 
 from sqlalchemy.exc import IntegrityError
 
-from utils.enum import UserRole, DebtStatus, AgreementStatus, InstallmentStatus, MethodPayment, NotificationType
+from utils.enum import (
+    UserRole, DebtStatus, AgreementStatus,
+    InstallmentStatus, MethodPayment, NotificationType
+)
 
 
 @pytest.mark.unit
@@ -92,6 +95,7 @@ class TestUserModel:
         assert user.is_active is True
         assert user.must_change_password is True
 
+
 @pytest.mark.unit
 class TestCreditorModel:
 
@@ -151,6 +155,7 @@ class TestCreditorModel:
         with pytest.raises(IntegrityError):
             session.commit()
 
+
 @pytest.mark.unit
 class TestDebtorModel:
 
@@ -158,8 +163,8 @@ class TestDebtorModel:
         debtor = Debtor(
             name="João da Silva",
             document="12345678900",
-            email = "joao@test.com",
-            phone = "11999999999"
+            email="joao@test.com",
+            phone="11999999999"
         )
 
         session.add(debtor)
@@ -206,6 +211,7 @@ class TestDebtorModel:
         assert debtor.id is not None
         assert debtor.email is None
         assert debtor.phone is None
+
 
 @pytest.mark.unit
 class TestDebtModel:
@@ -337,6 +343,7 @@ class TestAgreementModel:
         assert agreement.entry_value == Decimal("0.00")
         assert agreement.discount_applied == Decimal("0.00")
 
+
 @pytest.mark.unit
 class TestInstallmentsModel:
 
@@ -369,6 +376,7 @@ class TestInstallmentsModel:
         assert installment.value == Decimal("100.00")
         assert installment.due_date == date(2024, 3, 1)
         assert installment.status == InstallmentStatus.PENDING
+
 
 @pytest.mark.unit
 class TestPaymentModel:
@@ -480,6 +488,7 @@ class TestPaymentModel:
         session.commit()
 
         assert payment.method == MethodPayment.PIX
+
 
 @pytest.mark.unit
 class TestNotificationModel:
@@ -659,6 +668,7 @@ class TestNotificationModel:
             session.commit()
 
         assert "extra cannot be None" in str(err.value)
+
 
 @pytest.mark.unit
 class TestModelRelationships:

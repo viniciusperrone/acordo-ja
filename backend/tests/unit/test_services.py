@@ -29,7 +29,11 @@ from debts.exceptions import DebtNotFound
 
 from agreement.models import Agreement
 from agreement.services import AgreementService
-from agreement.exceptions import AgreementNotFound, AgreementStatusError, PendingInstallmentsError
+from agreement.exceptions import (
+    AgreementNotFound,
+    AgreementStatusError,
+    PendingInstallmentsError
+)
 
 from installments.models import Installments
 from installments.services import InstallmentService
@@ -39,9 +43,11 @@ from payment.models import Payment
 from payment.services import PaymentService
 from payment.exception import PaymentError
 
-from utils.enum import UserRole, AgreementStatus, InstallmentStatus, MethodPayment, DebtStatus
+from utils.enum import (
+    UserRole, AgreementStatus, InstallmentStatus,
+    MethodPayment, DebtStatus
+)
 
-pytest.ExceptionInfo
 
 @pytest.mark.unit
 class TestLeadService:
@@ -74,6 +80,7 @@ class TestLeadService:
             lead,
             session,
         )
+
 
 @pytest.mark.unit
 class TestUserService:
@@ -123,7 +130,7 @@ class TestUserService:
         assert persisted_user.id == user.id
         assert persisted_user.email == data["email"]
 
-    def test_should_raise_email_already_exists_when_updating_to_existing_email(
+    def test_should_raise_email_already_exists_when_creating_user(
         self,
         agent_user,
         session
@@ -183,9 +190,9 @@ class TestUserService:
         assert updated_user.role == UserRole.ADMIN
 
     def test_should_raise_email_already_exists_when_updating_to_existing_email(
-            self,
-            session,
-            agent_user,
+        self,
+        session,
+        agent_user,
     ):
         another_user = User(
             name="Another User",
@@ -218,6 +225,7 @@ class TestUserService:
 
         assert deleted_user is None
 
+
 @pytest.mark.unit
 class TestCreditorService:
 
@@ -230,7 +238,7 @@ class TestCreditorService:
         assert isinstance(found_creditor, Creditor)
         assert found_creditor.id == creditor.id
 
-    def test_should_raise_creditor_not_found_when_creditor_does_not_exist(self, session):
+    def test_should_raise_creditor_not_found_when_creditor_does_not_exist(self, session): # noqa: E501, E261
         with pytest.raises(CreditorNotFound) as err:
             CreditorService.get(uuid.uuid4(), session)
 
@@ -279,7 +287,7 @@ class TestCreditorService:
         assert persisted_creditor.id == creditor.id
         assert persisted_creditor.bank_code == data["bank_code"]
 
-    def test_should_raise_creditor_already_exists_when_bank_code_is_duplicated(self, session, creditor):
+    def test_should_raise_creditor_already_exists_when_bank_code_is_duplicated(self, session, creditor): # noqa: E501, E261
         data = {
             "bank_code": creditor.bank_code,
             "interest_rate": Decimal("5.00"),
@@ -294,6 +302,7 @@ class TestCreditorService:
             )
 
         assert err.value.message == "Creditor already exists"
+
 
 @pytest.mark.unit
 class TestDebtorService:
@@ -365,6 +374,7 @@ class TestDebtorService:
             )
 
         assert err.value.message == "Duplicate document debtor"
+
 
 @pytest.mark.unit
 class TestDebtService:
@@ -503,7 +513,7 @@ class TestDebtService:
             session,
         )
 
-    def test_should_raise_creditor_not_found_when_creditor_does_not_exist(self, debtor, manager_user, session):
+    def test_should_raise_creditor_not_found_when_creditor_does_not_exist(self, debtor, manager_user, session): # noqa: E501, E261
         data = {
             "creditor_id": uuid.uuid4(),
             "debtor_id": debtor.id,
@@ -520,7 +530,7 @@ class TestDebtService:
 
         assert err.value.message == "Creditor not found"
 
-    def test_should_raise_debtor_not_found_when_debtor_does_not_exist(self, creditor, manager_user, session):
+    def test_should_raise_debtor_not_found_when_debtor_does_not_exist(self, creditor, manager_user, session): # noqa: E501, E261
         data = {
             "creditor_id": creditor.id,
             "debtor_id": 999999,
@@ -557,6 +567,7 @@ class TestDebtService:
             session,
         )
 
+
 @pytest.mark.unit
 class TestAgreementService:
 
@@ -568,15 +579,14 @@ class TestAgreementService:
 
         assert found_agreement.id == agreement.id
 
-
-    def test_should_raise_agreement_not_found_when_agreement_does_not_exist(self, session):
+    def test_should_raise_agreement_not_found_when_agreement_does_not_exist(self, session): # noqa: E501, E261
         with pytest.raises(AgreementNotFound) as err:
             AgreementService.get(uuid.uuid4(), session)
 
         assert err.value.message == "Agreement not found"
 
     @patch("agreement.services.NotificationEvents.on_agreement_created")
-    def test_should_create_agreement_successfully(self, mock_notification, debt, session):
+    def test_should_create_agreement_successfully(self, mock_notification, debt, session): # noqa: E501, E261
         data = {
             "debt_id": debt.id,
             "installments_quantity": 10,
@@ -607,7 +617,7 @@ class TestAgreementService:
             session,
         )
 
-    def test_should_raise_debt_not_found_when_creating_agreement_with_invalid_debt(self, session):
+    def test_should_raise_debt_not_found_when_creating_agreement_with_invalid_debt(self, session): # noqa: E501, E261
         data = {
             "debt_id": uuid.uuid4(),
             "installments_quantity": 10,
@@ -645,7 +655,7 @@ class TestAgreementService:
 
         assert "Discount cannot exceed" in str(err.value)
 
-    def test_should_raise_error_when_entry_exceeds_total_after_discount(self, debt, session):
+    def test_should_raise_error_when_entry_exceeds_total_after_discount(self, debt, session): # noqa: E501, E261
         data = {
             "debt_id": debt.id,
             "installments_quantity": 5,
@@ -671,27 +681,35 @@ class TestAgreementService:
         assert str(err.value) == "Installments quantity must be greater than zero"
 
     @patch("agreement.services.DebtHistoryService.record_agreement_activated")
-    def test_should_activate_agreement_successfully(self, mock_history, agreement, manager_user, session):
-        activated_agreement = AgreementService.activate(agreement, manager_user, session)
+    def test_should_activate_agreement_successfully(self, mock_history, agreement, manager_user, session): # noqa: E501, E261
+        activated_agreement = AgreementService.activate(
+            agreement,
+            manager_user,
+            session
+        )
 
         assert activated_agreement.status == AgreementStatus.ACTIVE
 
-        assert activated_agreement.debt.status == DebtStatus.IN_AGREEMENT
+        assert activated_agreement.debt.status == DebtStatus.IN_AGREEMENT # noqa: E501, E261
 
         mock_history.assert_called_once()
 
-    def test_should_raise_error_when_activating_non_draft_agreement(self, agreement, manager_user, session):
+    def test_should_raise_error_when_activating_non_draft_agreement(self, agreement, manager_user, session): # noqa: E501, E261
         agreement.status = AgreementStatus.ACTIVE
 
         session.flush()
 
         with pytest.raises(AgreementStatusError) as err:
-            AgreementService.activate(agreement, manager_user, session)
+            AgreementService.activate(
+                agreement,
+                manager_user,
+                session
+            )
 
         assert err.value.message == "Agreement cannot opened"
 
     @patch("agreement.services.DebtHistoryService.record_agreement_cancelled")
-    def test_should_cancel_agreement_successfully(self, mock_history, agreement, session):
+    def test_should_cancel_agreement_successfully(self, mock_history, agreement, session): # noqa: E501, E261
         agreement.status = AgreementStatus.ACTIVE
 
         session.flush()
@@ -703,7 +721,7 @@ class TestAgreementService:
 
         mock_history.assert_called_once()
 
-    def test_should_raise_error_when_cancelling_completed_agreement(self, agreement, session):
+    def test_should_raise_error_when_cancelling_completed_agreement(self, agreement, session): # noqa: E501, E261
         agreement.status = AgreementStatus.COMPLETED
 
         session.flush()
@@ -714,7 +732,7 @@ class TestAgreementService:
         assert err.value.message == "Cannot cancel a completed agreement"
 
     @patch("agreement.services.NotificationEvents.on_agreement_completed")
-    def test_should_complete_agreement_successfully(self, mock_notification, debt, session):
+    def test_should_complete_agreement_successfully(self, mock_notification, debt, session): # noqa: E501, E261
         agreement = Agreement(
             debt_id=debt.id,
             total_traded=Decimal("1000.00"),
@@ -750,7 +768,7 @@ class TestAgreementService:
             session,
         )
 
-    def test_should_raise_pending_installments_error_when_agreement_has_pending_installments(self, debt, session):
+    def test_should_raise_pending_installments_error_when_agreement_has_pending_installments(self, debt, session): # noqa: E501, E261
         agreement = Agreement(
             debt_id=debt.id,
             total_traded=Decimal("1000.00"),
@@ -781,6 +799,7 @@ class TestAgreementService:
             )
 
         assert err.value.message == "There are outstanding installments"
+
 
 @pytest.mark.unit
 class TestInstallmentService:
@@ -826,6 +845,7 @@ class TestInstallmentService:
             InstallmentService.get(installment_id, session)
 
         assert err.value.message == "Installment not found"
+
 
 @pytest.mark.unit
 class TestPaymentService:

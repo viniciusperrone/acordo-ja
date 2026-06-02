@@ -20,7 +20,12 @@ from installments.filters import InstallmentFilter
 from payment.filters import PaymentFilter
 from notifications.filters import NotificationFilter
 
-from utils.enum import InstallmentStatus, MethodPayment, AgreementStatus, NotificationType
+from utils.enum import (
+    InstallmentStatus,
+    MethodPayment,
+    AgreementStatus,
+    NotificationType
+)
 
 
 @pytest.mark.unit
@@ -157,6 +162,7 @@ class TestUserFilter:
         names = [user.name for user in result]
 
         assert names == sorted(names, reverse=True)
+
 
 @pytest.mark.unit
 class TestCreditorFilter:
@@ -301,6 +307,7 @@ class TestCreditorFilter:
         rates = [item.interest_rate for item in result]
 
         assert rates == sorted(rates, reverse=True)
+
 
 @pytest.mark.unit
 class TestDebtorFilter:
@@ -487,6 +494,7 @@ class TestDebtorFilter:
         names = [item.name for item in result]
 
         assert names == sorted(names, reverse=True)
+
 
 @pytest.mark.unit
 class TestDebtFilter:
@@ -707,6 +715,7 @@ class TestDebtFilter:
         values = [item.original_value for item in result]
 
         assert values == sorted(values, reverse=True)
+
 
 @pytest.mark.unit
 class TestInstallmentFilter:
@@ -976,6 +985,7 @@ class TestInstallmentFilter:
         result = InstallmentFilter(query, params).apply().all()
 
         assert isinstance(result, list)
+
 
 @pytest.mark.unit
 class TestPaymentFilter:
@@ -1295,6 +1305,7 @@ class TestPaymentFilter:
         result = PaymentFilter(query, params).apply().all()
 
         assert isinstance(result, list)
+
 
 @pytest.mark.unit
 class TestNotificationFilter:
