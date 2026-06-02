@@ -7,8 +7,6 @@ from decimal import Decimal
 
 from utils.enum import UserRole, DebtStatus
 
-os.environ["TESTING"] = "True"
-
 from app import initialize_app
 from config.db import db as _db
 from users.models import User
@@ -18,12 +16,15 @@ from debts.models import Debt
 from agreement.models import Agreement
 
 
+os.environ["TESTING"] = "True"
+
+
 @pytest.fixture(scope="session")
 def app():
     app = initialize_app()
     app.config.update({
         "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI":  "sqlite://",
+        "SQLALCHEMY_DATABASE_URI": "sqlite://",
         "SQLALCHEMY_TRACK_MODIFICATIONS": False,
         "JWT_SECRET_KEY": "test-secret-key",
         "SQLALCHEMY_ENGINE_OPTIONS": {
@@ -32,6 +33,7 @@ def app():
     })
 
     yield app
+
 
 @pytest.fixture(scope="session")
 def db(app):
@@ -48,6 +50,7 @@ def db(app):
         _db.create_all()
         yield _db
         _db.drop_all()
+
 
 @pytest.fixture(scope="function")
 def session(db, app):
@@ -68,10 +71,12 @@ def session(db, app):
         transaction.rollback()
         connection.close()
 
+
 @pytest.fixture(scope="function")
 def client(app, session):
 
     return app.test_client()
+
 
 @pytest.fixture
 def admin_user(session):
@@ -89,6 +94,7 @@ def admin_user(session):
 
     return user
 
+
 @pytest.fixture
 def manager_user(session):
     user = User(
@@ -104,6 +110,7 @@ def manager_user(session):
     session.commit()
 
     return user
+
 
 @pytest.fixture
 def agent_user(session):
@@ -121,6 +128,7 @@ def agent_user(session):
 
     return user
 
+
 @pytest.fixture
 def auth_headers_admin(client, admin_user):
     response = client.post('/auth/login', json={
@@ -134,6 +142,7 @@ def auth_headers_admin(client, admin_user):
         'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json',
     }
+
 
 @pytest.fixture
 def creditor(session):
@@ -149,6 +158,7 @@ def creditor(session):
 
     return creditor
 
+
 @pytest.fixture
 def debtor(session):
     debtor = Debtor(
@@ -162,6 +172,7 @@ def debtor(session):
     session.commit()
 
     return debtor
+
 
 @pytest.fixture
 def debt(session, debtor, creditor):
@@ -179,6 +190,7 @@ def debt(session, debtor, creditor):
 
     return debt
 
+
 @pytest.fixture
 def agreement(session, debt):
     agreement = Agreement(
@@ -193,6 +205,7 @@ def agreement(session, debt):
     session.commit()
 
     return agreement
+
 
 @pytest.fixture
 def lead(session):
@@ -210,6 +223,7 @@ def lead(session):
 
     return lead
 
+
 @pytest.fixture
 def sample_debt_data(debtor, creditor):
     return {
@@ -218,6 +232,7 @@ def sample_debt_data(debtor, creditor):
         "original_value": "1500.00",
         "due_date": "2024-06-01"
     }
+
 
 @pytest.fixture
 def sample_creditor_data(creditor, debtor):
