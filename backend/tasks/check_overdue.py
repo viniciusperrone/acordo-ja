@@ -67,7 +67,6 @@ def check_overdue_installments():
 
         db.session.commit()
 
-
     except Exception as e:
         db.session.rollback()
 
@@ -80,6 +79,7 @@ def check_overdue_installments():
         )
 
         raise
+
 
 if __name__ == '__main__':
     from app import initialize_app

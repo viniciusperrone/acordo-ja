@@ -47,6 +47,7 @@ def init_scheduler(app: Flask):
 
     scheduler.start()
 
+
 def run_with_app_context(app: Flask, func):
     from flask import current_app
     from datetime import datetime
@@ -92,6 +93,7 @@ def run_with_app_context(app: Flask, func):
             )
 
             raise
+
 
 def cleanup_old_notification():
     from flask import current_app
