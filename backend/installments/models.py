@@ -14,13 +14,13 @@ class Installments(db.Model):
     value = db.Column(NUMERIC(12, 2), nullable=False)
 
     status = db.Column(
-       db.Enum(
-           InstallmentStatus,
-           name="installment_status_enum"
-       ),
-       default=InstallmentStatus.PENDING,
-       server_default=InstallmentStatus.PENDING.value,
-       nullable=False
+        db.Enum(
+            InstallmentStatus,
+            name="installment_status_enum"
+        ),
+        default=InstallmentStatus.PENDING,
+        server_default=InstallmentStatus.PENDING.value,
+        nullable=False
     )
 
     agreement = db.relationship(
