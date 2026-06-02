@@ -1861,7 +1861,7 @@ class TestDebtHistorySchema:
 
         data = {
             "id": uuid.uuid4(),
-            "event_type": DebtHistoryType.UPDATED,
+            "event_type": DebtHistoryType.DEBT_CREATED,
             "old_status": DebtStatus.OPEN,
             "new_status": DebtStatus.PAID,
             "old_value": Decimal("100.00"),
@@ -2023,12 +2023,14 @@ class TestAgreementSchema:
     def test_should_load_successfully_with_valid_data(self):
         schema = AgreementSchema()
 
+        first_due_data = date.today() + timedelta(days=30)
+
         data = {
             "debt_id": uuid.uuid4(),
             "installments_quantity": 1,
             "entry_value": Decimal("150.00"),
             "discount_applied": Decimal("0.05"),
-            "first_due_date": date(2026, 5, 6),
+            "first_due_date": first_due_data,
         }
 
         result = schema.load(data)
