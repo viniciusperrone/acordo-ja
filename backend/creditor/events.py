@@ -1,7 +1,7 @@
 from sqlalchemy import event
 from sqlalchemy.orm import Session # noqa: F401 E261
 
-from creditor import Creditor
+from creditor.models import Creditor
 
 
 @event.listens_for(Creditor, "before_delete")
