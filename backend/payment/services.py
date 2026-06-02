@@ -2,7 +2,7 @@ from datetime import datetime, date
 
 from installments.exceptions import InstallmentWithoutAgreement
 from notifications.events import NotificationEvents
-from observability.events import payment_events
+from observability.events.payment_events import payments_events
 from observability.events.agreement_events import agreement_events
 from observability.events.debt_events import debt_events
 from observability.tracing import traced
@@ -65,7 +65,7 @@ class PaymentService:
 
         agreement = installment.agreement
 
-        payment_events.payment_received(
+        payments_events.payment_received(
             payment_id=str(payment.id),
             data={
                 'installment_id': installment.id,

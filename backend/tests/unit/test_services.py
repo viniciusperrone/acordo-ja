@@ -898,9 +898,12 @@ class TestPaymentService:
 
         return agreement, installment
 
+    @patch("payment.services.payments_events.payment_received")
     def test_should_process_installment_payment_successfully(
         self,
+        mock_payment_received,
         debt,
+        agent_user,
         session,
     ):
         agreement, installment = self.__create_installment(
@@ -910,6 +913,7 @@ class TestPaymentService:
 
         payment = PaymentService.process_installment_payment(
             installment=installment,
+            user=agent_user,
             amount=Decimal("100.00"),
             method=MethodPayment.PIX,
             session=session,
@@ -924,8 +928,19 @@ class TestPaymentService:
         assert installment.status == InstallmentStatus.PAID
         assert installment.payment_date == date.today()
 
+        mock_payment_received.assert_called_once_with(
+            payment_id=str(payment.id),
+            data={
+                'installment_id': installment.id,
+                'amount': payment.amount,
+                'method': payment.method.value,
+                'agreement_id': agreement.id,
+            }
+        )
+
     def test_should_raise_error_when_installment_has_no_agreement(
         self,
+        agent_user,
         session,
     ):
         installment = Installments(
@@ -938,6 +953,7 @@ class TestPaymentService:
         with pytest.raises(InstallmentWithoutAgreement) as err:
             PaymentService.process_installment_payment(
                 installment=installment,
+                user=agent_user,
                 amount=Decimal("100.00"),
                 method=MethodPayment.PIX,
                 session=session,
@@ -948,6 +964,7 @@ class TestPaymentService:
     def test_should_raise_error_when_payment_method_is_invalid(
         self,
         debt,
+        agent_user,
         session,
     ):
         _, installment = self.__create_installment(
@@ -958,6 +975,7 @@ class TestPaymentService:
         with pytest.raises(PaymentError) as err:
             PaymentService.process_installment_payment(
                 installment=installment,
+                user=agent_user,
                 amount=Decimal("100.00"),
                 method="INVALID_METHOD",
                 session=session,
@@ -968,6 +986,7 @@ class TestPaymentService:
     def test_should_raise_error_when_installment_is_already_paid(
         self,
         debt,
+        agent_user,
         session,
     ):
         _, installment = self.__create_installment(
@@ -979,6 +998,7 @@ class TestPaymentService:
         with pytest.raises(PaymentError) as err:
             PaymentService.process_installment_payment(
                 installment=installment,
+                user=agent_user,
                 amount=Decimal("100.00"),
                 method=MethodPayment.PIX,
                 session=session,
@@ -989,6 +1009,7 @@ class TestPaymentService:
     def test_should_raise_error_when_agreement_is_not_active(
         self,
         debt,
+        agent_user,
         session,
     ):
         _, installment = self.__create_installment(
@@ -1000,6 +1021,7 @@ class TestPaymentService:
         with pytest.raises(PaymentError) as err:
             PaymentService.process_installment_payment(
                 installment=installment,
+                user=agent_user,
                 amount=Decimal("100.00"),
                 method=MethodPayment.PIX,
                 session=session,
@@ -1010,6 +1032,7 @@ class TestPaymentService:
     def test_should_raise_error_when_payment_amount_is_invalid(
         self,
         debt,
+        agent_user,
         session,
     ):
         _, installment = self.__create_installment(
@@ -1020,6 +1043,7 @@ class TestPaymentService:
         with pytest.raises(PaymentError) as err:
             PaymentService.process_installment_payment(
                 installment=installment,
+                user=agent_user,
                 amount=Decimal("200.00"),
                 method=MethodPayment.PIX,
                 session=session,
@@ -1027,9 +1051,12 @@ class TestPaymentService:
 
         assert err.value.message == "Payment must match installment value"
 
+    @patch("payment.services.payments_events.payment_received")
     def test_should_complete_agreement_when_all_installments_are_paid(
         self,
+        mock_payment_received,
         debt,
+        agent_user,
         session,
     ):
         agreement = Agreement(
@@ -1055,8 +1082,9 @@ class TestPaymentService:
         session.add(installment)
         session.commit()
 
-        PaymentService.process_installment_payment(
+        payment = PaymentService.process_installment_payment(
             installment=installment,
+            user=agent_user,
             amount=Decimal("100.00"),
             method=MethodPayment.PIX,
             session=session,
@@ -1064,3 +1092,13 @@ class TestPaymentService:
 
         assert agreement.status == AgreementStatus.COMPLETED
         assert agreement.debt.status == DebtStatus.PAID
+
+        mock_payment_received.assert_called_once_with(
+            payment_id=str(payment.id),
+            data={
+                'installment_id': installment.id,
+                'amount': payment.amount,
+                'method': payment.method.value,
+                'agreement_id': agreement.id,
+            }
+        )
