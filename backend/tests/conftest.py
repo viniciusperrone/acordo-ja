@@ -2,7 +2,7 @@ import pytest
 
 import os
 from sqlalchemy import event
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from decimal import Decimal
 
 from utils.enum import UserRole, DebtStatus
@@ -198,7 +198,7 @@ def agreement(session, debt):
         total_traded=Decimal("12000.00"),
         installments_quantity=10,
         installment_value=Decimal("1200.00"),
-        first_due_date=date(2026, 5, 6),
+        first_due_date=date.today() + timedelta(days=30),
     )
 
     session.add(agreement)
