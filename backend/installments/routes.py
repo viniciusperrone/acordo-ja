@@ -1,7 +1,7 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from flask_jwt_extended import jwt_required
 
-from common.decorators import transactional
+from common.decorators import transactional, current_user
 from config.rate_limit import limiter
 
 from installments.models import Installments
@@ -48,8 +48,11 @@ def list_installments():
 @installment_bp.route("/<int:installment_id>/pay", methods=["POST"])
 @jwt_required()
 @limiter.limit("3 per minute")
+@current_user
 @transactional
 def pay_installment(installment_id, db):
+    user = g.current_user
+
     payment_schema = PaymentSchema()
 
     installment = InstallmentService.get(installment_id, db.session)
@@ -57,6 +60,7 @@ def pay_installment(installment_id, db):
 
     payment = PaymentService.process_installment_payment(
         installment=installment,
+        user=user,
         amount=data['amount'],
         method=data['method'],
         session=db.session
