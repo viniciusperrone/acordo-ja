@@ -1,6 +1,7 @@
 import pytest
 
 import os
+import secrets
 from sqlalchemy import event
 from datetime import datetime, date, timedelta
 from decimal import Decimal
@@ -26,7 +27,7 @@ def app():
         "TESTING": True,
         "SQLALCHEMY_DATABASE_URI": "sqlite://",
         "SQLALCHEMY_TRACK_MODIFICATIONS": False,
-        "JWT_SECRET_KEY": "test-secret-key",
+        "JWT_SECRET_KEY": secrets.token_hex(32),
         "SQLALCHEMY_ENGINE_OPTIONS": {
             "connect_args": {"check_same_thread": False}
         }
