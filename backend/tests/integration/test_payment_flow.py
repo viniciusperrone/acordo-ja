@@ -51,7 +51,7 @@ class TestPaymentFlow:
         assert agreement.status == AgreementStatus.ACTIVE
         assert debt.status == DebtStatus.IN_AGREEMENT
 
-    def test_should_complete_agreement_after_last_installment_payment(self, debt, agent_user, session):
+    def test_should_complete_agreement_after_last_installment_payment(self, debt, agent_user, session): # noqa: E501, E261
         agreement = AgreementService.create(
             {
                 "debt_id": debt.id,
@@ -81,7 +81,7 @@ class TestPaymentFlow:
         assert agreement.status == AgreementStatus.COMPLETED
         assert debt.status == DebtStatus.PAID
 
-    def test_should_not_pay_installment_when_agreement_is_draft(self, debt, agent_user, session):
+    def test_should_not_pay_installment_when_agreement_is_draft(self, debt, agent_user, session): # noqa: E501, E261
         agreement = AgreementService.create(
             {
                 "debt_id": debt.id,

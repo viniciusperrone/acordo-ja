@@ -16,7 +16,7 @@ class TestDebtFlow:
     creditors, debtors, and related business rules.
     """
 
-    def test_should_create_debt_with_valid_creditor_and_debtor(self, creditor, debtor, manager_user, session):
+    def test_should_create_debt_with_valid_creditor_and_debtor(self, creditor, debtor, manager_user, session): # noqa: E501, E261
         data = {
             "creditor_id": creditor.id,
             "debtor_id": debtor.id,
@@ -37,7 +37,6 @@ class TestDebtFlow:
         assert debt.debtor_id == debtor.id
         assert debt.original_value == Decimal("3000.00")
         assert debt.status == DebtStatus.OPEN
-
 
     def test_should_return_debts_for_existing_document(self, debt, session):
         result = DebtService.search(

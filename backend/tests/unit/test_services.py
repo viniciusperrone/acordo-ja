@@ -630,7 +630,7 @@ class TestAgreementService:
 
         assert err.value.message == "Debt not found"
 
-    def test_should_raise_error_when_discount_exceeds_total_debt(self, debt, agent_user, session):
+    def test_should_raise_error_when_discount_exceeds_total_debt(self, debt, agent_user, session): # noqa: E501, E261
         data = {
             "debt_id": debt.id,
             "installments_quantity": 5,
@@ -643,7 +643,7 @@ class TestAgreementService:
 
         assert str(err.value) == "Discount cannot exceed total debt"
 
-    def test_should_raise_error_when_discount_exceeds_limit(self, debt, agent_user, session):
+    def test_should_raise_error_when_discount_exceeds_limit(self, debt, agent_user, session): # noqa: E501, E261
         data = {
             "debt_id": debt.id,
             "installments_quantity": 5,
@@ -669,7 +669,7 @@ class TestAgreementService:
 
         assert str(err.value) == "Entry cannot exceed total after discount"
 
-    def test_should_raise_error_when_installments_quantity_is_zero(self, debt, agent_user, session):
+    def test_should_raise_error_when_installments_quantity_is_zero(self, debt, agent_user, session): # noqa: E501, E261
         data = {
             "debt_id": debt.id,
             "installments_quantity": 0,

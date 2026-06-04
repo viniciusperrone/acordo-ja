@@ -36,8 +36,7 @@ class TestAgreementFlow:
         assert debt.renegotiation_count == 1
         assert agreement.status == AgreementStatus.DRAFT
 
-
-    def test_activate_agreement_updates_debt(self, agreement, debt, agent_user, session):
+    def test_activate_agreement_updates_debt(self, agreement, debt, agent_user, session): # noqa: E501, E261
         AgreementService.activate(agreement, agent_user, session)
 
         session.refresh(agreement)
@@ -48,7 +47,6 @@ class TestAgreementFlow:
         assert debt.status == DebtStatus.IN_AGREEMENT
         assert debt.updated_value == agreement.total_traded
         assert debt.last_agreement_date is not None
-
 
     def test_cancel_agreement_revert_debt(self, agreement, debt, agent_user, session):
         AgreementService.activate(agreement, agent_user, session)
