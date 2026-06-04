@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 
-from common.decorators import transactional, permission_roles
+from common.decorators import transactional, permission_roles, current_user
 from config.rate_limit import limiter
 
 from debtor.models import Debtor
@@ -58,6 +58,7 @@ def retrieve_debtor(debtor_id, db):
 @debtor_bp.route('/add', methods=['POST'])
 @jwt_required()
 @limiter.limit("10 per minute")
+@current_user
 @permission_roles(UserRole.ADMIN, UserRole.MANAGER)
 @transactional
 def create_debtor(db):

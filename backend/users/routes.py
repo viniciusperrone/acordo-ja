@@ -57,9 +57,9 @@ def retrieve_user(user_id, db):
 @user_bp.route('/add', methods=['POST'])
 @jwt_required()
 @limiter.limit("10 per minute")
-@transactional
 @current_user
 @permission_roles(UserRole.ADMIN)
+@transactional
 def create_user(db):
     user_schema = UserSchema()
 
@@ -73,9 +73,9 @@ def create_user(db):
 @user_bp.route('/<uuid:user_id>/update', methods=['PUT'])
 @jwt_required()
 @limiter.limit("10 per minute")
-@transactional
 @current_user
 @permission_roles(UserRole.ADMIN)
+@transactional
 def update_user(user_id, db):
     schema = UserUpdateSchema()
     response_schema = UserResponseSchema()

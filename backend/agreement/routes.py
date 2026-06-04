@@ -70,9 +70,9 @@ def retrieve_agreement(agreement_id, db):
 @agreement_bp.route('/<uuid:agreement_id>/activate', methods=['PATCH'])
 @jwt_required()
 @limiter.limit("3 per minute")
+@current_user
 @permission_roles(UserRole.ADMIN, UserRole.MANAGER)
 @transactional
-@current_user
 def activate_agreement(agreement_id, db):
     user = getattr(g, "current_user", None)
 
@@ -86,9 +86,9 @@ def activate_agreement(agreement_id, db):
 @agreement_bp.route('/<uuid:agreement_id>/cancel', methods=['POST'])
 @jwt_required()
 @limiter.limit("3 per minute")
+@current_user
 @permission_roles(UserRole.ADMIN, UserRole.MANAGER)
 @transactional
-@current_user
 def cancel_agreement(agreement_id, db):
     user = getattr(g, "current_user", None)
 
@@ -100,9 +100,10 @@ def cancel_agreement(agreement_id, db):
 
 
 @agreement_bp.route('/<uuid:agreement_id>/complete', methods=['POST'])
-@limiter.limit("3 per minute")
-@permission_roles(UserRole.ADMIN, UserRole.MANAGER)
 @jwt_required()
+@limiter.limit("3 per minute")
+@current_user
+@permission_roles(UserRole.ADMIN, UserRole.MANAGER)
 @transactional
 def complete_agreement(agreement_id, db):
     agreement = AgreementService.get(agreement_id, db.session)
