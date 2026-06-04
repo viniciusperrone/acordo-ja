@@ -1,10 +1,20 @@
+import logging
+from datetime import datetime
+
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
-from flask import Flask
+from flask import Flask, current_app
 
+from config.db import db
+from notifications.services import NotificationService
+from observability.structured_logger import log_event
+from observability.tracing import traced
 from .check_overdue import check_overdue_installments
 
 
+logger = logging.getLogger(__name__)
+
+@traced("tasks.scheduler.init_scheduler")
 def init_scheduler(app: Flask):
 
     scheduler = BackgroundScheduler(
@@ -12,14 +22,18 @@ def init_scheduler(app: Flask):
         timezone='America/Sao_Paulo',
     )
 
-    app.logger.info(
-        "Initializing scheduler",
-        extra={"timezone": "America/Sao_Paulo"}
+    log_event(
+        logger,
+        "info",
+        extra_fields={
+            "message": "Initializing scheduler",
+            "timezone": "America/Sao_Paulo"
+        }
     )
 
     scheduler.add_job(
         func=lambda: run_with_app_context(app, check_overdue_installments),
-        trigger=CronTrigger(hour=9, minute=0),
+        trigger=CronTrigger(hour=13, minute=0),
         id='check_overdue_installments',
         name='Check overdue payments',
         replace_existing=True,
@@ -35,9 +49,11 @@ def init_scheduler(app: Flask):
         misfire_grace_time=3600,
     )
 
-    app.logger.info(
-        "Scheduler started",
-        extra={
+    log_event(
+        logger,
+        "info",
+        extra_fields={
+            "message": "Scheduler started",
             "jobs": [
                 "check_overdue_installments",
                 "cleanup_old_notification",
@@ -55,9 +71,11 @@ def run_with_app_context(app: Flask, func):
     with app.app_context():
         started_at = datetime.utcnow()
 
-        current_app.logger.info(
-            "Job started",
-            extra={
+        log_event(
+            logger,
+            "info",
+            extra_fields={
+                "message": "Job started",
                 "job_name": func.__name__,
                 "started_at": started_at.isoformat(),
             }
@@ -68,9 +86,11 @@ def run_with_app_context(app: Flask, func):
 
             finished_at = datetime.utcnow()
 
-            current_app.logger.info(
-                "Job finished successfully",
-                extra={
+            log_event(
+                current_app.logger,
+                "info",
+                extra_fields={
+                    "message": "Job finished successfully",
                     "job_name": func.__name__,
                     "started_at": started_at.isoformat(),
                     "finished_at": finished_at.isoformat(),
@@ -82,9 +102,11 @@ def run_with_app_context(app: Flask, func):
         except Exception as e:
             finished_at = datetime.utcnow()
 
-            current_app.logger.exception(
-                "Job failed",
-                extra={
+            log_event(
+                current_app.logger,
+                "error",
+                extra_fields={
+                    "message": "Job failed",
                     "job_name": func.__name__,
                     "started_at": started_at.isoformat(),
                     "finished_at": finished_at.isoformat(),
@@ -96,17 +118,14 @@ def run_with_app_context(app: Flask, func):
 
 
 def cleanup_old_notification():
-    from flask import current_app
-    from datetime import datetime
-    from notifications.services import NotificationService
-    from config.db import db
-
     started_at = datetime.utcnow()
 
     try:
-        current_app.logger.info(
-            "Starting cleanup of old notification",
-            extra={
+        log_event(
+            current_app.logger,
+            "info",
+            extra_fields={
+                "message": "Starting cleanup of old notifications",
                 "days_threshold": 30,
                 "started_at": started_at.isoformat(),
             }
@@ -119,9 +138,11 @@ def cleanup_old_notification():
 
         db.session.commit()
 
-        current_app.logger.info(
-            "Cleanup of odl notifications completed",
-            extra={
+        log_event(
+            current_app.logger,
+            "info",
+            extra_fields={
+                "message": "Cleanup of old notifications completed",
                 "deleted_count": count,
                 "finished_at": datetime.utcnow().isoformat(),
             }
@@ -130,9 +151,11 @@ def cleanup_old_notification():
     except Exception as e:
         db.session.rollback()
 
-        current_app.logger.exception(
-            "Error cleaning up old notifications",
-            extra={
+        log_event(
+            current_app.logger,
+            "error",
+            extra_fields={
+                "message": "Error cleaning up old notifications",
                 "started_at": started_at.isoformat(),
                 "error": str(e)
             }

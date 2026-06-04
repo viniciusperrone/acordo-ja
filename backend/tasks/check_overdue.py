@@ -1,15 +1,20 @@
 from datetime import date
+import logging
+
 from sqlalchemy import and_
 
 from config.db import db
 from installments import Installments
 from notifications.events import NotificationEvents
+from observability.tracing import traced
+from observability.structured_logger import log_event
 from utils.enum import InstallmentStatus
 
+logger = logging.getLogger(__name__)
 
+
+@traced("tasks.scheduler.check_overdue_installments")
 def check_overdue_installments():
-    from flask import current_app
-
     today = date.today()
 
     try:
@@ -23,16 +28,23 @@ def check_overdue_installments():
         count = len(overdue_installments)
 
         if count == 0:
-            current_app.logger.info(
-                "No overdue installments found",
-                extra={"checked_at": today.isoformat()}
+            log_event(
+                logger,
+                "info",
+                extra_fields={
+                    "message": "No overdue installments found",
+                    "total_found": count,
+                    "checked_at": today.isoformat()
+                }
             )
 
             return
 
-        current_app.logger.info(
-            "Processing overdue installments",
-            extra={
+        log_event(
+            logger,
+            "info",
+            extra_fields={
+                "message": "Processing overdue installments",
                 "total_found": count,
                 "checked_at": today.isoformat()
             }
@@ -44,9 +56,11 @@ def check_overdue_installments():
 
             NotificationEvents.on_installment_overdue(installment, db.session)
 
-            current_app.logger.info(
-                "Installment marked as overdue",
-                extra={
+            log_event(
+                logger,
+                "info",
+                extra_fields={
+                    "message": "Installment marked as overdue",
                     "installment_id": installment.id,
                     "installment_number": installment.installment_number,
                     "agreement_id": str(installment.agreement_id),
@@ -57,9 +71,11 @@ def check_overdue_installments():
                 }
             )
 
-        current_app.logger.info(
-            "Overdue installments processing completed",
-            extra={
+        log_event(
+            logger,
+            "info",
+            extra_fields={
+                "message": "Overdue installments processing completed",
                 "total_processed": count,
                 "processed_at": today.isoformat()
             }
@@ -69,14 +85,6 @@ def check_overdue_installments():
 
     except Exception as e:
         db.session.rollback()
-
-        current_app.logger.exception(
-            "Error processing overdue installments",
-            extra={
-                "checked_at": today.isoformat(),
-                "error": str(e)
-            }
-        )
 
         raise
 
