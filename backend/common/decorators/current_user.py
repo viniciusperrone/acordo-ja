@@ -1,10 +1,11 @@
 from functools import wraps
+from uuid import UUID
 
-from flask import g, abort
-from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
+from flask import abort, g
+from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
 
-from users import User
 from config.db import db
+from users import User
 
 
 def current_user(fn):
@@ -13,7 +14,7 @@ def current_user(fn):
         verify_jwt_in_request()
 
         user_id = get_jwt_identity()
-        user = db.session.get(User, user_id)
+        user = db.session.get(User, UUID(user_id))
 
         if not user:
             abort(401, description="User not found")
