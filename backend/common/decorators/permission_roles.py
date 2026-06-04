@@ -7,6 +7,18 @@ from utils.enum import UserRole
 
 
 def permission_roles(*roles):
+    """
+    Secures Flask endpoints by validating the current user's role against allowed roles.
+
+    NOTE: Must be placed BELOW the authentication/identity decorator (e.g., @current_user)
+    so that the identity is populated before this permission check runs.
+
+    Example:
+        @current_user
+        @permission_roles(UserRole.ADMIN, UserRole.MANAGER)
+        def activate_agreement():
+            ...
+    """
 
     if not all(isinstance(role, UserRole) for role in roles):
         raise ValueError("All roles must be instances of UserRole")
