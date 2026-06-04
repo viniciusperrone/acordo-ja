@@ -67,6 +67,7 @@ class PaymentService:
 
         payments_events.payment_received(
             payment_id=str(payment.id),
+            user_id=str(user.id),
             data={
                 'installment_id': installment.id,
                 'amount': payment.amount,

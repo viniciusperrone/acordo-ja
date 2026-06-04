@@ -2,6 +2,8 @@ import pytest
 
 from datetime import date, timedelta
 
+from agreement.models import Agreement
+from debts.models import Debt
 from agreement.services import AgreementService
 from payment.services import PaymentService
 
@@ -80,11 +82,20 @@ class TestAgreementFlow:
 
     def test_should_complete_agreement_and_pay_debt_when_all_installments_are_paid(
         self,
-        agreement,
         debt,
         agent_user,
         session
     ):
+        agreement = AgreementService.create(
+            {
+                "debt_id": debt.id,
+                "installments_quantity": 2,
+                "first_due_date": date.today() + timedelta(days=30)
+            },
+            agent_user,
+            session
+        )
+
         AgreementService.activate(
             agreement,
             agent_user,
@@ -108,13 +119,13 @@ class TestAgreementFlow:
 
         session.commit()
 
-        session.refresh(agreement)
-        session.refresh(debt)
-
-        assert agreement.status == AgreementStatus.COMPLETED
-        assert debt.status == DebtStatus.PAID
+        agreement = session.get(Agreement, agreement.id)
+        debt = session.get(Debt, debt.id)
 
         assert all(
             installment.status == InstallmentStatus.PAID
             for installment in installments
         )
+
+        assert agreement.status == AgreementStatus.COMPLETED
+        assert debt.status == DebtStatus.PAID
