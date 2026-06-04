@@ -1,5 +1,4 @@
 from datetime import date
-import logging
 
 from sqlalchemy import and_
 
@@ -7,11 +6,11 @@ from config.db import db
 from installments import Installments
 from notifications.events import NotificationEvents
 from observability.tracing import traced
-from observability.structured_logger import log_event
+from observability.structured_logger import get_logger, log_event
 from utils.enum import InstallmentStatus
 
-logger = logging.getLogger(__name__)
 
+logger = get_logger("tasks.scheduler.overdue_installments")
 
 @traced("tasks.scheduler.check_overdue_installments")
 def check_overdue_installments():
@@ -31,6 +30,7 @@ def check_overdue_installments():
             log_event(
                 logger,
                 "info",
+                "tasks.scheduler.no_overdue_installments",
                 extra_fields={
                     "message": "No overdue installments found",
                     "total_found": count,
@@ -43,6 +43,7 @@ def check_overdue_installments():
         log_event(
             logger,
             "info",
+            "tasks.scheduler.processing_overdue_installments",
             extra_fields={
                 "message": "Processing overdue installments",
                 "total_found": count,
@@ -59,6 +60,7 @@ def check_overdue_installments():
             log_event(
                 logger,
                 "info",
+                "tasks.scheduler.installment_marked_overdue",
                 extra_fields={
                     "message": "Installment marked as overdue",
                     "installment_id": installment.id,
@@ -74,6 +76,7 @@ def check_overdue_installments():
         log_event(
             logger,
             "info",
+            "tasks.scheduler.overdue_installments_processed",
             extra_fields={
                 "message": "Overdue installments processing completed",
                 "total_processed": count,

@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -7,12 +6,12 @@ from flask import Flask, current_app
 
 from config.db import db
 from notifications.services import NotificationService
-from observability.structured_logger import log_event
+from observability.structured_logger import log_event, get_logger
 from observability.tracing import traced
 from .check_overdue import check_overdue_installments
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger("tasks.scheduler")
 
 @traced("tasks.scheduler.init_scheduler")
 def init_scheduler(app: Flask):
@@ -25,6 +24,7 @@ def init_scheduler(app: Flask):
     log_event(
         logger,
         "info",
+        "tasks.scheduler.init_scheduler",
         extra_fields={
             "message": "Initializing scheduler",
             "timezone": "America/Sao_Paulo"
@@ -33,7 +33,7 @@ def init_scheduler(app: Flask):
 
     scheduler.add_job(
         func=lambda: run_with_app_context(app, check_overdue_installments),
-        trigger=CronTrigger(hour=13, minute=0),
+        trigger=CronTrigger(hour=15, minute=3),
         id='check_overdue_installments',
         name='Check overdue payments',
         replace_existing=True,
@@ -52,6 +52,7 @@ def init_scheduler(app: Flask):
     log_event(
         logger,
         "info",
+        "tasks.scheduler.scheduler_started",
         extra_fields={
             "message": "Scheduler started",
             "jobs": [
@@ -65,7 +66,6 @@ def init_scheduler(app: Flask):
 
 
 def run_with_app_context(app: Flask, func):
-    from flask import current_app
     from datetime import datetime
 
     with app.app_context():
@@ -74,6 +74,7 @@ def run_with_app_context(app: Flask, func):
         log_event(
             logger,
             "info",
+            "tasks.scheduler.job_started",
             extra_fields={
                 "message": "Job started",
                 "job_name": func.__name__,
@@ -87,8 +88,9 @@ def run_with_app_context(app: Flask, func):
             finished_at = datetime.utcnow()
 
             log_event(
-                current_app.logger,
+                logger,
                 "info",
+                "tasks.scheduler.job_completed",
                 extra_fields={
                     "message": "Job finished successfully",
                     "job_name": func.__name__,
@@ -103,8 +105,9 @@ def run_with_app_context(app: Flask, func):
             finished_at = datetime.utcnow()
 
             log_event(
-                current_app.logger,
+                logger,
                 "error",
+                "tasks.scheduler.job_failed",
                 extra_fields={
                     "message": "Job failed",
                     "job_name": func.__name__,
@@ -122,8 +125,9 @@ def cleanup_old_notification():
 
     try:
         log_event(
-            current_app.logger,
+            logger,
             "info",
+            "tasks.scheduler.clean_old_notifications",
             extra_fields={
                 "message": "Starting cleanup of old notifications",
                 "days_threshold": 30,
@@ -139,8 +143,9 @@ def cleanup_old_notification():
         db.session.commit()
 
         log_event(
-            current_app.logger,
+            logger,
             "info",
+            "tasks.scheduler.cleanup_old_notifications_finished",
             extra_fields={
                 "message": "Cleanup of old notifications completed",
                 "deleted_count": count,
@@ -154,6 +159,7 @@ def cleanup_old_notification():
         log_event(
             current_app.logger,
             "error",
+            "tasks.scheduler.cleanup_old_notifications_failed",
             extra_fields={
                 "message": "Error cleaning up old notifications",
                 "started_at": started_at.isoformat(),
