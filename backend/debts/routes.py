@@ -108,7 +108,10 @@ def get_debt_timeline(debt_id, db):
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
 
-    pagination = DebtService.get_timeline(debt, db.session).paginate(
+    query = DebtService.get_timeline(debt, db.session)
+
+    pagination = db.paginate(
+        query,
         page=page,
         per_page=per_page,
         error_out=False
