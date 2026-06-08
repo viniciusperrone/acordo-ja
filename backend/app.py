@@ -46,6 +46,7 @@ def initialize_app():
         app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
         app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
         app.config["TESTING"] = True
+        app.config["RATELIMIT_ENABLED"] = False
     else:
         app.config.from_object(Config)
 
