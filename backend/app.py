@@ -52,7 +52,7 @@ def initialize_app():
     db.init_app(app)
     init_jwt(app)
 
-    limiter.init_app(app)
+    # limiter.init_app(app)
 
     app.register_error_handler(429, rate_limit_handler)
 
