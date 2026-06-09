@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from flask import Blueprint, request, g, jsonify
 from flask_jwt_extended import jwt_required
 
@@ -47,7 +49,7 @@ def list_notifications(db):
         "total": pagination.total,
         "pages": pagination.pages,
         "current_page": page,
-        "unread_count": NotificationService.get_unread_count(current_user_id)
+        "unread_count": NotificationService.get_unread_count(current_user_id, db.session)
     })
 
 
@@ -56,9 +58,9 @@ def list_notifications(db):
 @limiter.limit("120 per minute")
 @transactional
 @current_user
-def get_unread_count():
+def get_unread_count(db):
     current_user_id = g.current_user.id
-    count = NotificationService.get_unread_count(current_user_id)
+    count = NotificationService.get_unread_count(current_user_id, db.session)
 
     return jsonify({"unread_count": count}), 200
 
@@ -100,7 +102,7 @@ def mark_multiple_as_read(db):
     ).all()
 
     for notification in notifications:
-        if str(notification.user_id) != current_user_id:
+        if notification.user_id != current_user_id:
             return jsonify({"message": "Unauthorized access"}), 401
 
     count = NotificationService.mark_multiple_as_read(
@@ -119,10 +121,10 @@ def mark_multiple_as_read(db):
 @transactional
 @current_user
 def mark_all_as_read(db):
-    current_user_id = g.current_user.id
+    user = g.current_user
 
     count = NotificationService.mark_all_read_for_user(
-        current_user_id,
+        user_id=user.id,
         session=db.session
     )
 

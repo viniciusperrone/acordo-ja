@@ -1,3 +1,4 @@
+from uuid import UUID
 from typing import Optional, List
 from datetime import datetime
 
@@ -103,9 +104,9 @@ class NotificationService:
 
     @staticmethod
     def mark_all_read_for_user(user_id: str, session=None) -> int:
-        notifications = Notification.query.filter(
+        notifications = session.query(Notification).filter(
             Notification.user_id == user_id,
-            Notification.is_read == False, # noqa: E712 E261
+            Notification.is_read == False,  # noqa: E712 E261
         ).all()
 
         count = 0
@@ -117,11 +118,17 @@ class NotificationService:
         return count
 
     @staticmethod
-    def get_unread_count(user_id: str) -> int:
-        return Notification.query.filter(
-            Notification.user_id == user_id,
-            Notification.is_read == False, # noqa: E712 E261
-        ).count()
+    def get_unread_count(user_id, session=None) -> int:
+        if isinstance(user_id, str):
+            user_id = UUID(user_id)
+
+        return (
+            session.query(Notification)
+            .filter(
+                Notification.user_id == user_id,
+                Notification.is_read.is_(False) # noqa: E712 E261
+            ).count()
+        )
 
     @staticmethod
     def delete_old_notifications(days: int = 30, session=None):

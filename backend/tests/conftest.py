@@ -133,7 +133,7 @@ def agent_user(session):
 @pytest.fixture
 def auth_headers_admin(client, admin_user):
     response = client.post('/auth/login', json={
-        'email': 'admin@test.com',
+        'email': admin_user.email,
         'password': 'AcordoJA@2026'
     })
 

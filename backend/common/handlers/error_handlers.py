@@ -1,3 +1,5 @@
+import traceback
+
 from flask import jsonify, Flask
 from werkzeug.exceptions import HTTPException
 from marshmallow.exceptions import ValidationError
@@ -25,4 +27,7 @@ def register_error_handlers(app: Flask):
     @app.errorhandler(Exception)
     def handle_generic_exception(err):
         print(str(err))
+
+        traceback.print_exc()
+
         return jsonify({"message": "Internal Server Error"}), 500
