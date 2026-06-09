@@ -57,9 +57,9 @@ class TestDebtRoutes:
 
         assert response.status_code == 404
 
-    def test_create_debt_with_invalid_debtor(self):
+    def test_create_debt_with_invalid_debtor(self, client, auth_headers_admin):
         payload = {
-            "debtor_id": '',
+            "debtor_id": random.randint(1, 99999),
             "creditor_id": str(uuid.uuid4()),
             "original_value": "1500.00",
             "due_date": (date.today() + timedelta(days=30)).isoformat(),

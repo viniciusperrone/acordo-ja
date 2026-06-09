@@ -13,8 +13,8 @@ from utils.enum import UserRole
 creditor_bp = Blueprint('creditor', __name__, url_prefix='/creditors')
 
 
-@jwt_required()
 @creditor_bp.route('/list', methods=['GET'])
+@jwt_required()
 @limiter.limit("30 per minute")
 def list_creditors():
     page = request.args.get('page', 1, type=int)
@@ -58,9 +58,9 @@ def retrieve_creditor(creditor_id, db):
 @creditor_bp.route('/add', methods=['POST'])
 @jwt_required()
 @limiter.limit("10 per minute")
+@current_user
 @permission_roles(UserRole.ADMIN)
 @transactional
-@current_user
 def create_creditor(db):
     creditor_schema = CreditorSchema()
 

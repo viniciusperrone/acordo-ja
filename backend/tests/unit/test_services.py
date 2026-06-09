@@ -930,6 +930,7 @@ class TestPaymentService:
 
         mock_payment_received.assert_called_once_with(
             payment_id=str(payment.id),
+            user_id=str(agent_user.id),
             data={
                 'installment_id': installment.id,
                 'amount': payment.amount,
@@ -1095,6 +1096,7 @@ class TestPaymentService:
 
         mock_payment_received.assert_called_once_with(
             payment_id=str(payment.id),
+            user_id=str(agent_user.id),
             data={
                 'installment_id': installment.id,
                 'amount': payment.amount,

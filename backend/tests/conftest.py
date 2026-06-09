@@ -78,6 +78,7 @@ def client(app, session):
 
     return app.test_client()
 
+
 pytest_plugins = [
     "tests.fixtures.users",
     "tests.fixtures.auth",

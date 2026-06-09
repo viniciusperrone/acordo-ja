@@ -1,5 +1,7 @@
 import pytest
 
+import uuid
+
 from creditor.models import Creditor
 
 
@@ -54,8 +56,6 @@ class TestCreditorRoutes:
         client,
         auth_headers_admin,
     ):
-        import uuid
-
         response = client.get(
             f"/creditors/{uuid.uuid4()}/detail",
             headers=auth_headers_admin,
