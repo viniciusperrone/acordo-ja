@@ -4,7 +4,6 @@ import uuid
 
 from notifications.models import Notification
 from notifications.services import NotificationService
-from tests.conftest import admin_user
 
 from utils.enum import NotificationType
 
