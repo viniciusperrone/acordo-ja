@@ -86,6 +86,7 @@ pytest_plugins = [
     "tests.fixtures.debtors",
     "tests.fixtures.debts",
     "tests.fixtures.agreements",
+    "tests.fixtures.installments",
     "tests.fixtures.leads",
     "tests.fixtures.mock",
 ]
