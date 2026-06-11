@@ -84,11 +84,13 @@ class TestCheckOverdueTask:
 
     @patch("tasks.check_overdue.db.session.rollback")
     @patch("tasks.check_overdue.NotificationEvents.on_installment_overdue")
-    def test_rollbacks_when_exception_occurs(self, mock_notification, mock_rollback, installment, session):
-        """
-        Should rollback transaction when an exception occurs
-        """
-
+    def test_rollbacks_when_exception_occurs(
+            self,
+            mock_notification,
+            mock_rollback,
+            installment,
+            session,
+    ):
         installment.status = InstallmentStatus.PENDING
         installment.due_date = date.today() - timedelta(days=5)
 
@@ -96,7 +98,9 @@ class TestCheckOverdueTask:
 
         mock_notification.side_effect = Exception("unexpected error")
 
-        with pytest.raises(Exception):
-            check_overdue_installments()
+        check_overdue_installments()
 
+        session.refresh(installment)
+
+        assert installment.status == InstallmentStatus.PENDING
         mock_rollback.assert_called_once()
