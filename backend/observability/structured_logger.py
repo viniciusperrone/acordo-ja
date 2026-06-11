@@ -75,7 +75,7 @@ def clear_context() -> None:
     _ctx.set({})
 
 
-def log_event(logger, level: str, event: str, **fields) -> None:
+def log_event(logger, level: str, event: str, exc_info=None, **fields) -> None:
     extra = {"extra_fields": {"event": event, **fields}}
 
-    getattr(logger, level)(event, extra=extra)
+    getattr(logger, level)(event, extra=extra, exc_info=exc_info)

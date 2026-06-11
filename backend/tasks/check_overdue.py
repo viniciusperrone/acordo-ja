@@ -51,43 +51,77 @@ def check_overdue_installments():
             }
         )
 
+        success_count = 0
+        failed_count = 0
+
         for installment in overdue_installments:
-            old_status = installment.status
-            installment.status = InstallmentStatus.OVERDUE
+            try:
+                old_status = installment.status
+                installment.status = InstallmentStatus.OVERDUE
 
-            NotificationEvents.on_installment_overdue(installment, db.session)
+                NotificationEvents.on_installment_overdue(installment, db.session)
 
-            log_event(
-                logger,
-                "info",
-                "tasks.scheduler.installment_marked_overdue",
-                extra_fields={
-                    "message": "Installment marked as overdue",
-                    "installment_id": installment.id,
-                    "installment_number": installment.installment_number,
-                    "agreement_id": str(installment.agreement_id),
-                    "due_date": installment.due_date.isoformat(),
-                    "value": float(installment.value),
-                    "previous_status": old_status,
-                    "new_status": installment.status.value
-                }
-            )
+                db.session.commit()
+
+                success_count += 1
+
+                log_event(
+                    logger,
+                    "info",
+                    "tasks.scheduler.installment_marked_overdue",
+                    extra_fields={
+                        "message": "Installment marked as overdue",
+                        "installment_id": installment.id,
+                        "installment_number": installment.installment_number,
+                        "agreement_id": str(installment.agreement_id),
+                        "due_date": installment.due_date.isoformat(),
+                        "value": float(installment.value),
+                        "previous_status": old_status,
+                        "new_status": installment.status.value
+                    }
+                )
+            except Exception as e:
+                db.session.rollback()
+
+                failed_count += 1
+
+                logger.exception(
+                    "tasks.scheduler.installment_processing_failed",
+                    extra={
+                        "extra_fields": {
+                            "event": "tasks.scheduler.installment_processing_failed",
+                            "installment_id": installment.id,
+                            "agreement_id": str(installment.agreement_id),
+                            "error": str(e)
+                        }
+                    }
+                )
+
+                continue
 
         log_event(
             logger,
             "info",
             "tasks.scheduler.overdue_installments_processed",
-            extra_fields={
-                "message": "Overdue installments processing completed",
-                "total_processed": count,
-                "processed_at": today.isoformat()
-            }
+            message="Overdue installments processing completed",
+            total_found=count,
+            total_processed=success_count,
+            total_failed=failed_count,
+            processed_at=today.isoformat()
         )
-
-        db.session.commit()
 
     except Exception as e:
         db.session.rollback()
+
+        log_event(
+            logger,
+            "error",
+            "tasks.scheduler.check_overdue_installments_failed",
+            exc_info=True,
+            message="Error processing overdue installments",
+            error=str(e),
+            checked_at=today.isoformat()
+        )
 
         raise
 
