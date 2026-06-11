@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 import pytest
 from unittest.mock import patch
 
@@ -7,6 +5,7 @@ from datetime import date, timedelta
 
 from tasks.check_overdue import check_overdue_installments
 from utils.enum import InstallmentStatus
+
 
 @pytest.mark.tasks
 @pytest.mark.db

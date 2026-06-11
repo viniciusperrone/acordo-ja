@@ -5,6 +5,7 @@ from datetime import date, timedelta
 
 from agreement.models import Agreement
 
+
 @pytest.fixture
 def agreement(session, debt):
     agreement = Agreement(

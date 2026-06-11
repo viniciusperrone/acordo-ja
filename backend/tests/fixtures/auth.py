@@ -18,6 +18,7 @@ def auth_headers_admin(client, admin_user):
         "Content-Type": "application/json",
     }
 
+
 @pytest.fixture
 def auth_headers_manager(client, manager_user):
     response = client.post(
@@ -34,6 +35,7 @@ def auth_headers_manager(client, manager_user):
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
     }
+
 
 @pytest.fixture
 def auth_headers_agent(client, agent_user):
