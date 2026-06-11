@@ -1,5 +1,4 @@
 import logging
-import traceback
 import json
 from datetime import datetime, timezone
 
@@ -45,7 +44,7 @@ class JSONFormatter(logging.Formatter):
         }
 
         if record.exc_info:
-            payload["exception"] = traceback.format_exc()
+            payload["exception"] = self.formatException(record.exc_info)
 
         return json.dumps(payload, ensure_ascii=False, default=str)
 
