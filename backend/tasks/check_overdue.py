@@ -12,6 +12,7 @@ from utils.enum import InstallmentStatus
 
 logger = get_logger("tasks.scheduler.overdue_installments")
 
+
 @traced("tasks.scheduler.check_overdue_installments")
 def check_overdue_installments():
     today = date.today()

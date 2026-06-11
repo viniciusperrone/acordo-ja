@@ -13,6 +13,7 @@ from .check_overdue import check_overdue_installments
 
 logger = get_logger("tasks.scheduler")
 
+
 @traced("tasks.scheduler.init_scheduler")
 def init_scheduler(app: Flask):
 
