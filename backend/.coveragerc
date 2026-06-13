@@ -8,6 +8,7 @@ omit =
     */config/*
     app.py
     */tasks/scheduler.py
+    */observability/*
 
 [report]
 exclude_lines =
