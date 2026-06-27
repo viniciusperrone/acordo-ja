@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Menu } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import logo from "../assets/logo.png";
 
@@ -17,26 +17,33 @@ const navigation = [
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileMenuOpen(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/90 backdrop-blur-md px-[15%]">
+    <header className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/90 backdrop-blur-md">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Logo + CTA */}
-        <div className="flex items-center gap-4">
-          <Link
-            href="/"
-            aria-label="Ir para página inicial"
-            className="flex items-center gap-3"
-          >
-            <Image
-              src={logo}
-              alt="Acordo Já logo"
-              width={65}
-              height={65}
-              priority
-              className="h-auto w-auto"
-            />
-          </Link>
-        </div>
+        {/* Logo */}
+        <Link
+          href="/"
+          aria-label="Ir para página inicial"
+          className="flex items-center"
+        >
+          <Image
+            src={logo}
+            alt="Acordo Já logo"
+            width={65}
+            height={65}
+            priority
+            className="h-14 md:h-16 w-auto"
+          />
+        </Link>
 
         {/* Desktop Navigation */}
         <nav
@@ -52,9 +59,10 @@ export default function Header() {
               {item.name}
             </Link>
           ))}
+
           <Link
             href="/login"
-            className="hidden rounded-lg bg-green-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-700 md:inline-flex"
+            className="inline-flex rounded-lg bg-green-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-700"
           >
             Colaborador
           </Link>
@@ -64,8 +72,12 @@ export default function Header() {
         <button
           type="button"
           aria-label="Abrir menu"
+          aria-expanded={mobileMenuOpen}
+          aria-controls="mobile-menu"
           onClick={() => setMobileMenuOpen((prev) => !prev)}
-          className="inline-flex items-center justify-center rounded-md p-2 text-zinc-700 transition hover:bg-zinc-100 md:hidden"
+          className={`inline-flex items-center justify-center rounded-md p-2 text-zinc-700 transition hover:bg-zinc-100 md:hidden ${
+            mobileMenuOpen ? "bg-zinc-100" : ""
+          }`}
         >
           <Menu size={24} />
         </button>
@@ -73,7 +85,10 @@ export default function Header() {
 
       {/* Mobile Navigation */}
       {mobileMenuOpen && (
-        <div className="border-t border-zinc-200 bg-white md:hidden">
+        <div
+          id="mobile-menu"
+          className="border-t border-zinc-200 bg-white md:hidden"
+        >
           <nav className="flex flex-col px-4 py-4">
             {navigation.map((item) => (
               <Link
